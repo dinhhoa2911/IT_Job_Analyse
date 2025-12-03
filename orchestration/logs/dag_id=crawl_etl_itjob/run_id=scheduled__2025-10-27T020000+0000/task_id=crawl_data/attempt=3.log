@@ -1,0 +1,96 @@
+[2025-10-28T14:32:56.071+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-10-28T14:32:56.100+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2025-10-27T02:00:00+00:00 [queued]>
+[2025-10-28T14:32:56.225+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2025-10-27T02:00:00+00:00 [queued]>
+[2025-10-28T14:32:56.226+0000] {taskinstance.py:2867} INFO - Starting attempt 3 of 4
+[2025-10-28T14:32:56.237+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): crawl_data> on 2025-10-27 02:00:00+00:00
+[2025-10-28T14:32:56.244+0000] {standard_task_runner.py:72} INFO - Started process 69 to run task
+[2025-10-28T14:32:56.249+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'crawl_data', 'scheduled__2025-10-27T02:00:00+00:00', '--job-id', '17', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmp7hpuroqm']
+[2025-10-28T14:32:56.250+0000] {standard_task_runner.py:105} INFO - Job 17: Subtask crawl_data
+[2025-10-28T14:32:56.276+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2025-10-28T14:32:56.471+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.crawl_data scheduled__2025-10-27T02:00:00+00:00 [running]> on host a1de7f96d4f1
+[2025-10-28T14:32:56.472+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2025-10-28T14:32:56.662+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='alert@datateam.local' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='crawl_data' AIRFLOW_CTX_EXECUTION_DATE='2025-10-27T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='3' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-10-27T02:00:00+00:00'
+[2025-10-28T14:32:56.663+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2025-10-28T14:32:56.690+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2025-10-28T14:32:56.691+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', 'docker exec spark-submit bash -c "xvfb-run -a python3 /opt/spark/scripts/Crawl_Data.py"']
+[2025-10-28T14:32:56.702+0000] {subprocess.py:99} INFO - Output:
+[2025-10-28T14:32:58.257+0000] {subprocess.py:106} INFO - 🚀 Bắt đầu crawl ITviec...
+[2025-10-28T14:32:58.258+0000] {subprocess.py:106} INFO - 🗂️  Chrome user data dir: /tmp/chrome_cache_xuilgja7
+[2025-10-28T14:32:58.258+0000] {subprocess.py:106} INFO - Traceback (most recent call last):
+[2025-10-28T14:32:58.259+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Crawl_Data.py", line 218, in <module>
+[2025-10-28T14:32:58.259+0000] {subprocess.py:106} INFO -     df = crawl_itviec_jobs(pages=MAX_PAGES, headless=HEADLESS_MODE)
+[2025-10-28T14:32:58.259+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Crawl_Data.py", line 77, in crawl_itviec_jobs
+[2025-10-28T14:32:58.260+0000] {subprocess.py:106} INFO -     driver = create_chrome_driver(headless=headless)
+[2025-10-28T14:32:58.260+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Crawl_Data.py", line 69, in create_chrome_driver
+[2025-10-28T14:32:58.260+0000] {subprocess.py:106} INFO -     driver = uc.Chrome(options=options, version_main=140, user_data_dir=tmp_profile)
+[2025-10-28T14:32:58.260+0000] {subprocess.py:106} INFO -   File "/usr/local/lib/python3.8/dist-packages/undetected_chromedriver/__init__.py", line 251, in __init__
+[2025-10-28T14:32:58.261+0000] {subprocess.py:106} INFO -     self.patcher = Patcher(
+[2025-10-28T14:32:58.261+0000] {subprocess.py:106} INFO -   File "/usr/local/lib/python3.8/dist-packages/undetected_chromedriver/patcher.py", line 70, in __init__
+[2025-10-28T14:32:58.261+0000] {subprocess.py:106} INFO -     os.makedirs(self.data_path, exist_ok=True)
+[2025-10-28T14:32:58.262+0000] {subprocess.py:106} INFO -   File "/usr/lib/python3.8/os.py", line 213, in makedirs
+[2025-10-28T14:32:58.262+0000] {subprocess.py:106} INFO -     makedirs(head, exist_ok=exist_ok)
+[2025-10-28T14:32:58.262+0000] {subprocess.py:106} INFO -   File "/usr/lib/python3.8/os.py", line 213, in makedirs
+[2025-10-28T14:32:58.262+0000] {subprocess.py:106} INFO -     makedirs(head, exist_ok=exist_ok)
+[2025-10-28T14:32:58.263+0000] {subprocess.py:106} INFO -   File "/usr/lib/python3.8/os.py", line 213, in makedirs
+[2025-10-28T14:32:58.263+0000] {subprocess.py:106} INFO -     makedirs(head, exist_ok=exist_ok)
+[2025-10-28T14:32:58.263+0000] {subprocess.py:106} INFO -   File "/usr/lib/python3.8/os.py", line 223, in makedirs
+[2025-10-28T14:32:58.263+0000] {subprocess.py:106} INFO -     mkdir(name, mode)
+[2025-10-28T14:32:58.264+0000] {subprocess.py:106} INFO - PermissionError: [Errno 13] Permission denied: '/home/spark'
+[2025-10-28T14:32:58.353+0000] {subprocess.py:110} INFO - Command exited with return code 1
+[2025-10-28T14:32:58.385+0000] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-10-28T14:32:58.407+0000] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=crawl_etl_itjob, task_id=crawl_data, run_id=scheduled__2025-10-27T02:00:00+00:00, execution_date=20251027T020000, start_date=20251028T143256, end_date=20251028T143258
+[2025-10-28T14:32:58.489+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2025-10-28T14:32:58.490+0000] {standard_task_runner.py:124} ERROR - Failed to execute job 17 for task crawl_data (Bash command failed. The command returned a non-zero exit code 1.; 69)
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-10-28T14:32:58.519+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 1
+[2025-10-28T14:32:58.571+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-10-28T14:32:58.584+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

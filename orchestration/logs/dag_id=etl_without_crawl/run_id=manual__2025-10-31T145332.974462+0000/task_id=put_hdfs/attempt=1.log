@@ -1,0 +1,25 @@
+[2025-10-31T14:53:34.656+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-10-31T14:53:34.707+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: etl_without_crawl.put_hdfs manual__2025-10-31T14:53:32.974462+00:00 [queued]>
+[2025-10-31T14:53:34.720+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: etl_without_crawl.put_hdfs manual__2025-10-31T14:53:32.974462+00:00 [queued]>
+[2025-10-31T14:53:34.721+0000] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2025-10-31T14:53:34.746+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): put_hdfs> on 2025-10-31 14:53:32.974462+00:00
+[2025-10-31T14:53:34.751+0000] {standard_task_runner.py:72} INFO - Started process 188 to run task
+[2025-10-31T14:53:34.756+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'etl_without_crawl', 'put_hdfs', 'manual__2025-10-31T14:53:32.974462+00:00', '--job-id', '75', '--raw', '--subdir', 'DAGS_FOLDER/ETL_Without_Crawl.py', '--cfg-path', '/tmp/tmp4ga3fs6m']
+[2025-10-31T14:53:34.758+0000] {standard_task_runner.py:105} INFO - Job 75: Subtask put_hdfs
+[2025-10-31T14:53:34.791+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2025-10-31T14:53:34.886+0000] {task_command.py:467} INFO - Running <TaskInstance: etl_without_crawl.put_hdfs manual__2025-10-31T14:53:32.974462+00:00 [running]> on host a1de7f96d4f1
+[2025-10-31T14:53:35.006+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='alert@datateam.local' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='etl_without_crawl' AIRFLOW_CTX_TASK_ID='put_hdfs' AIRFLOW_CTX_EXECUTION_DATE='2025-10-31T14:53:32.974462+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-10-31T14:53:32.974462+00:00'
+[2025-10-31T14:53:35.007+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2025-10-31T14:53:35.017+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2025-10-31T14:53:35.018+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', "\n        docker exec spark-submit bash -c '\n        python3 /opt/spark/scripts/puthdfs.py\n        '\n        "]
+[2025-10-31T14:53:35.027+0000] {subprocess.py:99} INFO - Output:
+[2025-10-31T14:53:39.256+0000] {subprocess.py:106} INFO - 🚀 Bắt đầu upload lên HDFS (qua hdfscli)...
+[2025-10-31T14:53:39.257+0000] {subprocess.py:106} INFO - ✅ Upload thành công: /opt/spark/scripts/itviec_jobs_full.csv → /data_lake/raw/itviec_jobs_full.csv
+[2025-10-31T14:53:39.278+0000] {subprocess.py:110} INFO - Command exited with return code 0
+[2025-10-31T14:53:39.335+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2025-10-31T14:53:39.336+0000] {taskinstance.py:353} INFO - Marking task as SUCCESS. dag_id=etl_without_crawl, task_id=put_hdfs, run_id=manual__2025-10-31T14:53:32.974462+00:00, execution_date=20251031T145332, start_date=20251031T145334, end_date=20251031T145339
+[2025-10-31T14:53:39.422+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2025-10-31T14:53:39.472+0000] {taskinstance.py:3901} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2025-10-31T14:53:39.474+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

@@ -1,0 +1,464 @@
+[2025-10-28T19:39:06.688+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-10-28T19:39:06.726+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.load_bronze manual__2025-10-28T14:22:46.701447+00:00 [queued]>
+[2025-10-28T19:39:06.738+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.load_bronze manual__2025-10-28T14:22:46.701447+00:00 [queued]>
+[2025-10-28T19:39:06.739+0000] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2025-10-28T19:39:06.752+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): load_bronze> on 2025-10-28 14:22:46.701447+00:00
+[2025-10-28T19:39:06.756+0000] {standard_task_runner.py:72} INFO - Started process 98 to run task
+[2025-10-28T19:39:06.760+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'load_bronze', 'manual__2025-10-28T14:22:46.701447+00:00', '--job-id', '26', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpynr2ou5c']
+[2025-10-28T19:39:06.762+0000] {standard_task_runner.py:105} INFO - Job 26: Subtask load_bronze
+[2025-10-28T19:39:06.787+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2025-10-28T19:39:06.921+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.load_bronze manual__2025-10-28T14:22:46.701447+00:00 [running]> on host a1de7f96d4f1
+[2025-10-28T19:39:07.034+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='alert@datateam.local' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='load_bronze' AIRFLOW_CTX_EXECUTION_DATE='2025-10-28T14:22:46.701447+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-10-28T14:22:46.701447+00:00'
+[2025-10-28T19:39:07.035+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2025-10-28T19:39:07.049+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2025-10-28T19:39:07.050+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', "\n        docker exec spark-submit bash -c '\n        /opt/spark/bin/spark-submit         --master spark://spark-master:7077         --deploy-mode client         --packages org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0         /opt/spark/scripts/Load_Bronze.py\n        '\n        "]
+[2025-10-28T19:39:07.059+0000] {subprocess.py:99} INFO - Output:
+[2025-10-28T19:39:08.956+0000] {subprocess.py:106} INFO - :: loading settings :: url = jar:file:/opt/spark/jars/ivy-2.5.1.jar!/org/apache/ivy/core/settings/ivysettings.xml
+[2025-10-28T19:39:09.047+0000] {subprocess.py:106} INFO - Ivy Default Cache set to: /home/spark/.ivy2/cache
+[2025-10-28T19:39:09.047+0000] {subprocess.py:106} INFO - The jars for the packages stored in: /home/spark/.ivy2/jars
+[2025-10-28T19:39:09.056+0000] {subprocess.py:106} INFO - org.apache.iceberg#iceberg-spark-runtime-3.5_2.12 added as a dependency
+[2025-10-28T19:39:09.058+0000] {subprocess.py:106} INFO - :: resolving dependencies :: org.apache.spark#spark-submit-parent-e192f1d2-78e0-48d6-a85a-f4252afc77b4;1.0
+[2025-10-28T19:39:09.059+0000] {subprocess.py:106} INFO - 	confs: [default]
+[2025-10-28T19:39:09.212+0000] {subprocess.py:106} INFO - 	found org.apache.iceberg#iceberg-spark-runtime-3.5_2.12;1.5.0 in central
+[2025-10-28T19:39:09.235+0000] {subprocess.py:106} INFO - :: resolution report :: resolve 170ms :: artifacts dl 5ms
+[2025-10-28T19:39:09.237+0000] {subprocess.py:106} INFO - 	:: modules in use:
+[2025-10-28T19:39:09.237+0000] {subprocess.py:106} INFO - 	org.apache.iceberg#iceberg-spark-runtime-3.5_2.12;1.5.0 from central in [default]
+[2025-10-28T19:39:09.239+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2025-10-28T19:39:09.240+0000] {subprocess.py:106} INFO - 	|                  |            modules            ||   artifacts   |
+[2025-10-28T19:39:09.241+0000] {subprocess.py:106} INFO - 	|       conf       | number| search|dwnlded|evicted|| number|dwnlded|
+[2025-10-28T19:39:09.242+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2025-10-28T19:39:09.244+0000] {subprocess.py:106} INFO - 	|      default     |   1   |   0   |   0   |   0   ||   1   |   0   |
+[2025-10-28T19:39:09.244+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2025-10-28T19:39:09.245+0000] {subprocess.py:106} INFO - :: retrieving :: org.apache.spark#spark-submit-parent-e192f1d2-78e0-48d6-a85a-f4252afc77b4
+[2025-10-28T19:39:09.246+0000] {subprocess.py:106} INFO - 	confs: [default]
+[2025-10-28T19:39:09.248+0000] {subprocess.py:106} INFO - 	0 artifacts copied, 1 already retrieved (0kB/6ms)
+[2025-10-28T19:39:09.560+0000] {subprocess.py:106} INFO - 25/10/28 19:39:09 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[2025-10-28T19:39:10.507+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SparkContext: Running Spark version 3.5.3
+[2025-10-28T19:39:10.508+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SparkContext: OS info Linux, 6.6.87.2-microsoft-standard-WSL2, amd64
+[2025-10-28T19:39:10.509+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SparkContext: Java version 11.0.24
+[2025-10-28T19:39:10.540+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO ResourceUtils: ==============================================================
+[2025-10-28T19:39:10.541+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO ResourceUtils: No custom resources configured for spark.driver.
+[2025-10-28T19:39:10.542+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO ResourceUtils: ==============================================================
+[2025-10-28T19:39:10.543+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SparkContext: Submitted application: Load_Bronze_Hive_Iceberg
+[2025-10-28T19:39:10.590+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+[2025-10-28T19:39:10.610+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO ResourceProfile: Limiting resource is cpu
+[2025-10-28T19:39:10.612+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO ResourceProfileManager: Added ResourceProfile id: 0
+[2025-10-28T19:39:10.749+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SecurityManager: Changing view acls to: spark
+[2025-10-28T19:39:10.750+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SecurityManager: Changing modify acls to: spark
+[2025-10-28T19:39:10.753+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SecurityManager: Changing view acls groups to:
+[2025-10-28T19:39:10.754+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SecurityManager: Changing modify acls groups to:
+[2025-10-28T19:39:10.755+0000] {subprocess.py:106} INFO - 25/10/28 19:39:10 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: spark; groups with view permissions: EMPTY; users with modify permissions: spark; groups with modify permissions: EMPTY
+[2025-10-28T19:39:11.027+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO Utils: Successfully started service 'sparkDriver' on port 32849.
+[2025-10-28T19:39:11.062+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO SparkEnv: Registering MapOutputTracker
+[2025-10-28T19:39:11.098+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO SparkEnv: Registering BlockManagerMaster
+[2025-10-28T19:39:11.116+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+[2025-10-28T19:39:11.117+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+[2025-10-28T19:39:11.122+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+[2025-10-28T19:39:11.149+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-353c3445-e3ab-4386-bb86-a3b330b5cb58
+[2025-10-28T19:39:11.161+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+[2025-10-28T19:39:11.176+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO SparkEnv: Registering OutputCommitCoordinator
+[2025-10-28T19:39:11.324+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+[2025-10-28T19:39:11.417+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+[2025-10-28T19:39:11.452+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO SparkContext: Added JAR file:///home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar at spark://68d0d8c522fe:32849/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar with timestamp 1761680350492
+[2025-10-28T19:39:11.456+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO SparkContext: Added file file:///home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar at spark://68d0d8c522fe:32849/files/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar with timestamp 1761680350492
+[2025-10-28T19:39:11.458+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO Utils: Copying /home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar to /tmp/spark-c348dd24-c31c-4daf-8b79-453cad520034/userFiles-389b4a16-ce4c-43d1-affe-3100ef9d6162/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar
+[2025-10-28T19:39:11.660+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO StandaloneAppClient$ClientEndpoint: Connecting to master spark://spark-master:7077...
+[2025-10-28T19:39:11.710+0000] {subprocess.py:106} INFO - 25/10/28 19:39:11 INFO TransportClientFactory: Successfully created connection to spark-master/172.30.0.6:7077 after 30 ms (0 ms spent in bootstraps)
+[2025-10-28T19:39:12.602+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO StandaloneSchedulerBackend: Connected to Spark cluster with app ID app-20251028193911-0000
+[2025-10-28T19:39:12.619+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 36499.
+[2025-10-28T19:39:12.620+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO NettyBlockTransferService: Server created on 68d0d8c522fe:36499
+[2025-10-28T19:39:12.623+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+[2025-10-28T19:39:12.637+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, 68d0d8c522fe, 36499, None)
+[2025-10-28T19:39:12.642+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO BlockManagerMasterEndpoint: Registering block manager 68d0d8c522fe:36499 with 434.4 MiB RAM, BlockManagerId(driver, 68d0d8c522fe, 36499, None)
+[2025-10-28T19:39:12.645+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, 68d0d8c522fe, 36499, None)
+[2025-10-28T19:39:12.647+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, 68d0d8c522fe, 36499, None)
+[2025-10-28T19:39:12.649+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO StandaloneAppClient$ClientEndpoint: Executor added: app-20251028193911-0000/0 on worker-20251028183816-172.30.0.7-36417 (172.30.0.7:36417) with 1 core(s)
+[2025-10-28T19:39:12.653+0000] {subprocess.py:106} INFO - 25/10/28 19:39:12 INFO StandaloneSchedulerBackend: Granted executor ID app-20251028193911-0000/0 on hostPort 172.30.0.7:36417 with 1 core(s), 1024.0 MiB RAM
+[2025-10-28T19:39:13.602+0000] {subprocess.py:106} INFO - 25/10/28 19:39:13 INFO StandaloneSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.0
+[2025-10-28T19:39:13.811+0000] {subprocess.py:106} INFO - 25/10/28 19:39:13 INFO StandaloneAppClient$ClientEndpoint: Executor updated: app-20251028193911-0000/0 is now RUNNING
+[2025-10-28T19:39:14.210+0000] {subprocess.py:106} INFO - 25/10/28 19:39:14 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir.
+[2025-10-28T19:39:14.211+0000] {subprocess.py:106} INFO - 25/10/28 19:39:14 INFO SharedState: Warehouse path is 'file:/opt/spark/work-dir/spark-warehouse'.
+[2025-10-28T19:39:16.462+0000] {subprocess.py:106} INFO - 25/10/28 19:39:16 INFO InMemoryFileIndex: It took 73 ms to list leaf files for 1 paths.
+[2025-10-28T19:39:16.667+0000] {subprocess.py:106} INFO - 25/10/28 19:39:16 INFO MemoryStore: Block broadcast_0 stored as values in memory (estimated size 203.7 KiB, free 434.2 MiB)
+[2025-10-28T19:39:16.734+0000] {subprocess.py:106} INFO - 25/10/28 19:39:16 INFO MemoryStore: Block broadcast_0_piece0 stored as bytes in memory (estimated size 35.3 KiB, free 434.2 MiB)
+[2025-10-28T19:39:16.738+0000] {subprocess.py:106} INFO - 25/10/28 19:39:16 INFO BlockManagerInfo: Added broadcast_0_piece0 in memory on 68d0d8c522fe:36499 (size: 35.3 KiB, free: 434.4 MiB)
+[2025-10-28T19:39:16.745+0000] {subprocess.py:106} INFO - 25/10/28 19:39:16 INFO SparkContext: Created broadcast 0 from csv at <unknown>:0
+[2025-10-28T19:39:17.197+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO FileInputFormat: Total input files to process : 1
+[2025-10-28T19:39:17.201+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO FileInputFormat: Total input files to process : 1
+[2025-10-28T19:39:17.256+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO SparkContext: Starting job: csv at <unknown>:0
+[2025-10-28T19:39:17.279+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO DAGScheduler: Got job 0 (csv at <unknown>:0) with 1 output partitions
+[2025-10-28T19:39:17.280+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO DAGScheduler: Final stage: ResultStage 0 (csv at <unknown>:0)
+[2025-10-28T19:39:17.281+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO DAGScheduler: Parents of final stage: List()
+[2025-10-28T19:39:17.284+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO DAGScheduler: Missing parents: List()
+[2025-10-28T19:39:17.292+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO DAGScheduler: Submitting ResultStage 0 (MapPartitionsRDD[2] at csv at <unknown>:0), which has no missing parents
+[2025-10-28T19:39:17.332+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO MemoryStore: Block broadcast_1 stored as values in memory (estimated size 7.6 KiB, free 434.2 MiB)
+[2025-10-28T19:39:17.340+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO MemoryStore: Block broadcast_1_piece0 stored as bytes in memory (estimated size 4.4 KiB, free 434.2 MiB)
+[2025-10-28T19:39:17.341+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO BlockManagerInfo: Added broadcast_1_piece0 in memory on 68d0d8c522fe:36499 (size: 4.4 KiB, free: 434.4 MiB)
+[2025-10-28T19:39:17.344+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO SparkContext: Created broadcast 1 from broadcast at DAGScheduler.scala:1585
+[2025-10-28T19:39:17.388+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO DAGScheduler: Submitting 1 missing tasks from ResultStage 0 (MapPartitionsRDD[2] at csv at <unknown>:0) (first 15 tasks are for partitions Vector(0))
+[2025-10-28T19:39:17.390+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO TaskSchedulerImpl: Adding task set 0.0 with 1 tasks resource profile 0
+[2025-10-28T19:39:17.475+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO StandaloneSchedulerBackend$StandaloneDriverEndpoint: Registered executor NettyRpcEndpointRef(spark-client://Executor) (172.30.0.7:44062) with ID 0,  ResourceProfileId 0
+[2025-10-28T19:39:17.574+0000] {subprocess.py:106} INFO - 25/10/28 19:39:17 INFO BlockManagerMasterEndpoint: Registering block manager 172.30.0.7:35651 with 434.4 MiB RAM, BlockManagerId(0, 172.30.0.7, 35651, None)
+[2025-10-28T19:39:18.348+0000] {subprocess.py:106} INFO - 25/10/28 19:39:18 INFO TaskSetManager: Starting task 0.0 in stage 0.0 (TID 0) (172.30.0.7, executor 0, partition 0, PROCESS_LOCAL, 9467 bytes)
+[2025-10-28T19:39:18.640+0000] {subprocess.py:106} INFO - 25/10/28 19:39:18 INFO BlockManagerInfo: Added broadcast_1_piece0 in memory on 172.30.0.7:35651 (size: 4.4 KiB, free: 434.4 MiB)
+[2025-10-28T19:39:18.875+0000] {subprocess.py:106} INFO - 25/10/28 19:39:18 INFO BlockManagerInfo: Added broadcast_0_piece0 in memory on 172.30.0.7:35651 (size: 35.3 KiB, free: 434.4 MiB)
+[2025-10-28T19:39:19.126+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 WARN TaskSetManager: Lost task 0.0 in stage 0.0 (TID 0) (172.30.0.7 executor 0): java.io.FileNotFoundException: File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist
+[2025-10-28T19:39:19.127+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.deprecatedGetFileStatus(RawLocalFileSystem.java:779)
+[2025-10-28T19:39:19.128+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileLinkStatusInternal(RawLocalFileSystem.java:1100)
+[2025-10-28T19:39:19.128+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:769)
+[2025-10-28T19:39:19.129+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:462)
+[2025-10-28T19:39:19.130+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem$ChecksumFSInputChecker.<init>(ChecksumFileSystem.java:160)
+[2025-10-28T19:39:19.131+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem.open(ChecksumFileSystem.java:372)
+[2025-10-28T19:39:19.132+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FileSystem.open(FileSystem.java:976)
+[2025-10-28T19:39:19.133+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStream(CodecStreams.scala:40)
+[2025-10-28T19:39:19.134+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStreamWithCloseResource(CodecStreams.scala:52)
+[2025-10-28T19:39:19.134+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.MultiLineCSVDataSource$.$anonfun$infer$1(CSVDataSource.scala:195)
+[2025-10-28T19:39:19.139+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.nextCur(Iterator.scala:486)
+[2025-10-28T19:39:19.143+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.hasNext(Iterator.scala:492)
+[2025-10-28T19:39:19.144+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$SliceIterator.hasNext(Iterator.scala:268)
+[2025-10-28T19:39:19.144+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach(Iterator.scala:943)
+[2025-10-28T19:39:19.145+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+[2025-10-28T19:39:19.146+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+[2025-10-28T19:39:19.147+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq(Growable.scala:62)
+[2025-10-28T19:39:19.147+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq$(Growable.scala:53)
+[2025-10-28T19:39:19.148+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:105)
+[2025-10-28T19:39:19.148+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:49)
+[2025-10-28T19:39:19.149+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to(TraversableOnce.scala:366)
+[2025-10-28T19:39:19.149+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to$(TraversableOnce.scala:364)
+[2025-10-28T19:39:19.149+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.to(Iterator.scala:1431)
+[2025-10-28T19:39:19.150+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.150+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer$(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.150+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toBuffer(Iterator.scala:1431)
+[2025-10-28T19:39:19.151+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray(TraversableOnce.scala:345)
+[2025-10-28T19:39:19.151+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray$(TraversableOnce.scala:339)
+[2025-10-28T19:39:19.152+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toArray(Iterator.scala:1431)
+[2025-10-28T19:39:19.152+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.$anonfun$take$2(RDD.scala:1492)
+[2025-10-28T19:39:19.152+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.$anonfun$runJob$5(SparkContext.scala:2433)
+[2025-10-28T19:39:19.153+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+[2025-10-28T19:39:19.153+0000] {subprocess.py:106} INFO - 	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:166)
+[2025-10-28T19:39:19.154+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+[2025-10-28T19:39:19.154+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+[2025-10-28T19:39:19.155+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+[2025-10-28T19:39:19.156+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+[2025-10-28T19:39:19.156+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+[2025-10-28T19:39:19.156+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+[2025-10-28T19:39:19.157+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+[2025-10-28T19:39:19.157+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+[2025-10-28T19:39:19.158+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-10-28T19:39:19.158+0000] {subprocess.py:106} INFO - 
+[2025-10-28T19:39:19.159+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSetManager: Starting task 0.1 in stage 0.0 (TID 1) (172.30.0.7, executor 0, partition 0, PROCESS_LOCAL, 9467 bytes)
+[2025-10-28T19:39:19.193+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSetManager: Lost task 0.1 in stage 0.0 (TID 1) on 172.30.0.7, executor 0: java.io.FileNotFoundException (File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist) [duplicate 1]
+[2025-10-28T19:39:19.194+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSetManager: Starting task 0.2 in stage 0.0 (TID 2) (172.30.0.7, executor 0, partition 0, PROCESS_LOCAL, 9467 bytes)
+[2025-10-28T19:39:19.235+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSetManager: Lost task 0.2 in stage 0.0 (TID 2) on 172.30.0.7, executor 0: java.io.FileNotFoundException (File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist) [duplicate 2]
+[2025-10-28T19:39:19.237+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSetManager: Starting task 0.3 in stage 0.0 (TID 3) (172.30.0.7, executor 0, partition 0, PROCESS_LOCAL, 9467 bytes)
+[2025-10-28T19:39:19.271+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSetManager: Lost task 0.3 in stage 0.0 (TID 3) on 172.30.0.7, executor 0: java.io.FileNotFoundException (File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist) [duplicate 3]
+[2025-10-28T19:39:19.273+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 ERROR TaskSetManager: Task 0 in stage 0.0 failed 4 times; aborting job
+[2025-10-28T19:39:19.275+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSchedulerImpl: Removed TaskSet 0.0, whose tasks have all completed, from pool
+[2025-10-28T19:39:19.277+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSchedulerImpl: Cancelling stage 0
+[2025-10-28T19:39:19.278+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO TaskSchedulerImpl: Killing all running tasks in stage 0: Stage cancelled: Job aborted due to stage failure: Task 0 in stage 0.0 failed 4 times, most recent failure: Lost task 0.3 in stage 0.0 (TID 3) (172.30.0.7 executor 0): java.io.FileNotFoundException: File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist
+[2025-10-28T19:39:19.278+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.deprecatedGetFileStatus(RawLocalFileSystem.java:779)
+[2025-10-28T19:39:19.279+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileLinkStatusInternal(RawLocalFileSystem.java:1100)
+[2025-10-28T19:39:19.280+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:769)
+[2025-10-28T19:39:19.281+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:462)
+[2025-10-28T19:39:19.281+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem$ChecksumFSInputChecker.<init>(ChecksumFileSystem.java:160)
+[2025-10-28T19:39:19.281+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem.open(ChecksumFileSystem.java:372)
+[2025-10-28T19:39:19.282+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FileSystem.open(FileSystem.java:976)
+[2025-10-28T19:39:19.282+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStream(CodecStreams.scala:40)
+[2025-10-28T19:39:19.283+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStreamWithCloseResource(CodecStreams.scala:52)
+[2025-10-28T19:39:19.284+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.MultiLineCSVDataSource$.$anonfun$infer$1(CSVDataSource.scala:195)
+[2025-10-28T19:39:19.284+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.nextCur(Iterator.scala:486)
+[2025-10-28T19:39:19.284+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.hasNext(Iterator.scala:492)
+[2025-10-28T19:39:19.285+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$SliceIterator.hasNext(Iterator.scala:268)
+[2025-10-28T19:39:19.285+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach(Iterator.scala:943)
+[2025-10-28T19:39:19.286+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+[2025-10-28T19:39:19.287+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+[2025-10-28T19:39:19.290+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq(Growable.scala:62)
+[2025-10-28T19:39:19.291+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq$(Growable.scala:53)
+[2025-10-28T19:39:19.291+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:105)
+[2025-10-28T19:39:19.292+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:49)
+[2025-10-28T19:39:19.293+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to(TraversableOnce.scala:366)
+[2025-10-28T19:39:19.294+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to$(TraversableOnce.scala:364)
+[2025-10-28T19:39:19.294+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.to(Iterator.scala:1431)
+[2025-10-28T19:39:19.295+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.295+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer$(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.296+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toBuffer(Iterator.scala:1431)
+[2025-10-28T19:39:19.296+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray(TraversableOnce.scala:345)
+[2025-10-28T19:39:19.297+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray$(TraversableOnce.scala:339)
+[2025-10-28T19:39:19.297+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toArray(Iterator.scala:1431)
+[2025-10-28T19:39:19.298+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.$anonfun$take$2(RDD.scala:1492)
+[2025-10-28T19:39:19.299+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.$anonfun$runJob$5(SparkContext.scala:2433)
+[2025-10-28T19:39:19.299+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+[2025-10-28T19:39:19.300+0000] {subprocess.py:106} INFO - 	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:166)
+[2025-10-28T19:39:19.300+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+[2025-10-28T19:39:19.302+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+[2025-10-28T19:39:19.302+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+[2025-10-28T19:39:19.303+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+[2025-10-28T19:39:19.303+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+[2025-10-28T19:39:19.304+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+[2025-10-28T19:39:19.304+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+[2025-10-28T19:39:19.305+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+[2025-10-28T19:39:19.305+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-10-28T19:39:19.306+0000] {subprocess.py:106} INFO - 
+[2025-10-28T19:39:19.306+0000] {subprocess.py:106} INFO - Driver stacktrace:
+[2025-10-28T19:39:19.307+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO DAGScheduler: ResultStage 0 (csv at <unknown>:0) failed in 1.959 s due to Job aborted due to stage failure: Task 0 in stage 0.0 failed 4 times, most recent failure: Lost task 0.3 in stage 0.0 (TID 3) (172.30.0.7 executor 0): java.io.FileNotFoundException: File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist
+[2025-10-28T19:39:19.307+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.deprecatedGetFileStatus(RawLocalFileSystem.java:779)
+[2025-10-28T19:39:19.307+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileLinkStatusInternal(RawLocalFileSystem.java:1100)
+[2025-10-28T19:39:19.308+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:769)
+[2025-10-28T19:39:19.308+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:462)
+[2025-10-28T19:39:19.309+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem$ChecksumFSInputChecker.<init>(ChecksumFileSystem.java:160)
+[2025-10-28T19:39:19.309+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem.open(ChecksumFileSystem.java:372)
+[2025-10-28T19:39:19.310+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FileSystem.open(FileSystem.java:976)
+[2025-10-28T19:39:19.310+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStream(CodecStreams.scala:40)
+[2025-10-28T19:39:19.310+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStreamWithCloseResource(CodecStreams.scala:52)
+[2025-10-28T19:39:19.311+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.MultiLineCSVDataSource$.$anonfun$infer$1(CSVDataSource.scala:195)
+[2025-10-28T19:39:19.311+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.nextCur(Iterator.scala:486)
+[2025-10-28T19:39:19.312+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.hasNext(Iterator.scala:492)
+[2025-10-28T19:39:19.312+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$SliceIterator.hasNext(Iterator.scala:268)
+[2025-10-28T19:39:19.312+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach(Iterator.scala:943)
+[2025-10-28T19:39:19.312+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+[2025-10-28T19:39:19.313+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+[2025-10-28T19:39:19.313+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq(Growable.scala:62)
+[2025-10-28T19:39:19.313+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq$(Growable.scala:53)
+[2025-10-28T19:39:19.314+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:105)
+[2025-10-28T19:39:19.314+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:49)
+[2025-10-28T19:39:19.314+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to(TraversableOnce.scala:366)
+[2025-10-28T19:39:19.315+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to$(TraversableOnce.scala:364)
+[2025-10-28T19:39:19.315+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.to(Iterator.scala:1431)
+[2025-10-28T19:39:19.315+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.316+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer$(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.316+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toBuffer(Iterator.scala:1431)
+[2025-10-28T19:39:19.317+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray(TraversableOnce.scala:345)
+[2025-10-28T19:39:19.317+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray$(TraversableOnce.scala:339)
+[2025-10-28T19:39:19.317+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toArray(Iterator.scala:1431)
+[2025-10-28T19:39:19.318+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.$anonfun$take$2(RDD.scala:1492)
+[2025-10-28T19:39:19.318+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.$anonfun$runJob$5(SparkContext.scala:2433)
+[2025-10-28T19:39:19.318+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+[2025-10-28T19:39:19.319+0000] {subprocess.py:106} INFO - 	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:166)
+[2025-10-28T19:39:19.319+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+[2025-10-28T19:39:19.320+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+[2025-10-28T19:39:19.320+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+[2025-10-28T19:39:19.320+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+[2025-10-28T19:39:19.321+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+[2025-10-28T19:39:19.321+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+[2025-10-28T19:39:19.322+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+[2025-10-28T19:39:19.322+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+[2025-10-28T19:39:19.322+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-10-28T19:39:19.323+0000] {subprocess.py:106} INFO - 
+[2025-10-28T19:39:19.323+0000] {subprocess.py:106} INFO - Driver stacktrace:
+[2025-10-28T19:39:19.324+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO DAGScheduler: Job 0 failed: csv at <unknown>:0, took 2.029844 s
+[2025-10-28T19:39:19.399+0000] {subprocess.py:106} INFO - Traceback (most recent call last):
+[2025-10-28T19:39:19.400+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Load_Bronze.py", line 33, in <module>
+[2025-10-28T19:39:19.400+0000] {subprocess.py:106} INFO -     spark.read
+[2025-10-28T19:39:19.400+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/pyspark.zip/pyspark/sql/readwriter.py", line 740, in csv
+[2025-10-28T19:39:19.401+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/py4j-0.10.9.7-src.zip/py4j/java_gateway.py", line 1322, in __call__
+[2025-10-28T19:39:19.401+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/pyspark.zip/pyspark/errors/exceptions/captured.py", line 179, in deco
+[2025-10-28T19:39:19.401+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/py4j-0.10.9.7-src.zip/py4j/protocol.py", line 326, in get_return_value
+[2025-10-28T19:39:19.444+0000] {subprocess.py:106} INFO - py4j.protocol.Py4JJavaError: An error occurred while calling o50.csv.
+[2025-10-28T19:39:19.445+0000] {subprocess.py:106} INFO - : org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 0.0 failed 4 times, most recent failure: Lost task 0.3 in stage 0.0 (TID 3) (172.30.0.7 executor 0): java.io.FileNotFoundException: File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist
+[2025-10-28T19:39:19.445+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.deprecatedGetFileStatus(RawLocalFileSystem.java:779)
+[2025-10-28T19:39:19.445+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileLinkStatusInternal(RawLocalFileSystem.java:1100)
+[2025-10-28T19:39:19.446+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:769)
+[2025-10-28T19:39:19.446+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:462)
+[2025-10-28T19:39:19.446+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem$ChecksumFSInputChecker.<init>(ChecksumFileSystem.java:160)
+[2025-10-28T19:39:19.446+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem.open(ChecksumFileSystem.java:372)
+[2025-10-28T19:39:19.446+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FileSystem.open(FileSystem.java:976)
+[2025-10-28T19:39:19.447+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStream(CodecStreams.scala:40)
+[2025-10-28T19:39:19.447+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStreamWithCloseResource(CodecStreams.scala:52)
+[2025-10-28T19:39:19.447+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.MultiLineCSVDataSource$.$anonfun$infer$1(CSVDataSource.scala:195)
+[2025-10-28T19:39:19.447+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.nextCur(Iterator.scala:486)
+[2025-10-28T19:39:19.448+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.hasNext(Iterator.scala:492)
+[2025-10-28T19:39:19.448+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$SliceIterator.hasNext(Iterator.scala:268)
+[2025-10-28T19:39:19.448+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach(Iterator.scala:943)
+[2025-10-28T19:39:19.448+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+[2025-10-28T19:39:19.448+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+[2025-10-28T19:39:19.448+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq(Growable.scala:62)
+[2025-10-28T19:39:19.449+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq$(Growable.scala:53)
+[2025-10-28T19:39:19.449+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:105)
+[2025-10-28T19:39:19.449+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:49)
+[2025-10-28T19:39:19.450+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to(TraversableOnce.scala:366)
+[2025-10-28T19:39:19.450+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to$(TraversableOnce.scala:364)
+[2025-10-28T19:39:19.450+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.to(Iterator.scala:1431)
+[2025-10-28T19:39:19.451+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.451+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer$(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.451+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toBuffer(Iterator.scala:1431)
+[2025-10-28T19:39:19.451+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray(TraversableOnce.scala:345)
+[2025-10-28T19:39:19.451+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray$(TraversableOnce.scala:339)
+[2025-10-28T19:39:19.452+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toArray(Iterator.scala:1431)
+[2025-10-28T19:39:19.452+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.$anonfun$take$2(RDD.scala:1492)
+[2025-10-28T19:39:19.452+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.$anonfun$runJob$5(SparkContext.scala:2433)
+[2025-10-28T19:39:19.452+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+[2025-10-28T19:39:19.453+0000] {subprocess.py:106} INFO - 	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:166)
+[2025-10-28T19:39:19.453+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+[2025-10-28T19:39:19.453+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+[2025-10-28T19:39:19.453+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+[2025-10-28T19:39:19.454+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+[2025-10-28T19:39:19.454+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+[2025-10-28T19:39:19.454+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+[2025-10-28T19:39:19.454+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+[2025-10-28T19:39:19.455+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+[2025-10-28T19:39:19.455+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-10-28T19:39:19.455+0000] {subprocess.py:106} INFO - 
+[2025-10-28T19:39:19.455+0000] {subprocess.py:106} INFO - Driver stacktrace:
+[2025-10-28T19:39:19.455+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.failJobAndIndependentStages(DAGScheduler.scala:2856)
+[2025-10-28T19:39:19.456+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.$anonfun$abortStage$2(DAGScheduler.scala:2792)
+[2025-10-28T19:39:19.456+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.$anonfun$abortStage$2$adapted(DAGScheduler.scala:2791)
+[2025-10-28T19:39:19.456+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ResizableArray.foreach(ResizableArray.scala:62)
+[2025-10-28T19:39:19.456+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ResizableArray.foreach$(ResizableArray.scala:55)
+[2025-10-28T19:39:19.457+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:49)
+[2025-10-28T19:39:19.457+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.abortStage(DAGScheduler.scala:2791)
+[2025-10-28T19:39:19.457+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.$anonfun$handleTaskSetFailed$1(DAGScheduler.scala:1247)
+[2025-10-28T19:39:19.457+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.$anonfun$handleTaskSetFailed$1$adapted(DAGScheduler.scala:1247)
+[2025-10-28T19:39:19.457+0000] {subprocess.py:106} INFO - 	at scala.Option.foreach(Option.scala:407)
+[2025-10-28T19:39:19.458+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.handleTaskSetFailed(DAGScheduler.scala:1247)
+[2025-10-28T19:39:19.458+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.doOnReceive(DAGScheduler.scala:3060)
+[2025-10-28T19:39:19.458+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:2994)
+[2025-10-28T19:39:19.458+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGSchedulerEventProcessLoop.onReceive(DAGScheduler.scala:2983)
+[2025-10-28T19:39:19.458+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.EventLoop$$anon$1.run(EventLoop.scala:49)
+[2025-10-28T19:39:19.459+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.DAGScheduler.runJob(DAGScheduler.scala:989)
+[2025-10-28T19:39:19.459+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.runJob(SparkContext.scala:2393)
+[2025-10-28T19:39:19.459+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.runJob(SparkContext.scala:2414)
+[2025-10-28T19:39:19.459+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.runJob(SparkContext.scala:2433)
+[2025-10-28T19:39:19.459+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.$anonfun$take$1(RDD.scala:1492)
+[2025-10-28T19:39:19.460+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:151)
+[2025-10-28T19:39:19.460+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:112)
+[2025-10-28T19:39:19.460+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.withScope(RDD.scala:410)
+[2025-10-28T19:39:19.460+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.take(RDD.scala:1465)
+[2025-10-28T19:39:19.460+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.MultiLineCSVDataSource$.infer(CSVDataSource.scala:199)
+[2025-10-28T19:39:19.461+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.CSVDataSource.inferSchema(CSVDataSource.scala:64)
+[2025-10-28T19:39:19.461+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.CSVFileFormat.inferSchema(CSVFileFormat.scala:62)
+[2025-10-28T19:39:19.461+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.DataSource.$anonfun$getOrInferFileFormatSchema$11(DataSource.scala:208)
+[2025-10-28T19:39:19.461+0000] {subprocess.py:106} INFO - 	at scala.Option.orElse(Option.scala:447)
+[2025-10-28T19:39:19.461+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.DataSource.getOrInferFileFormatSchema(DataSource.scala:205)
+[2025-10-28T19:39:19.462+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.DataSource.resolveRelation(DataSource.scala:407)
+[2025-10-28T19:39:19.462+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.DataFrameReader.loadV1Source(DataFrameReader.scala:229)
+[2025-10-28T19:39:19.462+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.DataFrameReader.$anonfun$load$2(DataFrameReader.scala:211)
+[2025-10-28T19:39:19.462+0000] {subprocess.py:106} INFO - 	at scala.Option.getOrElse(Option.scala:189)
+[2025-10-28T19:39:19.463+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.DataFrameReader.load(DataFrameReader.scala:211)
+[2025-10-28T19:39:19.463+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.DataFrameReader.csv(DataFrameReader.scala:538)
+[2025-10-28T19:39:19.463+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[2025-10-28T19:39:19.464+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+[2025-10-28T19:39:19.464+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+[2025-10-28T19:39:19.464+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+[2025-10-28T19:39:19.464+0000] {subprocess.py:106} INFO - 	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)
+[2025-10-28T19:39:19.464+0000] {subprocess.py:106} INFO - 	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)
+[2025-10-28T19:39:19.465+0000] {subprocess.py:106} INFO - 	at py4j.Gateway.invoke(Gateway.java:282)
+[2025-10-28T19:39:19.465+0000] {subprocess.py:106} INFO - 	at py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)
+[2025-10-28T19:39:19.465+0000] {subprocess.py:106} INFO - 	at py4j.commands.CallCommand.execute(CallCommand.java:79)
+[2025-10-28T19:39:19.465+0000] {subprocess.py:106} INFO - 	at py4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:182)
+[2025-10-28T19:39:19.466+0000] {subprocess.py:106} INFO - 	at py4j.ClientServerConnection.run(ClientServerConnection.java:106)
+[2025-10-28T19:39:19.466+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-10-28T19:39:19.467+0000] {subprocess.py:106} INFO - Caused by: java.io.FileNotFoundException: File file:/opt/spark/scripts/itviec_jobs_full.csv does not exist
+[2025-10-28T19:39:19.467+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.deprecatedGetFileStatus(RawLocalFileSystem.java:779)
+[2025-10-28T19:39:19.467+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileLinkStatusInternal(RawLocalFileSystem.java:1100)
+[2025-10-28T19:39:19.467+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:769)
+[2025-10-28T19:39:19.468+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:462)
+[2025-10-28T19:39:19.468+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem$ChecksumFSInputChecker.<init>(ChecksumFileSystem.java:160)
+[2025-10-28T19:39:19.468+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.ChecksumFileSystem.open(ChecksumFileSystem.java:372)
+[2025-10-28T19:39:19.468+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.fs.FileSystem.open(FileSystem.java:976)
+[2025-10-28T19:39:19.469+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStream(CodecStreams.scala:40)
+[2025-10-28T19:39:19.469+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.CodecStreams$.createInputStreamWithCloseResource(CodecStreams.scala:52)
+[2025-10-28T19:39:19.469+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.execution.datasources.csv.MultiLineCSVDataSource$.$anonfun$infer$1(CSVDataSource.scala:195)
+[2025-10-28T19:39:19.469+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.nextCur(Iterator.scala:486)
+[2025-10-28T19:39:19.469+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$$anon$11.hasNext(Iterator.scala:492)
+[2025-10-28T19:39:19.470+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator$SliceIterator.hasNext(Iterator.scala:268)
+[2025-10-28T19:39:19.470+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach(Iterator.scala:943)
+[2025-10-28T19:39:19.470+0000] {subprocess.py:106} INFO - 	at scala.collection.Iterator.foreach$(Iterator.scala:943)
+[2025-10-28T19:39:19.470+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.foreach(Iterator.scala:1431)
+[2025-10-28T19:39:19.470+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq(Growable.scala:62)
+[2025-10-28T19:39:19.471+0000] {subprocess.py:106} INFO - 	at scala.collection.generic.Growable.$plus$plus$eq$(Growable.scala:53)
+[2025-10-28T19:39:19.471+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:105)
+[2025-10-28T19:39:19.471+0000] {subprocess.py:106} INFO - 	at scala.collection.mutable.ArrayBuffer.$plus$plus$eq(ArrayBuffer.scala:49)
+[2025-10-28T19:39:19.472+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to(TraversableOnce.scala:366)
+[2025-10-28T19:39:19.472+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.to$(TraversableOnce.scala:364)
+[2025-10-28T19:39:19.473+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.to(Iterator.scala:1431)
+[2025-10-28T19:39:19.473+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.473+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toBuffer$(TraversableOnce.scala:358)
+[2025-10-28T19:39:19.474+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toBuffer(Iterator.scala:1431)
+[2025-10-28T19:39:19.474+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray(TraversableOnce.scala:345)
+[2025-10-28T19:39:19.474+0000] {subprocess.py:106} INFO - 	at scala.collection.TraversableOnce.toArray$(TraversableOnce.scala:339)
+[2025-10-28T19:39:19.474+0000] {subprocess.py:106} INFO - 	at scala.collection.AbstractIterator.toArray(Iterator.scala:1431)
+[2025-10-28T19:39:19.476+0000] {subprocess.py:106} INFO - 	at org.apache.spark.rdd.RDD.$anonfun$take$2(RDD.scala:1492)
+[2025-10-28T19:39:19.477+0000] {subprocess.py:106} INFO - 	at org.apache.spark.SparkContext.$anonfun$runJob$5(SparkContext.scala:2433)
+[2025-10-28T19:39:19.477+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:93)
+[2025-10-28T19:39:19.477+0000] {subprocess.py:106} INFO - 	at org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:166)
+[2025-10-28T19:39:19.477+0000] {subprocess.py:106} INFO - 	at org.apache.spark.scheduler.Task.run(Task.scala:141)
+[2025-10-28T19:39:19.478+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:620)
+[2025-10-28T19:39:19.478+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)
+[2025-10-28T19:39:19.478+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)
+[2025-10-28T19:39:19.479+0000] {subprocess.py:106} INFO - 	at org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:94)
+[2025-10-28T19:39:19.479+0000] {subprocess.py:106} INFO - 	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:623)
+[2025-10-28T19:39:19.479+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+[2025-10-28T19:39:19.479+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+[2025-10-28T19:39:19.480+0000] {subprocess.py:106} INFO - 	... 1 more
+[2025-10-28T19:39:19.480+0000] {subprocess.py:106} INFO - 
+[2025-10-28T19:39:19.483+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO SparkContext: Invoking stop() from shutdown hook
+[2025-10-28T19:39:19.484+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO SparkContext: SparkContext is stopping with exitCode 0.
+[2025-10-28T19:39:19.495+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO SparkUI: Stopped Spark web UI at http://68d0d8c522fe:4040
+[2025-10-28T19:39:19.500+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO StandaloneSchedulerBackend: Shutting down all executors
+[2025-10-28T19:39:19.501+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO StandaloneSchedulerBackend$StandaloneDriverEndpoint: Asking each executor to shut down
+[2025-10-28T19:39:19.521+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+[2025-10-28T19:39:19.547+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO MemoryStore: MemoryStore cleared
+[2025-10-28T19:39:19.547+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO BlockManager: BlockManager stopped
+[2025-10-28T19:39:19.554+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO BlockManagerMaster: BlockManagerMaster stopped
+[2025-10-28T19:39:19.559+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+[2025-10-28T19:39:19.585+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO SparkContext: Successfully stopped SparkContext
+[2025-10-28T19:39:19.589+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO ShutdownHookManager: Shutdown hook called
+[2025-10-28T19:39:19.595+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO ShutdownHookManager: Deleting directory /tmp/spark-7170a049-7568-4cab-ae31-bb8af2c4102c
+[2025-10-28T19:39:19.596+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO ShutdownHookManager: Deleting directory /tmp/spark-c348dd24-c31c-4daf-8b79-453cad520034/pyspark-e89f76ec-5333-4d98-a8a0-e1decfccac87
+[2025-10-28T19:39:19.597+0000] {subprocess.py:106} INFO - 25/10/28 19:39:19 INFO ShutdownHookManager: Deleting directory /tmp/spark-c348dd24-c31c-4daf-8b79-453cad520034
+[2025-10-28T19:39:19.651+0000] {subprocess.py:110} INFO - Command exited with return code 1
+[2025-10-28T19:39:19.676+0000] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-10-28T19:39:19.687+0000] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=crawl_etl_itjob, task_id=load_bronze, run_id=manual__2025-10-28T14:22:46.701447+00:00, execution_date=20251028T142246, start_date=20251028T193906, end_date=20251028T193919
+[2025-10-28T19:39:19.780+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2025-10-28T19:39:19.781+0000] {standard_task_runner.py:124} ERROR - Failed to execute job 26 for task load_bronze (Bash command failed. The command returned a non-zero exit code 1.; 98)
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-10-28T19:39:19.839+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 1
+[2025-10-28T19:39:19.939+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-10-28T19:39:19.943+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

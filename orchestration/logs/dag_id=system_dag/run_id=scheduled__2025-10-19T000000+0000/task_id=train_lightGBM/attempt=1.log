@@ -1,0 +1,80 @@
+[2025-10-20T02:20:25.137+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-10-20T02:20:25.166+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: system_dag.train_lightGBM scheduled__2025-10-19T00:00:00+00:00 [queued]>
+[2025-10-20T02:20:25.175+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: system_dag.train_lightGBM scheduled__2025-10-19T00:00:00+00:00 [queued]>
+[2025-10-20T02:20:25.176+0000] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2025-10-20T02:20:25.186+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): train_lightGBM> on 2025-10-19 00:00:00+00:00
+[2025-10-20T02:20:25.190+0000] {standard_task_runner.py:72} INFO - Started process 143 to run task
+[2025-10-20T02:20:25.193+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'system_dag', 'train_lightGBM', 'scheduled__2025-10-19T00:00:00+00:00', '--job-id', '61', '--raw', '--subdir', 'DAGS_FOLDER/system_dag.py', '--cfg-path', '/tmp/tmpe7t91qt5']
+[2025-10-20T02:20:25.195+0000] {standard_task_runner.py:105} INFO - Job 61: Subtask train_lightGBM
+[2025-10-20T02:20:25.216+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2025-10-20T02:20:25.281+0000] {task_command.py:467} INFO - Running <TaskInstance: system_dag.train_lightGBM scheduled__2025-10-19T00:00:00+00:00 [running]> on host 1432f256adfc
+[2025-10-20T02:20:25.282+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2025-10-20T02:20:25.380+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='alert@datateam.local' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='system_dag' AIRFLOW_CTX_TASK_ID='train_lightGBM' AIRFLOW_CTX_EXECUTION_DATE='2025-10-19T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-10-19T00:00:00+00:00'
+[2025-10-20T02:20:25.381+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2025-10-20T02:20:25.391+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2025-10-20T02:20:25.392+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', '\n        docker exec spark-submit /opt/spark/bin/spark-submit         --master spark://spark-master:7077         --deploy-mode client         /opt/***/scripts/train_lightGBM.py\n        ']
+[2025-10-20T02:20:25.402+0000] {subprocess.py:99} INFO - Output:
+[2025-10-20T02:20:27.397+0000] {subprocess.py:106} INFO - Traceback (most recent call last):
+[2025-10-20T02:20:27.398+0000] {subprocess.py:106} INFO -   File "/opt/***/scripts/train_lightGBM.py", line 3, in <module>
+[2025-10-20T02:20:27.398+0000] {subprocess.py:106} INFO -     import joblib
+[2025-10-20T02:20:27.399+0000] {subprocess.py:106} INFO - ModuleNotFoundError: No module named 'joblib'
+[2025-10-20T02:20:27.413+0000] {subprocess.py:106} INFO - 25/10/20 02:20:27 INFO ShutdownHookManager: Shutdown hook called
+[2025-10-20T02:20:27.415+0000] {subprocess.py:106} INFO - 25/10/20 02:20:27 INFO ShutdownHookManager: Deleting directory /tmp/spark-9d2e002c-a731-42b6-aa72-3374efdf8274
+[2025-10-20T02:20:27.452+0000] {subprocess.py:110} INFO - Command exited with return code 1
+[2025-10-20T02:20:27.479+0000] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 768, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-10-20T02:20:27.518+0000] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=system_dag, task_id=train_lightGBM, run_id=scheduled__2025-10-19T00:00:00+00:00, execution_date=20251019T000000, start_date=20251020T022025, end_date=20251020T022027
+[2025-10-20T02:20:27.614+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2025-10-20T02:20:27.614+0000] {standard_task_runner.py:124} ERROR - Failed to execute job 61 for task train_lightGBM (Bash command failed. The command returned a non-zero exit code 1.; 143)
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 768, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-10-20T02:20:27.656+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 1
+[2025-10-20T02:20:27.682+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-10-20T02:20:27.684+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

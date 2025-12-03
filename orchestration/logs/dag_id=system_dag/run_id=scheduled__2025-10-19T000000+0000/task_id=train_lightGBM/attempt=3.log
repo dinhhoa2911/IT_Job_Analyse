@@ -1,0 +1,333 @@
+[2025-10-20T02:40:10.268+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-10-20T02:40:10.297+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: system_dag.train_lightGBM scheduled__2025-10-19T00:00:00+00:00 [queued]>
+[2025-10-20T02:40:10.306+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: system_dag.train_lightGBM scheduled__2025-10-19T00:00:00+00:00 [queued]>
+[2025-10-20T02:40:10.306+0000] {taskinstance.py:2867} INFO - Starting attempt 3 of 3
+[2025-10-20T02:40:10.316+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): train_lightGBM> on 2025-10-19 00:00:00+00:00
+[2025-10-20T02:40:10.320+0000] {standard_task_runner.py:72} INFO - Started process 230 to run task
+[2025-10-20T02:40:10.324+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'system_dag', 'train_lightGBM', 'scheduled__2025-10-19T00:00:00+00:00', '--job-id', '67', '--raw', '--subdir', 'DAGS_FOLDER/system_dag.py', '--cfg-path', '/tmp/tmp7ogeu7y_']
+[2025-10-20T02:40:10.325+0000] {standard_task_runner.py:105} INFO - Job 67: Subtask train_lightGBM
+[2025-10-20T02:40:10.346+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2025-10-20T02:40:10.412+0000] {task_command.py:467} INFO - Running <TaskInstance: system_dag.train_lightGBM scheduled__2025-10-19T00:00:00+00:00 [running]> on host 1432f256adfc
+[2025-10-20T02:40:10.413+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2025-10-20T02:40:10.504+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='alert@datateam.local' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='system_dag' AIRFLOW_CTX_TASK_ID='train_lightGBM' AIRFLOW_CTX_EXECUTION_DATE='2025-10-19T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='3' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-10-19T00:00:00+00:00'
+[2025-10-20T02:40:10.505+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2025-10-20T02:40:10.518+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2025-10-20T02:40:10.519+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', '\n        docker exec spark-submit /opt/spark/bin/spark-submit         --master spark://spark-master:7077         --deploy-mode client         /opt/***/scripts/train_lightGBM.py\n        ']
+[2025-10-20T02:40:10.527+0000] {subprocess.py:99} INFO - Output:
+[2025-10-20T02:40:13.622+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SparkContext: Running Spark version 3.5.3
+[2025-10-20T02:40:13.626+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SparkContext: OS info Linux, 6.6.87.2-microsoft-standard-WSL2, amd64
+[2025-10-20T02:40:13.630+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SparkContext: Java version 11.0.24
+[2025-10-20T02:40:13.708+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[2025-10-20T02:40:13.839+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO ResourceUtils: ==============================================================
+[2025-10-20T02:40:13.840+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO ResourceUtils: No custom resources configured for spark.driver.
+[2025-10-20T02:40:13.840+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO ResourceUtils: ==============================================================
+[2025-10-20T02:40:13.841+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SparkContext: Submitted application: Train_LightGBM
+[2025-10-20T02:40:13.867+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+[2025-10-20T02:40:13.879+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO ResourceProfile: Limiting resource is cpu
+[2025-10-20T02:40:13.880+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO ResourceProfileManager: Added ResourceProfile id: 0
+[2025-10-20T02:40:13.929+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SecurityManager: Changing view acls to: spark
+[2025-10-20T02:40:13.930+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SecurityManager: Changing modify acls to: spark
+[2025-10-20T02:40:13.931+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SecurityManager: Changing view acls groups to:
+[2025-10-20T02:40:13.931+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SecurityManager: Changing modify acls groups to:
+[2025-10-20T02:40:13.932+0000] {subprocess.py:106} INFO - 25/10/20 02:40:13 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: spark; groups with view permissions: EMPTY; users with modify permissions: spark; groups with modify permissions: EMPTY
+[2025-10-20T02:40:14.214+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO Utils: Successfully started service 'sparkDriver' on port 36861.
+[2025-10-20T02:40:14.260+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO SparkEnv: Registering MapOutputTracker
+[2025-10-20T02:40:14.326+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO SparkEnv: Registering BlockManagerMaster
+[2025-10-20T02:40:14.362+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+[2025-10-20T02:40:14.363+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+[2025-10-20T02:40:14.371+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+[2025-10-20T02:40:14.417+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-16003bef-0e3d-4ea7-93d1-3703a97843eb
+[2025-10-20T02:40:14.437+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+[2025-10-20T02:40:14.452+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO SparkEnv: Registering OutputCommitCoordinator
+[2025-10-20T02:40:14.579+0000] {subprocess.py:106} INFO - 25/10/20 02:40:14 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+[2025-10-20T02:40:11.619+0000] {subprocess.py:106} INFO - 25/10/20 02:40:11 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+[2025-10-20T02:40:11.736+0000] {subprocess.py:106} INFO - 25/10/20 02:40:11 INFO StandaloneAppClient$ClientEndpoint: Connecting to master spark://spark-master:7077...
+[2025-10-20T02:40:11.781+0000] {subprocess.py:106} INFO - 25/10/20 02:40:11 INFO TransportClientFactory: Successfully created connection to spark-master/172.30.0.6:7077 after 25 ms (0 ms spent in bootstraps)
+[2025-10-20T02:40:17.612+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO StandaloneSchedulerBackend: Connected to Spark cluster with app ID app-20251020024017-0011
+[2025-10-20T02:40:17.614+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO StandaloneAppClient$ClientEndpoint: Executor added: app-20251020024017-0011/0 on worker-20251020005347-172.30.0.8-45339 (172.30.0.8:45339) with 1 core(s)
+[2025-10-20T02:40:17.616+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO StandaloneSchedulerBackend: Granted executor ID app-20251020024017-0011/0 on hostPort 172.30.0.8:45339 with 1 core(s), 1024.0 MiB RAM
+[2025-10-20T02:40:17.623+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 39453.
+[2025-10-20T02:40:17.624+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO NettyBlockTransferService: Server created on 5e29bbedee46:39453
+[2025-10-20T02:40:17.625+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+[2025-10-20T02:40:17.631+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, 5e29bbedee46, 39453, None)
+[2025-10-20T02:40:17.634+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO BlockManagerMasterEndpoint: Registering block manager 5e29bbedee46:39453 with 434.4 MiB RAM, BlockManagerId(driver, 5e29bbedee46, 39453, None)
+[2025-10-20T02:40:17.636+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, 5e29bbedee46, 39453, None)
+[2025-10-20T02:40:17.638+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, 5e29bbedee46, 39453, None)
+[2025-10-20T02:40:17.679+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO StandaloneAppClient$ClientEndpoint: Executor updated: app-20251020024017-0011/0 is now RUNNING
+[2025-10-20T02:40:17.904+0000] {subprocess.py:106} INFO - 25/10/20 02:40:17 INFO StandaloneSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.0
+[2025-10-20T02:40:18.392+0000] {subprocess.py:106} INFO - 25/10/20 02:40:18 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir.
+[2025-10-20T02:40:18.401+0000] {subprocess.py:106} INFO - 25/10/20 02:40:18 INFO SharedState: Warehouse path is 'file:/opt/spark/work-dir/spark-warehouse'.
+[2025-10-20T02:40:20.659+0000] {subprocess.py:106} INFO - 25/10/20 02:40:20 INFO HiveConf: Found configuration file null
+[2025-10-20T02:40:21.127+0000] {subprocess.py:106} INFO - 25/10/20 02:40:21 INFO metastore: Trying to connect to metastore with URI thrift://hive-metastore:9083
+[2025-10-20T02:40:21.161+0000] {subprocess.py:106} INFO - 25/10/20 02:40:21 INFO metastore: Opened a connection to metastore, current connections: 1
+[2025-10-20T02:40:21.191+0000] {subprocess.py:106} INFO - 25/10/20 02:40:21 INFO metastore: Connected to metastore.
+[2025-10-20T02:40:21.410+0000] {subprocess.py:106} INFO - 25/10/20 02:40:21 INFO BaseMetastoreTableOperations: Refreshing table metadata from new version: hdfs://tuankiet170-master:9000/data_lake/warehouse/gold.db/features_sample/metadata/00001-a0ffee0a-cad1-42e2-94b6-f4483f76572d.metadata.json
+[2025-10-20T02:40:21.426+0000] {subprocess.py:106} INFO - 25/10/20 02:40:21 INFO StandaloneSchedulerBackend$StandaloneDriverEndpoint: Registered executor NettyRpcEndpointRef(spark-client://Executor) (172.30.0.8:51252) with ID 0,  ResourceProfileId 0
+[2025-10-20T02:40:21.544+0000] {subprocess.py:106} INFO - 25/10/20 02:40:21 INFO BlockManagerMasterEndpoint: Registering block manager 172.30.0.8:37737 with 434.4 MiB RAM, BlockManagerId(0, 172.30.0.8, 37737, None)
+[2025-10-20T02:40:22.210+0000] {subprocess.py:106} INFO - 25/10/20 02:40:22 INFO BaseMetastoreCatalog: Table loaded by catalog: hive_catalog.gold.features_sample
+[2025-10-20T02:40:22.902+0000] {subprocess.py:106} INFO - 25/10/20 02:40:22 INFO SnapshotScan: Scanning table hive_catalog.gold.features_sample snapshot 5519123200437785891 created at 2025-10-20T02:30:00.623+00:00 with filter true
+[2025-10-20T02:40:23.069+0000] {subprocess.py:106} INFO - 25/10/20 02:40:23 INFO BaseDistributedDataScan: Planning file tasks locally for table hive_catalog.gold.features_sample
+[2025-10-20T02:40:23.190+0000] {subprocess.py:106} INFO - 25/10/20 02:40:23 INFO V2ScanRelationPushDown:
+[2025-10-20T02:40:23.191+0000] {subprocess.py:106} INFO - Pushing operators to hive_catalog.gold.features_sample
+[2025-10-20T02:40:23.192+0000] {subprocess.py:106} INFO - Pushed Aggregate Functions:
+[2025-10-20T02:40:23.192+0000] {subprocess.py:106} INFO -  COUNT(*)
+[2025-10-20T02:40:23.193+0000] {subprocess.py:106} INFO - Pushed Group by:
+[2025-10-20T02:40:23.193+0000] {subprocess.py:106} INFO - 
+[2025-10-20T02:40:23.193+0000] {subprocess.py:106} INFO - 
+[2025-10-20T02:40:24.164+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO CodeGenerator: Code generated in 289.706396 ms
+[2025-10-20T02:40:24.192+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO CodeGenerator: Code generated in 16.266669 ms
+[2025-10-20T02:40:24.294+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Registering RDD 2 (count at <unknown>:0) as input to shuffle 0
+[2025-10-20T02:40:24.302+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Got map stage job 0 (count at <unknown>:0) with 1 output partitions
+[2025-10-20T02:40:24.304+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Final stage: ShuffleMapStage 0 (count at <unknown>:0)
+[2025-10-20T02:40:24.306+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Parents of final stage: List()
+[2025-10-20T02:40:24.308+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Missing parents: List()
+[2025-10-20T02:40:24.314+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Submitting ShuffleMapStage 0 (MapPartitionsRDD[2] at count at <unknown>:0), which has no missing parents
+[2025-10-20T02:40:24.426+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO MemoryStore: Block broadcast_0 stored as values in memory (estimated size 12.6 KiB, free 434.4 MiB)
+[2025-10-20T02:40:24.472+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO MemoryStore: Block broadcast_0_piece0 stored as bytes in memory (estimated size 6.2 KiB, free 434.4 MiB)
+[2025-10-20T02:40:24.477+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO BlockManagerInfo: Added broadcast_0_piece0 in memory on 5e29bbedee46:39453 (size: 6.2 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:24.483+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO SparkContext: Created broadcast 0 from broadcast at DAGScheduler.scala:1585
+[2025-10-20T02:40:24.504+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO DAGScheduler: Submitting 1 missing tasks from ShuffleMapStage 0 (MapPartitionsRDD[2] at count at <unknown>:0) (first 15 tasks are for partitions Vector(0))
+[2025-10-20T02:40:24.507+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO TaskSchedulerImpl: Adding task set 0.0 with 1 tasks resource profile 0
+[2025-10-20T02:40:24.558+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO TaskSetManager: Starting task 0.0 in stage 0.0 (TID 0) (172.30.0.8, executor 0, partition 0, PROCESS_LOCAL, 9164 bytes)
+[2025-10-20T02:40:24.834+0000] {subprocess.py:106} INFO - 25/10/20 02:40:24 INFO BlockManagerInfo: Added broadcast_0_piece0 in memory on 172.30.0.8:37737 (size: 6.2 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:25.900+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO TaskSetManager: Finished task 0.0 in stage 0.0 (TID 0) in 1364 ms on 172.30.0.8 (executor 0) (1/1)
+[2025-10-20T02:40:25.903+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO TaskSchedulerImpl: Removed TaskSet 0.0, whose tasks have all completed, from pool
+[2025-10-20T02:40:25.913+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO DAGScheduler: ShuffleMapStage 0 (count at <unknown>:0) finished in 1.583 s
+[2025-10-20T02:40:25.914+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO DAGScheduler: looking for newly runnable stages
+[2025-10-20T02:40:25.916+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO DAGScheduler: running: Set()
+[2025-10-20T02:40:25.917+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO DAGScheduler: waiting: Set()
+[2025-10-20T02:40:25.918+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO DAGScheduler: failed: Set()
+[2025-10-20T02:40:25.986+0000] {subprocess.py:106} INFO - 25/10/20 02:40:25 INFO CodeGenerator: Code generated in 21.787424 ms
+[2025-10-20T02:40:26.066+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkContext: Starting job: count at <unknown>:0
+[2025-10-20T02:40:26.073+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Got job 1 (count at <unknown>:0) with 1 output partitions
+[2025-10-20T02:40:26.074+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Final stage: ResultStage 2 (count at <unknown>:0)
+[2025-10-20T02:40:26.075+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Parents of final stage: List(ShuffleMapStage 1)
+[2025-10-20T02:40:26.076+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Missing parents: List()
+[2025-10-20T02:40:26.080+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Submitting ResultStage 2 (MapPartitionsRDD[5] at count at <unknown>:0), which has no missing parents
+[2025-10-20T02:40:26.102+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_1 stored as values in memory (estimated size 13.7 KiB, free 434.4 MiB)
+[2025-10-20T02:40:26.109+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_1_piece0 stored as bytes in memory (estimated size 6.3 KiB, free 434.4 MiB)
+[2025-10-20T02:40:26.111+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Added broadcast_1_piece0 in memory on 5e29bbedee46:39453 (size: 6.3 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:26.113+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkContext: Created broadcast 1 from broadcast at DAGScheduler.scala:1585
+[2025-10-20T02:40:26.119+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Submitting 1 missing tasks from ResultStage 2 (MapPartitionsRDD[5] at count at <unknown>:0) (first 15 tasks are for partitions Vector(0))
+[2025-10-20T02:40:26.122+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSchedulerImpl: Adding task set 2.0 with 1 tasks resource profile 0
+[2025-10-20T02:40:26.132+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSetManager: Starting task 0.0 in stage 2.0 (TID 1) (172.30.0.8, executor 0, partition 0, NODE_LOCAL, 9003 bytes)
+[2025-10-20T02:40:26.171+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Added broadcast_1_piece0 in memory on 172.30.0.8:37737 (size: 6.3 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:26.320+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MapOutputTrackerMasterEndpoint: Asked to send map output locations for shuffle 0 to 172.30.0.8:51252
+[2025-10-20T02:40:26.413+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Removed broadcast_0_piece0 on 5e29bbedee46:39453 in memory (size: 6.2 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:26.427+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Removed broadcast_0_piece0 on 172.30.0.8:37737 in memory (size: 6.2 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:26.535+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSetManager: Finished task 0.0 in stage 2.0 (TID 1) in 408 ms on 172.30.0.8 (executor 0) (1/1)
+[2025-10-20T02:40:26.540+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSchedulerImpl: Removed TaskSet 2.0, whose tasks have all completed, from pool
+[2025-10-20T02:40:26.541+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: ResultStage 2 (count at <unknown>:0) finished in 0.445 s
+[2025-10-20T02:40:26.541+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Job 1 is finished. Cancelling potential speculative or zombie tasks for this job
+[2025-10-20T02:40:26.542+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSchedulerImpl: Killing all running tasks in stage 2: Stage finished
+[2025-10-20T02:40:26.544+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Job 1 finished: count at <unknown>:0, took 0.476964 s
+[2025-10-20T02:40:26.561+0000] {subprocess.py:106} INFO - Features rows count = 101
+[2025-10-20T02:40:26.562+0000] {subprocess.py:106} INFO - Converting to pandas DataFrame
+[2025-10-20T02:40:26.634+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO V2ScanRelationPushDown:
+[2025-10-20T02:40:26.635+0000] {subprocess.py:106} INFO - Output: customer_id#0, product_id#1, order_date#2, year#3, month#4, day#5, dow#6, quantity#7, price#8, total_price#9, review_score#10, payment_method#11, city#12, gender#13, age#14, prod_total_qty#15L, prod_avg_price#16, prod_unique_buyers#17L
+[2025-10-20T02:40:26.635+0000] {subprocess.py:106} INFO - 
+[2025-10-20T02:40:26.638+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SnapshotScan: Scanning table hive_catalog.gold.features_sample snapshot 5519123200437785891 created at 2025-10-20T02:30:00.623+00:00 with filter true
+[2025-10-20T02:40:26.639+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BaseDistributedDataScan: Planning file tasks locally for table hive_catalog.gold.features_sample
+[2025-10-20T02:40:26.678+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkPartitioningAwareScan: Reporting UnknownPartitioning with 1 partition(s) for table hive_catalog.gold.features_sample
+[2025-10-20T02:40:26.696+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_2 stored as values in memory (estimated size 32.0 KiB, free 434.3 MiB)
+[2025-10-20T02:40:26.718+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_2_piece0 stored as bytes in memory (estimated size 29.6 KiB, free 434.3 MiB)
+[2025-10-20T02:40:26.720+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Added broadcast_2_piece0 in memory on 5e29bbedee46:39453 (size: 29.6 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:26.721+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkContext: Created broadcast 2 from toPandas at /opt/***/scripts/train_lightGBM.py:36
+[2025-10-20T02:40:26.758+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_3 stored as values in memory (estimated size 32.0 KiB, free 434.3 MiB)
+[2025-10-20T02:40:26.763+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_3_piece0 stored as bytes in memory (estimated size 29.6 KiB, free 434.3 MiB)
+[2025-10-20T02:40:26.764+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Added broadcast_3_piece0 in memory on 5e29bbedee46:39453 (size: 29.6 KiB, free: 434.3 MiB)
+[2025-10-20T02:40:26.765+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkContext: Created broadcast 3 from toPandas at /opt/***/scripts/train_lightGBM.py:36
+[2025-10-20T02:40:26.885+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO CodeGenerator: Code generated in 71.671917 ms
+[2025-10-20T02:40:26.925+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkContext: Starting job: toPandas at /opt/***/scripts/train_lightGBM.py:36
+[2025-10-20T02:40:26.927+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Got job 2 (toPandas at /opt/***/scripts/train_lightGBM.py:36) with 1 output partitions
+[2025-10-20T02:40:26.928+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Final stage: ResultStage 3 (toPandas at /opt/***/scripts/train_lightGBM.py:36)
+[2025-10-20T02:40:26.928+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Parents of final stage: List()
+[2025-10-20T02:40:26.929+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Missing parents: List()
+[2025-10-20T02:40:26.932+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Submitting ResultStage 3 (MapPartitionsRDD[9] at toPandas at /opt/***/scripts/train_lightGBM.py:36), which has no missing parents
+[2025-10-20T02:40:26.937+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_4 stored as values in memory (estimated size 22.5 KiB, free 434.2 MiB)
+[2025-10-20T02:40:26.940+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO MemoryStore: Block broadcast_4_piece0 stored as bytes in memory (estimated size 6.6 KiB, free 434.2 MiB)
+[2025-10-20T02:40:26.942+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO BlockManagerInfo: Added broadcast_4_piece0 in memory on 5e29bbedee46:39453 (size: 6.6 KiB, free: 434.3 MiB)
+[2025-10-20T02:40:26.943+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO SparkContext: Created broadcast 4 from broadcast at DAGScheduler.scala:1585
+[2025-10-20T02:40:26.944+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO DAGScheduler: Submitting 1 missing tasks from ResultStage 3 (MapPartitionsRDD[9] at toPandas at /opt/***/scripts/train_lightGBM.py:36) (first 15 tasks are for partitions Vector(0))
+[2025-10-20T02:40:26.945+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSchedulerImpl: Adding task set 3.0 with 1 tasks resource profile 0
+[2025-10-20T02:40:26.968+0000] {subprocess.py:106} INFO - 25/10/20 02:40:26 INFO TaskSetManager: Starting task 0.0 in stage 3.0 (TID 2) (172.30.0.8, executor 0, partition 0, ANY, 15093 bytes)
+[2025-10-20T02:40:27.342+0000] {subprocess.py:106} INFO - 25/10/20 02:40:27 INFO BlockManagerInfo: Added broadcast_4_piece0 in memory on 172.30.0.8:37737 (size: 6.6 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:27.494+0000] {subprocess.py:106} INFO - 25/10/20 02:40:27 INFO BlockManagerInfo: Added broadcast_3_piece0 in memory on 172.30.0.8:37737 (size: 29.6 KiB, free: 434.4 MiB)
+[2025-10-20T02:40:29.060+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO TaskSetManager: Finished task 0.0 in stage 3.0 (TID 2) in 2113 ms on 172.30.0.8 (executor 0) (1/1)
+[2025-10-20T02:40:29.060+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO TaskSchedulerImpl: Removed TaskSet 3.0, whose tasks have all completed, from pool
+[2025-10-20T02:40:29.062+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO DAGScheduler: ResultStage 3 (toPandas at /opt/***/scripts/train_lightGBM.py:36) finished in 2.128 s
+[2025-10-20T02:40:29.062+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO DAGScheduler: Job 2 is finished. Cancelling potential speculative or zombie tasks for this job
+[2025-10-20T02:40:29.063+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO TaskSchedulerImpl: Killing all running tasks in stage 3: Stage finished
+[2025-10-20T02:40:29.063+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO DAGScheduler: Job 2 finished: toPandas at /opt/***/scripts/train_lightGBM.py:36, took 2.137705 s
+[2025-10-20T02:40:29.127+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO SparkContext: SparkContext is stopping with exitCode 0.
+[2025-10-20T02:40:29.139+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO SparkUI: Stopped Spark web UI at http://5e29bbedee46:4040
+[2025-10-20T02:40:29.146+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO StandaloneSchedulerBackend: Shutting down all executors
+[2025-10-20T02:40:29.147+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO StandaloneSchedulerBackend$StandaloneDriverEndpoint: Asking each executor to shut down
+[2025-10-20T02:40:29.170+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+[2025-10-20T02:40:29.200+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO MemoryStore: MemoryStore cleared
+[2025-10-20T02:40:29.201+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO BlockManager: BlockManager stopped
+[2025-10-20T02:40:29.204+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO BlockManagerMaster: BlockManagerMaster stopped
+[2025-10-20T02:40:29.208+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+[2025-10-20T02:40:29.220+0000] {subprocess.py:106} INFO - 25/10/20 02:40:29 INFO SparkContext: Successfully stopped SparkContext
+[2025-10-20T02:40:29.458+0000] {subprocess.py:106} INFO - Converted to pandas. Shape: (101, 18)
+[2025-10-20T02:40:29.463+0000] {subprocess.py:106} INFO - Feature cols: ['price', 'prod_avg_price', 'prod_total_qty', 'prod_unique_buyers', 'year', 'month', 'dow', 'review_score', 'age', 'payment_method']
+[2025-10-20T02:40:29.464+0000] {subprocess.py:106} INFO - Train/test split ...
+[2025-10-20T02:40:29.465+0000] {subprocess.py:106} INFO - Training LGBMRegressor ...
+[2025-10-20T02:40:29.489+0000] {subprocess.py:106} INFO - [LightGBM] [Info] Auto-choosing col-wise multi-threading, the overhead of testing was 0.000096 seconds.
+[2025-10-20T02:40:29.490+0000] {subprocess.py:106} INFO - You can set `force_col_wise=true` to remove the overhead.
+[2025-10-20T02:40:29.490+0000] {subprocess.py:106} INFO - [LightGBM] [Info] Total Bins 131
+[2025-10-20T02:40:29.490+0000] {subprocess.py:106} INFO - [LightGBM] [Info] Number of data points in the train set: 85, number of used features: 9
+[2025-10-20T02:40:29.495+0000] {subprocess.py:106} INFO - [LightGBM] [Info] Start training from score 3.000000
+[2025-10-20T02:40:29.496+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.497+0000] {subprocess.py:106} INFO - Training until validation scores don't improve for 30 rounds
+[2025-10-20T02:40:29.497+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.498+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.498+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.498+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.499+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.499+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.500+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.500+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.500+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.500+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.501+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.501+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.501+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.502+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.503+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.503+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.503+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.504+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.504+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.504+0000] {subprocess.py:106} INFO - [20]	valid_0's rmse: 1.53383	valid_0's l2: 2.35264
+[2025-10-20T02:40:29.505+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.506+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.506+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.507+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.507+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.508+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.509+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.510+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.510+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.511+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.511+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.512+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.512+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.512+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.513+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.514+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.516+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.516+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.517+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.518+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.518+0000] {subprocess.py:106} INFO - [40]	valid_0's rmse: 1.49129	valid_0's l2: 2.22393
+[2025-10-20T02:40:29.519+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.519+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.519+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.520+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.520+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.521+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.521+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.521+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.522+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.522+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.522+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.523+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.523+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.523+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.524+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.524+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.525+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.525+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.525+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.526+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.526+0000] {subprocess.py:106} INFO - [60]	valid_0's rmse: 1.47455	valid_0's l2: 2.1743
+[2025-10-20T02:40:29.526+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.527+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.527+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.528+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.528+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.528+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.529+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.529+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.530+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.530+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.530+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.531+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.531+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.531+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.532+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.532+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.533+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.533+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.534+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.534+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.535+0000] {subprocess.py:106} INFO - [80]	valid_0's rmse: 1.46092	valid_0's l2: 2.1343
+[2025-10-20T02:40:29.535+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.536+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.536+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.537+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.538+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.538+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.539+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.539+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.539+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.540+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.540+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.540+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.541+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.541+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.541+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.542+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.542+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.542+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.542+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.543+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.543+0000] {subprocess.py:106} INFO - [100]	valid_0's rmse: 1.4626	valid_0's l2: 2.13918
+[2025-10-20T02:40:29.543+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.543+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.544+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.544+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.544+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.545+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.545+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.545+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.546+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.546+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.546+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.547+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.547+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.547+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.548+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.548+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.548+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.549+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.549+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.549+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.550+0000] {subprocess.py:106} INFO - [120]	valid_0's rmse: 1.46242	valid_0's l2: 2.13866
+[2025-10-20T02:40:29.550+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.550+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.551+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.551+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.551+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.551+0000] {subprocess.py:106} INFO - [LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2025-10-20T02:40:29.552+0000] {subprocess.py:106} INFO - Early stopping, best iteration is:
+[2025-10-20T02:40:29.552+0000] {subprocess.py:106} INFO - [96]	valid_0's rmse: 1.4596	valid_0's l2: 2.13044
+[2025-10-20T02:40:29.552+0000] {subprocess.py:106} INFO - Saved model to /tmp/lgbm_demand_model.pkl
+[2025-10-20T02:40:29.553+0000] {subprocess.py:106} INFO - Trying to upload model to HDFS via hdfs (Python Library)...
+[2025-10-20T02:40:33.171+0000] {subprocess.py:106} INFO - Directory /models not found, creating...
+[2025-10-20T02:40:34.911+0000] {subprocess.py:106} INFO - Model uploaded successfully to HDFS via WebHDFS.
+[2025-10-20T02:40:35.044+0000] {subprocess.py:106} INFO - 25/10/20 02:40:35 INFO ShutdownHookManager: Shutdown hook called
+[2025-10-20T02:40:35.045+0000] {subprocess.py:106} INFO - 25/10/20 02:40:35 INFO ShutdownHookManager: Deleting directory /tmp/spark-e21a9531-b628-4fe8-836a-61508cdf8050
+[2025-10-20T02:40:35.047+0000] {subprocess.py:106} INFO - 25/10/20 02:40:35 INFO ShutdownHookManager: Deleting directory /tmp/spark-8f71b8da-a9f5-441b-a9fe-78c12be5dc0e
+[2025-10-20T02:40:35.050+0000] {subprocess.py:106} INFO - 25/10/20 02:40:35 INFO ShutdownHookManager: Deleting directory /tmp/spark-8f71b8da-a9f5-441b-a9fe-78c12be5dc0e/pyspark-cb947e64-5a38-487c-b97c-b3df6d7f342a
+[2025-10-20T02:40:35.110+0000] {subprocess.py:110} INFO - Command exited with return code 0
+[2025-10-20T02:40:35.163+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2025-10-20T02:40:35.163+0000] {taskinstance.py:353} INFO - Marking task as SUCCESS. dag_id=system_dag, task_id=train_lightGBM, run_id=scheduled__2025-10-19T00:00:00+00:00, execution_date=20251019T000000, start_date=20251020T024010, end_date=20251020T024035
+[2025-10-20T02:40:35.227+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2025-10-20T02:40:35.263+0000] {taskinstance.py:3901} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2025-10-20T02:40:35.265+0000] {local_task_job_runner.py:245} INFO - ::endgroup::
