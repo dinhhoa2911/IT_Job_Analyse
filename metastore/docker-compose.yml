@@ -1,0 +1,41 @@
+services:
+  postgres-metastore:
+    image: postgres:13
+    container_name: postgres-metastore
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ndh
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: metastore
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - system_network
+
+  hive-metastore:
+    image: dinhhoa0102/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    restart: unless-stopped
+    environment:
+      - HIVE_METASTORE_DB_HOST=postgres-metastore
+      - HIVE_METASTORE_DB_NAME=metastore
+      - HIVE_METASTORE_DB_USER=ndh
+      - HIVE_METASTORE_DB_PASS=123
+    depends_on:
+      - postgres-metastore
+    volumes:
+      - ./hive-config:/opt/hive/conf
+      - ./hive-logs:/opt/hive/logs
+      - ../hadoop-cluster/config/core-site.xml:/etc/hadoop/conf/core-site.xml:ro
+      - ../hadoop-cluster/config/hdfs-site.xml:/etc/hadoop/conf/hdfs-site.xml:ro
+    ports:
+      - "9083:9083"
+      - "10000:10000"
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true

@@ -1,0 +1,36 @@
+services:
+  superset-postgres:
+    image: postgres:15
+    container_name: superset-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+      POSTGRES_DB: superset
+    volumes:
+      - ./superset_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - system_network
+
+  superset:
+    image: dinhhoa0102/superset:latest
+    container_name: superset
+    restart: unless-stopped
+    depends_on:
+      - superset-postgres
+    environment:
+      - SUPERSET_DATABASE_URI=postgresql+psycopg2://superset:superset@superset-postgres:5432/superset
+      - ENABLE_PROXY_FIX=true
+    volumes:
+      - ./superset_home/config/superset_config.py:/app/pythonpath/superset_config.py:ro
+    ports:
+      - "8088:8088"
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true
+

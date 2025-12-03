@@ -1,0 +1,133 @@
+{
+  "format-version" : 2,
+  "table-uuid" : "cd70c006-2104-48c3-a5f1-100f6c4ca12c",
+  "location" : "hdfs://dinhhoa-master:9000/user/ndh/warehouse/gold.db/fact_job_posting",
+  "last-sequence-number" : 1,
+  "last-updated-ms" : 1764316615336,
+  "last-column-id" : 12,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "fact_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 2,
+      "name" : "job_title",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 3,
+      "name" : "company_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 4,
+      "name" : "skill_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 5,
+      "name" : "location_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 6,
+      "name" : "category_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 7,
+      "name" : "mode_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 8,
+      "name" : "date_id",
+      "required" : false,
+      "type" : "int"
+    }, {
+      "id" : 9,
+      "name" : "snapshot_date",
+      "required" : false,
+      "type" : "int"
+    }, {
+      "id" : 10,
+      "name" : "job_link",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 11,
+      "name" : "post_count",
+      "required" : false,
+      "type" : "int"
+    }, {
+      "id" : 12,
+      "name" : "clean_time",
+      "required" : false,
+      "type" : "timestamptz"
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ {
+      "name" : "date_id",
+      "transform" : "identity",
+      "source-id" : 8,
+      "field-id" : 1000
+    } ]
+  } ],
+  "last-partition-id" : 1000,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "spark",
+    "write.parquet.compression-codec" : "zstd"
+  },
+  "current-snapshot-id" : 5447257330616305729,
+  "refs" : {
+    "main" : {
+      "snapshot-id" : 5447257330616305729,
+      "type" : "branch"
+    }
+  },
+  "snapshots" : [ {
+    "sequence-number" : 1,
+    "snapshot-id" : 5447257330616305729,
+    "timestamp-ms" : 1764316615336,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "app-20251128075537-0002",
+      "added-data-files" : "67",
+      "added-records" : "18644",
+      "added-files-size" : "745407",
+      "changed-partition-count" : "67",
+      "total-records" : "18644",
+      "total-files-size" : "745407",
+      "total-data-files" : "67",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0",
+      "engine-version" : "3.5.3",
+      "app-id" : "app-20251128075537-0002",
+      "engine-name" : "spark",
+      "iceberg-version" : "Apache Iceberg 1.6.1 (commit 8e9d59d299be42b0bca9461457cd1e95dbaad086)"
+    },
+    "manifest-list" : "hdfs://dinhhoa-master:9000/user/ndh/warehouse/gold.db/fact_job_posting/metadata/snap-5447257330616305729-1-d974a7d0-a22c-4bea-8f44-fa9ac98272e4.avro",
+    "schema-id" : 0
+  } ],
+  "statistics" : [ ],
+  "partition-statistics" : [ ],
+  "snapshot-log" : [ {
+    "timestamp-ms" : 1764316615336,
+    "snapshot-id" : 5447257330616305729
+  } ],
+  "metadata-log" : [ ]
+}

@@ -1,0 +1,17 @@
+services:
+  trino:
+    image: trinodb/trino:418
+    container_name: trino
+    hostname: trino
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./config/catalog:/etc/trino/catalog
+      - ../hadoop-cluster/config/core-site.xml:/etc/hadoop/conf/core-site.xml:ro
+      - ../hadoop-cluster/config/hdfs-site.xml:/etc/hadoop/conf/hdfs-site.xml:ro
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true

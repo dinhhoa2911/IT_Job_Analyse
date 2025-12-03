@@ -1,0 +1,146 @@
+version: "3.8"
+services:
+  airflow-postgres:
+    image: postgres:13
+    container_name: airflow-postgres
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - system_network
+
+  redis:
+    image: redis:7
+    container_name: airflow-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - system_network
+  
+  airflow-init:
+    image: dinhhoa0102/airflow:2.7.1
+    container_name: airflow-init
+    depends_on:
+      - airflow-postgres
+      - redis
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres:5432/airflow
+    command: >
+      bash -c "
+        airflow db upgrade &&
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com
+      "
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    networks:
+      - system_network
+
+  airflow-webserver:
+    image: dinhhoa0102/airflow:2.7.1
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - airflow-postgres
+      - redis
+    environment:
+      &airflow-common-env
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: "1"
+      AIRFLOW__CORE__PARALLELISM: "8"
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+      _PIP_ADDITIONAL_REQUIREMENTS: ""
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock 
+    ports:
+      - "8085:8080"
+    command: webserver
+    networks:
+      - system_network
+
+  airflow-scheduler:
+    image: dinhhoa0102/airflow:2.7.1
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - airflow-postgres
+      - redis
+    environment: *airflow-common-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock 
+    command: scheduler
+    networks:
+      - system_network
+
+  airflow-worker:
+    image: dinhhoa0102/airflow:2.7.1
+    container_name: airflow-worker
+    restart: always
+    depends_on:
+      - airflow-postgres
+      - redis
+    environment:
+      <<: *airflow-common-env
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: "1"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock 
+    command: celery worker
+    networks:
+      - system_network
+
+  airflow-triggerer:
+    image: dinhhoa0102/airflow:2.7.1
+    container_name: airflow-triggerer
+    restart: always
+    depends_on:
+      - airflow-postgres
+      - redis
+    environment: *airflow-common-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock 
+    command: triggerer
+    networks:
+      - system_network
+
+  flower:
+    image: mher/flower:2.0.0
+    container_name: airflow-flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true

@@ -1,0 +1,57 @@
+services:
+  spark-master:
+    image: dinhhoa0102/spark-iceberg:3.5.3
+    container_name: spark-master
+    hostname: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_UI_PORT=8080
+    volumes:
+      - ../hadoop-cluster/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
+      - ../hadoop-cluster/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml:ro
+    command: >
+      bash -c "/opt/spark/sbin/start-master.sh && tail -f /opt/spark/logs/spark--org.apache.spark.deploy.master*.out"
+    ports:
+      - "7077:7077"
+      - "8080:8080"    
+    networks:
+      - system_network
+
+  spark-worker:
+    image: dinhhoa0102/spark-iceberg:3.5.3
+    container_name: spark-worker
+    hostname: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=1
+    volumes:
+      - ../hadoop-cluster/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
+      - ../hadoop-cluster/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml:ro
+    depends_on:
+      - spark-master
+    command: >
+      bash -c "/opt/spark/sbin/start-worker.sh spark://spark-master:7077 && tail -f /opt/spark/logs/spark--org.apache.spark.deploy.worker*.out"
+    ports:
+      - "8081:8081"
+    networks:
+      - system_network
+
+  spark-submit:
+    image: dinhhoa0102/spark-iceberg:3.5.3
+    container_name: spark-submit
+    volumes:
+      - ../hadoop-cluster/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
+      - ../hadoop-cluster/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml:ro
+    entrypoint: ["sleep", "infinity"]
+    networks:
+      - system_network
+    depends_on:
+      - spark-master
+
+networks:
+  system_network:
+    external: true
