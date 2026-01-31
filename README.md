@@ -60,12 +60,16 @@ Installation
 Clone the repository:
 
 Bash
+
 git clone https://github.com/your-username/job-demand-datalakehouse.git
+
 cd job-demand-datalakehouse
+
 Start the environment:
 
 Bash
 docker-compose up -d
+
 Access the interfaces:
 
 Airflow: http://localhost:8080 (User/Pass: admin/admin)
@@ -89,12 +93,19 @@ Forecasting: Line charts showing Historical Data vs. Prophet Predictions.
 📂 Project Structure
 
 ├── dags/                 # Airflow DAGs (ETL & ML pipelines)
+
 ├── data/                 # Sample raw data
+
 ├── docker/               # Dockerfile and configuration for services
+
 ├── notebooks/            # Jupyter Notebooks for EDA and Model Prototyping
+
 ├── scripts/              # Python/Spark scripts for processing
+
 ├── docker-compose.yaml   # Container orchestration
+
 └── README.md             # Project documentation
+
 
 📝 License
 This project is created for educational purposes within the "specialized essay" course.
