@@ -8,7 +8,7 @@ from airflow.operators.bash import BashOperator
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'email': ['alert@datateam.local'],
+    'email': ['dinhhoa0102@gmail.com'],
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 1,

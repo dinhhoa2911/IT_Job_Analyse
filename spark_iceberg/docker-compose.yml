@@ -11,6 +11,7 @@ services:
     volumes:
       - ../hadoop-cluster/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
       - ../hadoop-cluster/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml:ro
+      - ../scripts:/opt/spark/scripts
     command: >
       bash -c "/opt/spark/sbin/start-master.sh && tail -f /opt/spark/logs/spark--org.apache.spark.deploy.master*.out"
     ports:
@@ -31,6 +32,7 @@ services:
     volumes:
       - ../hadoop-cluster/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
       - ../hadoop-cluster/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml:ro
+      - ../scripts:/opt/spark/scripts
     depends_on:
       - spark-master
     command: >
@@ -46,6 +48,8 @@ services:
     volumes:
       - ../hadoop-cluster/config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
       - ../hadoop-cluster/config/hdfs-site.xml:/opt/bitnami/spark/conf/hdfs-site.xml:ro
+      - ../scripts:/opt/spark/scripts
+      - ../models:/opt/spark/models
     entrypoint: ["sleep", "infinity"]
     networks:
       - system_network

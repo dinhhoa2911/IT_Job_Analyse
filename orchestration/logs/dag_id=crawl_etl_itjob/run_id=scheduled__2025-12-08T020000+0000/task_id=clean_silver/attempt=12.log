@@ -1,0 +1,411 @@
+[2025-12-09T11:22:27.594+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2025-12-09T11:22:27.630+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.clean_silver scheduled__2025-12-08T02:00:00+00:00 [queued]>
+[2025-12-09T11:22:27.642+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.clean_silver scheduled__2025-12-08T02:00:00+00:00 [queued]>
+[2025-12-09T11:22:27.643+0000] {taskinstance.py:2867} INFO - Starting attempt 12 of 13
+[2025-12-09T11:22:27.656+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): clean_silver> on 2025-12-08 02:00:00+00:00
+[2025-12-09T11:22:27.661+0000] {standard_task_runner.py:72} INFO - Started process 160 to run task
+[2025-12-09T11:22:27.667+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'clean_silver', 'scheduled__2025-12-08T02:00:00+00:00', '--job-id', '335', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpetotr5hv']
+[2025-12-09T11:22:27.669+0000] {standard_task_runner.py:105} INFO - Job 335: Subtask clean_silver
+[2025-12-09T11:22:27.695+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2025-12-09T11:22:27.784+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.clean_silver scheduled__2025-12-08T02:00:00+00:00 [running]> on host a1de7f96d4f1
+[2025-12-09T11:22:27.786+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2025-12-09T11:22:27.937+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='alert@datateam.local' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='clean_silver' AIRFLOW_CTX_EXECUTION_DATE='2025-12-08T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='12' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-12-08T02:00:00+00:00'
+[2025-12-09T11:22:27.939+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2025-12-09T11:22:27.961+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2025-12-09T11:22:27.962+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', "\n        docker exec spark-submit bash -c '\n        /opt/spark/bin/spark-submit         --master spark://spark-master:7077         --deploy-mode client         --packages org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0         /opt/spark/scripts/Clean_Silver.py\n        '\n        "]
+[2025-12-09T11:22:27.973+0000] {subprocess.py:99} INFO - Output:
+[2025-12-09T11:22:34.229+0000] {subprocess.py:106} INFO - :: loading settings :: url = jar:file:/opt/spark/jars/ivy-2.5.1.jar!/org/apache/ivy/core/settings/ivysettings.xml
+[2025-12-09T11:22:34.372+0000] {subprocess.py:106} INFO - Ivy Default Cache set to: /home/spark/.ivy2/cache
+[2025-12-09T11:22:34.373+0000] {subprocess.py:106} INFO - The jars for the packages stored in: /home/spark/.ivy2/jars
+[2025-12-09T11:22:34.378+0000] {subprocess.py:106} INFO - org.apache.iceberg#iceberg-spark-runtime-3.5_2.12 added as a dependency
+[2025-12-09T11:22:34.381+0000] {subprocess.py:106} INFO - :: resolving dependencies :: org.apache.spark#spark-submit-parent-7cd4aeb6-882b-429c-8d37-632cf16637df;1.0
+[2025-12-09T11:22:34.382+0000] {subprocess.py:106} INFO - 	confs: [default]
+[2025-12-09T11:22:34.549+0000] {subprocess.py:106} INFO - 	found org.apache.iceberg#iceberg-spark-runtime-3.5_2.12;1.5.0 in central
+[2025-12-09T11:22:34.567+0000] {subprocess.py:106} INFO - :: resolution report :: resolve 184ms :: artifacts dl 3ms
+[2025-12-09T11:22:34.567+0000] {subprocess.py:106} INFO - 	:: modules in use:
+[2025-12-09T11:22:34.568+0000] {subprocess.py:106} INFO - 	org.apache.iceberg#iceberg-spark-runtime-3.5_2.12;1.5.0 from central in [default]
+[2025-12-09T11:22:34.569+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2025-12-09T11:22:34.569+0000] {subprocess.py:106} INFO - 	|                  |            modules            ||   artifacts   |
+[2025-12-09T11:22:34.570+0000] {subprocess.py:106} INFO - 	|       conf       | number| search|dwnlded|evicted|| number|dwnlded|
+[2025-12-09T11:22:34.571+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2025-12-09T11:22:34.572+0000] {subprocess.py:106} INFO - 	|      default     |   1   |   0   |   0   |   0   ||   1   |   0   |
+[2025-12-09T11:22:34.572+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2025-12-09T11:22:34.573+0000] {subprocess.py:106} INFO - :: retrieving :: org.apache.spark#spark-submit-parent-7cd4aeb6-882b-429c-8d37-632cf16637df
+[2025-12-09T11:22:34.574+0000] {subprocess.py:106} INFO - 	confs: [default]
+[2025-12-09T11:22:34.578+0000] {subprocess.py:106} INFO - 	0 artifacts copied, 1 already retrieved (0kB/6ms)
+[2025-12-09T11:22:35.092+0000] {subprocess.py:106} INFO - 25/12/09 11:22:35 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[2025-12-09T11:22:37.022+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SparkContext: Running Spark version 3.5.3
+[2025-12-09T11:22:37.025+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SparkContext: OS info Linux, 6.6.87.2-microsoft-standard-WSL2, amd64
+[2025-12-09T11:22:37.027+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SparkContext: Java version 11.0.24
+[2025-12-09T11:22:37.067+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO ResourceUtils: ==============================================================
+[2025-12-09T11:22:37.068+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO ResourceUtils: No custom resources configured for spark.driver.
+[2025-12-09T11:22:37.071+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO ResourceUtils: ==============================================================
+[2025-12-09T11:22:37.072+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SparkContext: Submitted application: Silver_Array_Location_Optimization
+[2025-12-09T11:22:37.127+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+[2025-12-09T11:22:37.162+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO ResourceProfile: Limiting resource is cpu
+[2025-12-09T11:22:37.163+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO ResourceProfileManager: Added ResourceProfile id: 0
+[2025-12-09T11:22:37.299+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SecurityManager: Changing view acls to: spark
+[2025-12-09T11:22:37.300+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SecurityManager: Changing modify acls to: spark
+[2025-12-09T11:22:37.301+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SecurityManager: Changing view acls groups to:
+[2025-12-09T11:22:37.302+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SecurityManager: Changing modify acls groups to:
+[2025-12-09T11:22:37.303+0000] {subprocess.py:106} INFO - 25/12/09 11:22:37 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: spark; groups with view permissions: EMPTY; users with modify permissions: spark; groups with modify permissions: EMPTY
+[2025-12-09T11:22:38.071+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO Utils: Successfully started service 'sparkDriver' on port 38475.
+[2025-12-09T11:22:38.156+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO SparkEnv: Registering MapOutputTracker
+[2025-12-09T11:22:38.279+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO SparkEnv: Registering BlockManagerMaster
+[2025-12-09T11:22:38.333+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+[2025-12-09T11:22:38.335+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+[2025-12-09T11:22:38.351+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+[2025-12-09T11:22:38.445+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-bb794eae-aef7-4bd6-8b46-b1149e752974
+[2025-12-09T11:22:38.496+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+[2025-12-09T11:22:38.565+0000] {subprocess.py:106} INFO - 25/12/09 11:22:38 INFO SparkEnv: Registering OutputCommitCoordinator
+[2025-12-09T11:22:39.448+0000] {subprocess.py:106} INFO - 25/12/09 11:22:39 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+[2025-12-09T11:22:39.566+0000] {subprocess.py:106} INFO - 25/12/09 11:22:39 WARN Utils: Service 'SparkUI' could not bind on port 4040. Attempting port 4041.
+[2025-12-09T11:22:39.607+0000] {subprocess.py:106} INFO - 25/12/09 11:22:39 INFO Utils: Successfully started service 'SparkUI' on port 4041.
+[2025-12-09T11:22:39.758+0000] {subprocess.py:106} INFO - 25/12/09 11:22:39 INFO SparkContext: Added JAR file:///home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar at spark://65f44b4fd513:38475/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar with timestamp 1765279356986
+[2025-12-09T11:22:39.764+0000] {subprocess.py:106} INFO - 25/12/09 11:22:39 INFO SparkContext: Added file file:///home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar at spark://65f44b4fd513:38475/files/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar with timestamp 1765279356986
+[2025-12-09T11:22:39.767+0000] {subprocess.py:106} INFO - 25/12/09 11:22:39 INFO Utils: Copying /home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar to /tmp/spark-524c5da7-50e2-4a97-91e3-afbccd885386/userFiles-4ed013b6-1c98-47ee-80af-884a2dcf77b5/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar
+[2025-12-09T11:22:41.577+0000] {subprocess.py:106} INFO - 25/12/09 11:22:40 INFO StandaloneAppClient$ClientEndpoint: Connecting to master spark://spark-master:7077...
+[2025-12-09T11:23:19.952+0000] {job.py:239} ERROR - Job heartbeat failed with error
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 3371, in _wrap_pool_connect
+    return fn()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 327, in connect
+    return _ConnectionFairy._checkout(self)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 894, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 493, in checkout
+    rec = pool._do_get()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/impl.py", line 256, in _do_get
+    return self._create_connection()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 273, in _create_connection
+    return _ConnectionRecord(self)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 388, in __init__
+    self.__connect()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 691, in __connect
+    pool.logger.debug("Error on connect(): %s", e)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/util/langhelpers.py", line 70, in __exit__
+    compat.raise_(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/util/compat.py", line 211, in raise_
+    raise exception
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 686, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/create.py", line 574, in connect
+    return dialect.connect(*cargs, **cparams)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/default.py", line 598, in connect
+    return self.dbapi.connect(*cargs, **cparams)
+  File "/home/airflow/.local/lib/python3.8/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+psycopg2.OperationalError: could not translate host name "***-postgres" to address: Temporary failure in name resolution
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/jobs/job.py", line 207, in heartbeat
+    self._merge_from(Job._fetch_from_db(self, session))
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/api_internal/internal_api_call.py", line 166, in wrapper
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/session.py", line 94, in wrapper
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/retries.py", line 93, in wrapped_function
+    for attempt in run_with_db_retries(max_retries=retries, logger=logger, **retry_kwargs):
+  File "/home/airflow/.local/lib/python3.8/site-packages/tenacity/__init__.py", line 347, in __iter__
+    do = self.iter(retry_state=retry_state)
+  File "/home/airflow/.local/lib/python3.8/site-packages/tenacity/__init__.py", line 325, in iter
+    raise retry_exc.reraise()
+  File "/home/airflow/.local/lib/python3.8/site-packages/tenacity/__init__.py", line 158, in reraise
+    raise self.last_attempt.result()
+  File "/usr/local/lib/python3.8/concurrent/futures/_base.py", line 437, in result
+    return self.__get_result()
+  File "/usr/local/lib/python3.8/concurrent/futures/_base.py", line 389, in __get_result
+    raise self._exception
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/retries.py", line 102, in wrapped_function
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/jobs/job.py", line 335, in _fetch_from_db
+    session.merge(job)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 3056, in merge
+    return self._merge(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 3136, in _merge
+    merged = self.get(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 2853, in get
+    return self._get_impl(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 2975, in _get_impl
+    return db_load_fn(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/loading.py", line 530, in load_on_pk_identity
+    session.execute(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 1716, in execute
+    conn = self._connection_for_bind(bind)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 1555, in _connection_for_bind
+    return self._transaction._connection_for_bind(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/orm/session.py", line 750, in _connection_for_bind
+    conn = bind.connect()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/future/engine.py", line 406, in connect
+    return super(Engine, self).connect()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 3325, in connect
+    return self._connection_cls(self, close_with_result=close_with_result)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 96, in __init__
+    else engine.raw_connection()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 3404, in raw_connection
+    return self._wrap_pool_connect(self.pool.connect, _connection)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 3374, in _wrap_pool_connect
+    Connection._handle_dbapi_exception_noconnection(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 2208, in _handle_dbapi_exception_noconnection
+    util.raise_(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/util/compat.py", line 211, in raise_
+    raise exception
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/base.py", line 3371, in _wrap_pool_connect
+    return fn()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 327, in connect
+    return _ConnectionFairy._checkout(self)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 894, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 493, in checkout
+    rec = pool._do_get()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/impl.py", line 256, in _do_get
+    return self._create_connection()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 273, in _create_connection
+    return _ConnectionRecord(self)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 388, in __init__
+    self.__connect()
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 691, in __connect
+    pool.logger.debug("Error on connect(): %s", e)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/util/langhelpers.py", line 70, in __exit__
+    compat.raise_(
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/util/compat.py", line 211, in raise_
+    raise exception
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/pool/base.py", line 686, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/create.py", line 574, in connect
+    return dialect.connect(*cargs, **cparams)
+  File "/home/airflow/.local/lib/python3.8/site-packages/sqlalchemy/engine/default.py", line 598, in connect
+    return self.dbapi.connect(*cargs, **cparams)
+  File "/home/airflow/.local/lib/python3.8/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) could not translate host name "***-postgres" to address: Temporary failure in name resolution
+
+(Background on this error at: https://sqlalche.me/e/14/e3q8)
+[2025-12-09T11:23:20.081+0000] {job.py:254} ERROR - Job heartbeat failed with error. Scheduler is in unhealthy state
+[2025-12-09T11:23:59.056+0000] {job.py:254} ERROR - Job heartbeat failed with error. Scheduler is in unhealthy state
+[2025-12-09T11:24:01.322+0000] {subprocess.py:106} INFO - 25/12/09 11:22:41 INFO TransportClientFactory: Successfully created connection to spark-master/172.30.0.6:7077 after 170 ms (0 ms spent in bootstraps)
+[2025-12-09T11:24:01.362+0000] {subprocess.py:106} INFO - 25/12/09 11:22:41 INFO StandaloneSchedulerBackend: Connected to Spark cluster with app ID app-20251209112241-0010
+[2025-12-09T11:24:01.370+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 37089.
+[2025-12-09T11:24:01.371+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO NettyBlockTransferService: Server created on 65f44b4fd513:37089
+[2025-12-09T11:24:01.372+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+[2025-12-09T11:24:01.374+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, 65f44b4fd513, 37089, None)
+[2025-12-09T11:24:01.381+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO BlockManagerMasterEndpoint: Registering block manager 65f44b4fd513:37089 with 434.4 MiB RAM, BlockManagerId(driver, 65f44b4fd513, 37089, None)
+[2025-12-09T11:24:01.387+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, 65f44b4fd513, 37089, None)
+[2025-12-09T11:24:01.389+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, 65f44b4fd513, 37089, None)
+[2025-12-09T11:24:01.390+0000] {subprocess.py:106} INFO - 25/12/09 11:22:42 INFO StandaloneSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.0
+[2025-12-09T11:24:01.391+0000] {subprocess.py:106} INFO - 25/12/09 11:22:44 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir.
+[2025-12-09T11:24:01.391+0000] {subprocess.py:106} INFO - 25/12/09 11:22:44 INFO SharedState: Warehouse path is 'file:/opt/spark/work-dir/spark-warehouse'.
+[2025-12-09T11:24:01.393+0000] {subprocess.py:106} INFO - 25/12/09 11:23:34 INFO HiveConf: Found configuration file null
+[2025-12-09T11:24:01.394+0000] {subprocess.py:106} INFO - 25/12/09 11:23:38 INFO metastore: Trying to connect to metastore with URI thrift://hive-metastore:9083
+[2025-12-09T11:24:01.395+0000] {subprocess.py:106} INFO - 25/12/09 11:23:51 WARN metastore: Failed to connect to the MetaStore Server...
+[2025-12-09T11:24:01.396+0000] {subprocess.py:106} INFO - 25/12/09 11:23:51 INFO metastore: Waiting 1 seconds before next connection attempt.
+[2025-12-09T11:24:01.397+0000] {subprocess.py:106} INFO - 25/12/09 11:23:52 INFO metastore: Trying to connect to metastore with URI thrift://hive-metastore:9083
+[2025-12-09T11:24:01.398+0000] {subprocess.py:106} INFO - 25/12/09 11:23:52 WARN metastore: Failed to connect to the MetaStore Server...
+[2025-12-09T11:24:01.398+0000] {subprocess.py:106} INFO - 25/12/09 11:23:52 INFO metastore: Waiting 1 seconds before next connection attempt.
+[2025-12-09T11:24:01.399+0000] {subprocess.py:106} INFO - 25/12/09 11:23:53 INFO metastore: Trying to connect to metastore with URI thrift://hive-metastore:9083
+[2025-12-09T11:24:01.400+0000] {subprocess.py:106} INFO - 25/12/09 11:23:53 WARN metastore: Failed to connect to the MetaStore Server...
+[2025-12-09T11:24:01.401+0000] {subprocess.py:106} INFO - 25/12/09 11:23:53 INFO metastore: Waiting 1 seconds before next connection attempt.
+[2025-12-09T11:24:01.403+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO SparkContext: Invoking stop() from shutdown hook
+[2025-12-09T11:24:01.404+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO SparkContext: SparkContext is stopping with exitCode 0.
+[2025-12-09T11:24:01.405+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO SparkUI: Stopped Spark web UI at http://65f44b4fd513:4041
+[2025-12-09T11:24:01.406+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO StandaloneSchedulerBackend: Shutting down all executors
+[2025-12-09T11:24:01.407+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO StandaloneSchedulerBackend$StandaloneDriverEndpoint: Asking each executor to shut down
+[2025-12-09T11:24:01.408+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+[2025-12-09T11:24:01.471+0000] {subprocess.py:106} INFO - Traceback (most recent call last):
+[2025-12-09T11:24:01.472+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Clean_Silver.py", line 31, in <module>
+[2025-12-09T11:24:01.473+0000] {subprocess.py:106} INFO -     if spark.catalog.tableExists(f"hive_catalog.{DATABASE_SILVER}.{TABLE_SILVER}"):
+[2025-12-09T11:24:01.474+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/pyspark.zip/pyspark/sql/catalog.py", line 747, in tableExists
+[2025-12-09T11:24:01.475+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/py4j-0.10.9.7-src.zip/py4j/java_gateway.py", line 1322, in __call__
+[2025-12-09T11:24:01.476+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/pyspark.zip/pyspark/errors/exceptions/captured.py", line 179, in deco
+[2025-12-09T11:24:01.478+0000] {subprocess.py:106} INFO -   File "/opt/spark/python/lib/py4j-0.10.9.7-src.zip/py4j/protocol.py", line 326, in get_return_value
+[2025-12-09T11:24:01.479+0000] {subprocess.py:106} INFO - py4j.protocol.Py4JJavaError: An error occurred while calling o46.tableExists.
+[2025-12-09T11:24:01.480+0000] {subprocess.py:106} INFO - : org.apache.iceberg.hive.RuntimeMetaException: Failed to connect to Hive Metastore
+[2025-12-09T11:24:01.481+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveClientPool.newClient(HiveClientPool.java:85)
+[2025-12-09T11:24:01.482+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveClientPool.newClient(HiveClientPool.java:34)
+[2025-12-09T11:24:01.483+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.ClientPoolImpl.get(ClientPoolImpl.java:143)
+[2025-12-09T11:24:01.484+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.ClientPoolImpl.run(ClientPoolImpl.java:70)
+[2025-12-09T11:24:01.486+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.ClientPoolImpl.run(ClientPoolImpl.java:65)
+[2025-12-09T11:24:01.487+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.CachedClientPool.run(CachedClientPool.java:122)
+[2025-12-09T11:24:01.488+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveTableOperations.doRefresh(HiveTableOperations.java:147)
+[2025-12-09T11:24:01.489+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.BaseMetastoreTableOperations.refresh(BaseMetastoreTableOperations.java:90)
+[2025-12-09T11:24:01.490+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.BaseMetastoreTableOperations.current(BaseMetastoreTableOperations.java:73)
+[2025-12-09T11:24:01.491+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.BaseMetastoreCatalog.loadTable(BaseMetastoreCatalog.java:49)
+[2025-12-09T11:24:01.492+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.BoundedLocalCache.lambda$doComputeIfAbsent$14(BoundedLocalCache.java:2406)
+[2025-12-09T11:24:01.494+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ConcurrentHashMap.compute(Unknown Source)
+[2025-12-09T11:24:01.495+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.BoundedLocalCache.doComputeIfAbsent(BoundedLocalCache.java:2404)
+[2025-12-09T11:24:01.497+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.BoundedLocalCache.computeIfAbsent(BoundedLocalCache.java:2387)
+[2025-12-09T11:24:01.498+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.LocalCache.computeIfAbsent(LocalCache.java:108)
+[2025-12-09T11:24:01.499+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.LocalManualCache.get(LocalManualCache.java:62)
+[2025-12-09T11:24:01.500+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.CachingCatalog.loadTable(CachingCatalog.java:167)
+[2025-12-09T11:24:01.502+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.spark.SparkCatalog.load(SparkCatalog.java:845)
+[2025-12-09T11:24:01.503+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.spark.SparkCatalog.loadTable(SparkCatalog.java:170)
+[2025-12-09T11:24:01.505+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.connector.catalog.TableCatalog.tableExists(TableCatalog.java:185)
+[2025-12-09T11:24:01.506+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.internal.CatalogImpl.tableExists(CatalogImpl.scala:524)
+[2025-12-09T11:24:01.507+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[2025-12-09T11:24:01.507+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.508+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.509+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+[2025-12-09T11:24:01.509+0000] {subprocess.py:106} INFO - 	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)
+[2025-12-09T11:24:01.511+0000] {subprocess.py:106} INFO - 	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)
+[2025-12-09T11:24:01.520+0000] {subprocess.py:106} INFO - 	at py4j.Gateway.invoke(Gateway.java:282)
+[2025-12-09T11:24:01.522+0000] {subprocess.py:106} INFO - 	at py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)
+[2025-12-09T11:24:01.523+0000] {subprocess.py:106} INFO - 	at py4j.commands.CallCommand.execute(CallCommand.java:79)
+[2025-12-09T11:24:01.524+0000] {subprocess.py:106} INFO - 	at py4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:182)
+[2025-12-09T11:24:01.524+0000] {subprocess.py:106} INFO - 	at py4j.ClientServerConnection.run(ClientServerConnection.java:106)
+[2025-12-09T11:24:01.525+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-12-09T11:24:01.526+0000] {subprocess.py:106} INFO - Caused by: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.metastore.HiveMetaStoreClient
+[2025-12-09T11:24:01.527+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.MetaStoreUtils.newInstance(MetaStoreUtils.java:1742)
+[2025-12-09T11:24:01.528+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.<init>(RetryingMetaStoreClient.java:83)
+[2025-12-09T11:24:01.529+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:133)
+[2025-12-09T11:24:01.530+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:104)
+[2025-12-09T11:24:01.530+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:97)
+[2025-12-09T11:24:01.531+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[2025-12-09T11:24:01.532+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.533+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.535+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+[2025-12-09T11:24:01.540+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.common.DynMethods$UnboundMethod.invokeChecked(DynMethods.java:62)
+[2025-12-09T11:24:01.545+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.common.DynMethods$UnboundMethod.invoke(DynMethods.java:74)
+[2025-12-09T11:24:01.546+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.common.DynMethods$StaticMethod.invoke(DynMethods.java:187)
+[2025-12-09T11:24:01.547+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveClientPool.newClient(HiveClientPool.java:63)
+[2025-12-09T11:24:01.549+0000] {subprocess.py:106} INFO - 	... 32 more
+[2025-12-09T11:24:01.550+0000] {subprocess.py:106} INFO - Caused by: java.lang.reflect.InvocationTargetException
+[2025-12-09T11:24:01.552+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+[2025-12-09T11:24:01.554+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(Unknown Source)
+[2025-12-09T11:24:01.556+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(Unknown Source)
+[2025-12-09T11:24:01.563+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+[2025-12-09T11:24:01.569+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.MetaStoreUtils.newInstance(MetaStoreUtils.java:1740)
+[2025-12-09T11:24:01.570+0000] {subprocess.py:106} INFO - 	... 44 more
+[2025-12-09T11:24:01.571+0000] {subprocess.py:106} INFO - Caused by: MetaException(message:Could not connect to meta store using any of the URIs provided. Most recent failure: org.apache.thrift.transport.TTransportException: java.net.UnknownHostException: hive-metastore
+[2025-12-09T11:24:01.572+0000] {subprocess.py:106} INFO - 	at org.apache.thrift.transport.TSocket.open(TSocket.java:226)
+[2025-12-09T11:24:01.574+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.HiveMetaStoreClient.open(HiveMetaStoreClient.java:478)
+[2025-12-09T11:24:01.577+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.HiveMetaStoreClient.<init>(HiveMetaStoreClient.java:245)
+[2025-12-09T11:24:01.579+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+[2025-12-09T11:24:01.581+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(Unknown Source)
+[2025-12-09T11:24:01.592+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(Unknown Source)
+[2025-12-09T11:24:01.594+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+[2025-12-09T11:24:01.596+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.MetaStoreUtils.newInstance(MetaStoreUtils.java:1740)
+[2025-12-09T11:24:01.597+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.<init>(RetryingMetaStoreClient.java:83)
+[2025-12-09T11:24:01.598+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:133)
+[2025-12-09T11:24:01.598+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:104)
+[2025-12-09T11:24:01.604+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.getProxy(RetryingMetaStoreClient.java:97)
+[2025-12-09T11:24:01.611+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[2025-12-09T11:24:01.613+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.614+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.616+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+[2025-12-09T11:24:01.619+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.common.DynMethods$UnboundMethod.invokeChecked(DynMethods.java:62)
+[2025-12-09T11:24:01.622+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.common.DynMethods$UnboundMethod.invoke(DynMethods.java:74)
+[2025-12-09T11:24:01.628+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.common.DynMethods$StaticMethod.invoke(DynMethods.java:187)
+[2025-12-09T11:24:01.632+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveClientPool.newClient(HiveClientPool.java:63)
+[2025-12-09T11:24:01.633+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveClientPool.newClient(HiveClientPool.java:34)
+[2025-12-09T11:24:01.635+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.ClientPoolImpl.get(ClientPoolImpl.java:143)
+[2025-12-09T11:24:01.637+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.ClientPoolImpl.run(ClientPoolImpl.java:70)
+[2025-12-09T11:24:01.640+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.ClientPoolImpl.run(ClientPoolImpl.java:65)
+[2025-12-09T11:24:01.642+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.CachedClientPool.run(CachedClientPool.java:122)
+[2025-12-09T11:24:01.643+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.hive.HiveTableOperations.doRefresh(HiveTableOperations.java:147)
+[2025-12-09T11:24:01.644+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.BaseMetastoreTableOperations.refresh(BaseMetastoreTableOperations.java:90)
+[2025-12-09T11:24:01.645+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.BaseMetastoreTableOperations.current(BaseMetastoreTableOperations.java:73)
+[2025-12-09T11:24:01.646+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.BaseMetastoreCatalog.loadTable(BaseMetastoreCatalog.java:49)
+[2025-12-09T11:24:01.649+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.BoundedLocalCache.lambda$doComputeIfAbsent$14(BoundedLocalCache.java:2406)
+[2025-12-09T11:24:01.653+0000] {subprocess.py:106} INFO - 	at java.base/java.util.concurrent.ConcurrentHashMap.compute(Unknown Source)
+[2025-12-09T11:24:01.654+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.BoundedLocalCache.doComputeIfAbsent(BoundedLocalCache.java:2404)
+[2025-12-09T11:24:01.655+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.BoundedLocalCache.computeIfAbsent(BoundedLocalCache.java:2387)
+[2025-12-09T11:24:01.658+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.LocalCache.computeIfAbsent(LocalCache.java:108)
+[2025-12-09T11:24:01.677+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.shaded.com.github.benmanes.caffeine.cache.LocalManualCache.get(LocalManualCache.java:62)
+[2025-12-09T11:24:01.680+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.CachingCatalog.loadTable(CachingCatalog.java:167)
+[2025-12-09T11:24:01.681+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.spark.SparkCatalog.load(SparkCatalog.java:845)
+[2025-12-09T11:24:01.682+0000] {subprocess.py:106} INFO - 	at org.apache.iceberg.spark.SparkCatalog.loadTable(SparkCatalog.java:170)
+[2025-12-09T11:24:01.683+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.connector.catalog.TableCatalog.tableExists(TableCatalog.java:185)
+[2025-12-09T11:24:01.685+0000] {subprocess.py:106} INFO - 	at org.apache.spark.sql.internal.CatalogImpl.tableExists(CatalogImpl.scala:524)
+[2025-12-09T11:24:01.686+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[2025-12-09T11:24:01.687+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.688+0000] {subprocess.py:106} INFO - 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+[2025-12-09T11:24:01.692+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+[2025-12-09T11:24:01.695+0000] {subprocess.py:106} INFO - 	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)
+[2025-12-09T11:24:01.700+0000] {subprocess.py:106} INFO - 	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)
+[2025-12-09T11:24:01.701+0000] {subprocess.py:106} INFO - 	at py4j.Gateway.invoke(Gateway.java:282)
+[2025-12-09T11:24:01.702+0000] {subprocess.py:106} INFO - 	at py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)
+[2025-12-09T11:24:01.703+0000] {subprocess.py:106} INFO - 	at py4j.commands.CallCommand.execute(CallCommand.java:79)
+[2025-12-09T11:24:01.705+0000] {subprocess.py:106} INFO - 	at py4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:182)
+[2025-12-09T11:24:01.707+0000] {subprocess.py:106} INFO - 	at py4j.ClientServerConnection.run(ClientServerConnection.java:106)
+[2025-12-09T11:24:01.711+0000] {subprocess.py:106} INFO - 	at java.base/java.lang.Thread.run(Unknown Source)
+[2025-12-09T11:24:01.713+0000] {subprocess.py:106} INFO - Caused by: java.net.UnknownHostException: hive-metastore
+[2025-12-09T11:24:01.715+0000] {subprocess.py:106} INFO - 	at java.base/java.net.AbstractPlainSocketImpl.connect(Unknown Source)
+[2025-12-09T11:24:01.719+0000] {subprocess.py:106} INFO - 	at java.base/java.net.SocksSocketImpl.connect(Unknown Source)
+[2025-12-09T11:24:01.722+0000] {subprocess.py:106} INFO - 	at java.base/java.net.Socket.connect(Unknown Source)
+[2025-12-09T11:24:01.723+0000] {subprocess.py:106} INFO - 	at org.apache.thrift.transport.TSocket.open(TSocket.java:221)
+[2025-12-09T11:24:01.724+0000] {subprocess.py:106} INFO - 	... 51 more
+[2025-12-09T11:24:01.725+0000] {subprocess.py:106} INFO - )
+[2025-12-09T11:24:03.128+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.HiveMetaStoreClient.open(HiveMetaStoreClient.java:527)
+[2025-12-09T11:24:03.130+0000] {subprocess.py:106} INFO - 	at org.apache.hadoop.hive.metastore.HiveMetaStoreClient.<init>(HiveMetaStoreClient.java:245)
+[2025-12-09T11:24:03.132+0000] {subprocess.py:106} INFO - 	... 49 more
+[2025-12-09T11:24:03.133+0000] {subprocess.py:106} INFO - 
+[2025-12-09T11:24:03.134+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO MemoryStore: MemoryStore cleared
+[2025-12-09T11:24:03.135+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO BlockManager: BlockManager stopped
+[2025-12-09T11:24:03.136+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO BlockManagerMaster: BlockManagerMaster stopped
+[2025-12-09T11:24:03.138+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+[2025-12-09T11:24:03.140+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO SparkContext: Successfully stopped SparkContext
+[2025-12-09T11:24:03.143+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO ShutdownHookManager: Shutdown hook called
+[2025-12-09T11:24:03.144+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO ShutdownHookManager: Deleting directory /tmp/spark-524c5da7-50e2-4a97-91e3-afbccd885386
+[2025-12-09T11:24:03.148+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO ShutdownHookManager: Deleting directory /tmp/spark-c98a2120-7747-49d9-84eb-5fe1ba3c5769
+[2025-12-09T11:24:03.150+0000] {subprocess.py:106} INFO - 25/12/09 11:24:00 INFO ShutdownHookManager: Deleting directory /tmp/spark-524c5da7-50e2-4a97-91e3-afbccd885386/pyspark-8f6ab94f-518f-4c21-80ea-c6a0bb89887d
+[2025-12-09T11:24:03.153+0000] {subprocess.py:110} INFO - Command exited with return code 1
+[2025-12-09T11:24:03.378+0000] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-12-09T11:24:03.425+0000] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=crawl_etl_itjob, task_id=clean_silver, run_id=scheduled__2025-12-08T02:00:00+00:00, execution_date=20251208T020000, start_date=20251209T112227, end_date=20251209T112403
+[2025-12-09T11:24:03.645+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2025-12-09T11:24:03.652+0000] {standard_task_runner.py:124} ERROR - Failed to execute job 335 for task clean_silver (Bash command failed. The command returned a non-zero exit code 1.; 160)
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2025-12-09T11:24:03.726+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 1
+[2025-12-09T11:24:03.861+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-12-09T11:24:03.866+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

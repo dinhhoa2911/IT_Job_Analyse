@@ -2,21 +2,17 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 # ===========================================================
-#  System Configuration
+# System Configuration
 # ===========================================================
 HIVE_METASTORE = "thrift://hive-metastore:9083"
 WAREHOUSE_PATH = "hdfs://dinhhoa-master:9000/user/ndh/warehouse"
-
 DATABASE_SILVER = "silver"
 TABLE_SILVER = "it_jobs_clean"
 DATABASE_GOLD = "gold"
 
-# ===========================================================
-#  Create SparkSession with Iceberg + Hive
-# ===========================================================
 spark = (
     SparkSession.builder
-    .appName("Build_Gold_Layer_Star_Schema")
+    .appName("Build_Gold_Layer_Star_Schema_JobCategory")
     .config("hive.metastore.uris", HIVE_METASTORE)
     .enableHiveSupport()
     .config("spark.sql.catalog.hive_catalog", "org.apache.iceberg.spark.SparkCatalog")
@@ -28,221 +24,210 @@ spark = (
 )
 
 # ===========================================================
-#  Ensure Gold Namespace Exists
+#  Prepare Gold Namespace & Cleanup
 # ===========================================================
-spark.sql("CREATE NAMESPACE IF NOT EXISTS hive_catalog.gold")
+spark.sql(f"CREATE NAMESPACE IF NOT EXISTS hive_catalog.{DATABASE_GOLD}")
 
-# ===========================================================
-#  DROP ALL GOLD TABLES (FULL-REFRESH GOLD LAYER)
-# ===========================================================
-print("Dropping existing GOLD tables...")
-
+print(">>> Dropping existing GOLD tables for Full Refresh...")
 gold_tables = [
     "fact_job_posting",
     "dim_skill",
     "dim_location",
     "dim_company",
     "dim_date",
-    "dim_job_category",
-    "dim_work_mode"
+    "dim_work_mode",
+    "dim_job_category" # <--- [CHANGED] Table name changed here
 ]
 
 for tbl in gold_tables:
-    spark.sql(f"DROP TABLE IF EXISTS hive_catalog.gold.{tbl}")
+    spark.sql(f"DROP TABLE IF EXISTS hive_catalog.{DATABASE_GOLD}.{tbl}")
 
-print("All GOLD tables dropped. Rebuilding...")
-
-# ===========================================================
-#  Load Silver Table
-# ===========================================================
+# Read Silver Data
 df_silver = spark.table(f"hive_catalog.{DATABASE_SILVER}.{TABLE_SILVER}")
-print(" Silver record count:", df_silver.count())
+print(f">>> Loaded Silver Data: {df_silver.count()} records.")
 
 # ===========================================================
-#   DIM_SKILL  (UPPERCASE skill_name, ID ổn định bằng hash)
+#  Build Dimensions
 # ===========================================================
-df_skill = (
+
+# ---  DIM_SKILL ---
+# Logic: Explode skills array -> Distinct -> Hash ID
+df_dim_skill = (
     df_silver
-    .select(F.explode("skills_required").alias("skill"))
-    .filter(F.col("skill").isNotNull() & (F.col("skill") != ""))
-    .dropDuplicates(["skill"])
-    .withColumn("skill_name", F.upper(F.col("skill")))
-    .withColumn("skill_id", F.abs(F.xxhash64("skill_name")).cast("bigint"))  # stable ID
+    .select(F.explode("skills_required").alias("skill_name"))
+    .filter(F.col("skill_name").isNotNull() & (F.col("skill_name") != ""))
+    .dropDuplicates(["skill_name"])
+    .withColumn("skill_id", F.abs(F.xxhash64("skill_name")).cast("bigint"))
+    # Basic skill grouping (Optional)
     .withColumn(
         "skill_group",
-        F.when(F.col("skill_name").rlike("PYTHON|DATA|SPARK|SQL"), "Data/Backend")
-         .when(F.col("skill_name").rlike("AWS|DEVOPS|DOCKER|KUBERNETES"), "DevOps/Cloud")
-         .when(F.col("skill_name").rlike("REACT|ANGULAR|FRONTEND|VUE"), "Frontend")
+        F.when(F.col("skill_name").rlike("(?i)PYTHON|JAVA|NET|PHP|GO|NODE|RUBY"), "Backend")
+         .when(F.col("skill_name").rlike("(?i)REACT|VUE|ANGULAR|JS|HTML|CSS"), "Frontend")
+         .when(F.col("skill_name").rlike("(?i)SQL|DATA|SPARK|HADOOP|KAFKA|AWS|AZURE"), "Data & Cloud")
          .otherwise("Other")
     )
     .select("skill_id", "skill_name", "skill_group")
 )
+df_dim_skill.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_skill").using("iceberg").create()
+print(">>> DIM_SKILL created.")
 
-df_skill.writeTo("hive_catalog.gold.dim_skill").using("iceberg").create()
-
-# ===========================================================
-#   DIM_LOCATION  (rename location → city, ID ổn định bằng hash)
-# ===========================================================
-df_location = (
+# ---  DIM_LOCATION ---
+# Logic: Silver Location is an Array -> Explode -> Distinct -> Hash ID
+df_dim_location = (
     df_silver
-    .select(F.col("location").alias("city"))
-    .filter(F.col("city").isNotNull())
-    .dropDuplicates(["city"])
-    .withColumn("location_id", F.abs(F.xxhash64("city")).cast("bigint"))
+    .select(F.explode("location").alias("city_name"))
+    .filter(F.col("city_name").isNotNull())
+    .dropDuplicates(["city_name"])
+    .withColumn("location_id", F.abs(F.xxhash64("city_name")).cast("bigint"))
     .withColumn(
         "region",
-        F.when(F.col("city") == "Ha Noi", "Bắc")
-         .when(F.col("city") == "Da Nang", "Trung")
-         .when(F.col("city") == "Ho Chi Minh", "Nam")
-         .otherwise("Khác")
+        F.when(F.col("city_name").isin("Ha Noi", "Bac Ninh", "Hung Yen"), "North")
+         .when(F.col("city_name").isin("Da Nang", "Hue", "Nghe An"), "Central")
+         .when(F.col("city_name").isin("Ho Chi Minh", "Binh Duong", "Can Tho"), "South")
+         .otherwise("Other")
     )
-    .withColumn("country", F.lit("Vietnam"))
-    .select("location_id", "city", "region", "country")
+    .select("location_id", "city_name", "region")
 )
+df_dim_location.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_location").using("iceberg").create()
+print(">>> DIM_LOCATION created.")
 
-df_location.writeTo("hive_catalog.gold.dim_location").using("iceberg").create()
-
-# ===========================================================
-#   DIM_COMPANY (ID hash theo company_name)
-# ===========================================================
-df_company = (
+# ---  DIM_COMPANY ---
+df_dim_company = (
     df_silver
     .select("company_name")
     .filter(F.col("company_name").isNotNull())
     .dropDuplicates(["company_name"])
     .withColumn("company_id", F.abs(F.xxhash64("company_name")).cast("bigint"))
-    .withColumn("industry", F.lit(None).cast("string"))
-    .select("company_id", "company_name", "industry")
+    .select("company_id", "company_name")
 )
+df_dim_company.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_company").using("iceberg").create()
+print(">>> DIM_COMPANY created.")
 
-df_company.writeTo("hive_catalog.gold.dim_company").using("iceberg").create()
+# ---  DIM_WORK_MODE ---
+df_dim_work_mode = (
+    df_silver
+    .select("work_mode")
+    .filter(F.col("work_mode").isNotNull())
+    .dropDuplicates(["work_mode"])
+    .withColumn("mode_id", F.abs(F.xxhash64("work_mode")).cast("bigint"))
+    .select("mode_id", "work_mode")
+)
+df_dim_work_mode.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_work_mode").using("iceberg").create()
+print(">>> DIM_WORK_MODE created.")
 
-# ===========================================================
-#   DIM_DATE
-# ===========================================================
-df_date = (
+#   DIM_DATE 
+df_dim_date = (
     df_silver
     .select("date_posted")
-    .dropna()
+    .filter(F.col("date_posted").isNotNull())
+    .dropDuplicates(["date_posted"])
     .withColumn("date_id", F.date_format("date_posted", "yyyyMMdd").cast("int"))
+    .withColumn("full_date", F.col("date_posted"))
     .withColumn("day", F.dayofmonth("date_posted"))
     .withColumn("month", F.month("date_posted"))
-    .withColumn("quarter", F.quarter("date_posted"))
     .withColumn("year", F.year("date_posted"))
-    .withColumn("month_name", F.date_format("date_posted", "MMMM"))
+    .withColumn("quarter", F.quarter("date_posted"))
     .withColumn("day_of_week", F.date_format("date_posted", "EEEE"))
-    .dropDuplicates(["date_id"])
-    .select("date_id", "date_posted", "day", "month", "quarter", "year", "month_name", "day_of_week")
+    .select("date_id", "date_posted", "day", "month", "year", "quarter", "day_of_week")
 )
+df_dim_date.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_date").using("iceberg").create()
+print(">>> DIM_DATE created.")
 
-df_date.writeTo("hive_catalog.gold.dim_date").using("iceberg").create()
-
-# ===========================================================
-#   DIM_JOB_CATEGORY (chuẩn hóa từ job_category)
-# ===========================================================
-df_category = (
+# ---  DIM_JOB_CATEGORY () ---
+df_dim_category = (
     df_silver
-    .select("job_category")
-    .dropna()
-    .withColumn("category_raw", F.trim(F.col("job_category")))
-    .withColumn("category_name", F.initcap("category_raw"))
+    .select("job_title")
+    .distinct()
+    .withColumn("title_lower", F.lower(F.col("job_title")))
     .withColumn(
-        "category_group",
-        F.when(F.col("category_name").rlike("Data|Analytics|BI"), "Data & Analytics")
-         .when(F.col("category_name").rlike("Backend|Frontend|Fullstack|Software|Engineer"), "Software Engineering")
-         .when(F.col("category_name").rlike("DevOps|Cloud|SRE|SysOps"), "DevOps / Cloud / Infra")
-         .when(F.col("category_name").rlike("AI|Machine Learning|Computer Vision|Deep Learning"), "AI & ML")
-         .when(F.col("category_name").rlike("Security|Pentest|Cyber"), "Security")
-         .when(F.col("category_name").rlike("Manager|Director|C-level|Lead"), "Management")
-         .when(F.col("category_name").rlike("Tester|QA"), "QA / Testing")
+        "category_name",
+        F.when(F.col("title_lower").rlike("data|analytics|bi |ai |machine learning"), "Data & AI")
+         .when(F.col("title_lower").rlike("tester|qa|qc|test"), "Testing & QA")
+         .when(F.col("title_lower").rlike("devops|cloud|sre|system"), "DevOps & Infra")
+         .when(F.col("title_lower").rlike("frontend|mobile|android|ios|react|vue"), "Frontend & Mobile")
+         .when(F.col("title_lower").rlike("backend|java|net|php|golang|python|ruby"), "Backend")
+         .when(F.col("title_lower").rlike("fullstack|software engineer|developer"), "Software Engineering")
+         .when(F.col("title_lower").rlike("manager|lead|head|director|cto"), "Management")
+         .when(F.col("title_lower").rlike("ba |business analyst|product owner|product manager"), "Product & BA")
          .otherwise("Other")
     )
+    .select("category_name")
     .dropDuplicates(["category_name"])
     .withColumn("category_id", F.abs(F.xxhash64("category_name")).cast("bigint"))
-    .select("category_id", "category_name", "category_group")
 )
-
-df_category.writeTo("hive_catalog.gold.dim_job_category").using("iceberg").create()
-
-# ===========================================================
-#   DIM_WORK_MODE (nếu có)
-# ===========================================================
-has_work_mode = "work_mode" in df_silver.columns
-
-if has_work_mode:
-    df_workmode = (
-        df_silver
-        .select("work_mode")
-        .dropna()
-        .dropDuplicates(["work_mode"])
-        .withColumn("mode_id", F.abs(F.xxhash64("work_mode")).cast("bigint"))
-        .select("mode_id", "work_mode")
-    )
-
-    df_workmode.writeTo("hive_catalog.gold.dim_work_mode").using("iceberg").create()
-else:
-    print("  No 'work_mode' column found, skipping dim_work_mode")
+#  Write to dim_job_category table
+df_dim_category.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_job_category").using("iceberg").create()
+print(">>> DIM_JOB_CATEGORY created.")
 
 # ===========================================================
-#   FACT_JOB_POSTING
-#   - Join với tất cả dimension
-#   - Thêm snapshot_date
-#   - Partition theo date_id
+# 4. Build Fact Table (FACT_JOB_POSTING)
 # ===========================================================
-# Base: explode skill
+print(">>> Building FACT Table...")
+
+#  Prepare base data (Explode Location and Skill)
 df_fact_base = (
     df_silver
-    .withColumn("skill", F.explode("skills_required"))
-    .withColumn("skill", F.upper("skill"))
-)
-
-# Nếu có work_mode thì join luôn với dim_work_mode, lấy mode_id
-if has_work_mode:
-    df_fact_base = df_fact_base.join(df_workmode, "work_mode", "left")
-else:
-    df_fact_base = df_fact_base.withColumn("mode_id", F.lit(None).cast("bigint"))
-
-df_fact = (
-    df_fact_base
-    .join(df_skill, df_fact_base.skill == df_skill.skill_name, "left")
-    .join(df_location, df_fact_base.location == df_location.city, "left")
-    .join(df_company, "company_name", "left")
-    .join(df_date, "date_posted", "left")
-    .join(
-        df_category,
-        F.initcap(F.trim(df_fact_base.job_category)) == df_category.category_name,
-        "left"
-    )
-    .withColumn("snapshot_date", F.col("date_id"))  # metadata: ngày snapshot = ngày đăng
+    .withColumn("loc_single", F.explode("location"))
+    .withColumn("skill_single", F.explode("skills_required"))
+    
+    # Recalculate category (derived_category) to join with Dim
+    .withColumn("title_lower", F.lower(F.col("job_title")))
     .withColumn(
-        "fact_id",
-        F.abs(F.xxhash64("job_link", "skill_id", "location_id")).cast("bigint")
+        "derived_category",
+        F.when(F.col("title_lower").rlike("data|analytics|bi |ai |machine learning"), "Data & AI")
+         .when(F.col("title_lower").rlike("tester|qa|qc|test"), "Testing & QA")
+         .when(F.col("title_lower").rlike("devops|cloud|sre|system"), "DevOps & Infra")
+         .when(F.col("title_lower").rlike("frontend|mobile|android|ios|react|vue"), "Frontend & Mobile")
+         .when(F.col("title_lower").rlike("backend|java|net|php|golang|python|ruby"), "Backend")
+         .when(F.col("title_lower").rlike("fullstack|software engineer|developer"), "Software Engineering")
+         .when(F.col("title_lower").rlike("manager|lead|head|director|cto"), "Management")
+         .when(F.col("title_lower").rlike("ba |business analyst|product owner|product manager"), "Product & BA")
+         .otherwise("Other")
     )
-    .select(
-        "fact_id",
-        "job_title",
-        "company_id",
-        "skill_id",
-        "location_id",
-        "category_id",
-        "mode_id",
-        "date_id",
-        "snapshot_date",
-        "job_link",
-        F.lit(1).alias("post_count"),
-        "clean_time"
-    )
-    .dropDuplicates(["fact_id"])
 )
 
+#  Join with Dimensions
+df_fact = (
+    df_fact_base.alias("f")
+    .join(df_dim_company.alias("c"), F.col("f.company_name") == F.col("c.company_name"), "left")
+    .join(df_dim_location.alias("l"), F.col("f.loc_single") == F.col("l.city_name"), "left")
+    .join(df_dim_skill.alias("s"), F.col("f.skill_single") == F.col("s.skill_name"), "left")
+    .join(df_dim_work_mode.alias("w"), F.col("f.work_mode") == F.col("w.work_mode"), "left")
+    # [CHANGED] Join logic keeps df_dim_category variable (created above)
+    .join(df_dim_category.alias("cat"), F.col("f.derived_category") == F.col("cat.category_name"), "left")
+    
+    # Date ID
+    .withColumn("date_id", F.date_format("f.date_posted", "yyyyMMdd").cast("int"))
+)
+
+# Select ID columns and Measures
+df_fact_final = (
+    df_fact
+    .select(
+        F.col("f.job_link"),
+        F.col("f.job_title"),
+        F.col("c.company_id"),
+        F.col("l.location_id"),
+        F.col("s.skill_id"),
+        F.col("w.mode_id"),
+        F.col("cat.category_id"),
+        F.col("date_id"),
+        F.lit(1).alias("one_posting")
+    )
+    .withColumn(
+        "fact_id", 
+        F.abs(F.xxhash64("job_link", "location_id", "skill_id")).cast("bigint")
+    )
+)
+
+# Write Fact Table
 (
-    df_fact.writeTo("hive_catalog.gold.fact_job_posting")
+    df_fact_final.writeTo(f"hive_catalog.{DATABASE_GOLD}.fact_job_posting")
     .using("iceberg")
-    .partitionedBy("date_id")   # nếu lỗi, có thể đổi thành: .partitionedBy(F.col("date_id"))
+    .partitionedBy("date_id")
     .create()
 )
 
-print(" Gold layer successfully built!")
-print(f" Fact record count: {df_fact.count()}")
+print(f">>> GOLD Layer Built Successfully. Fact records: {df_fact_final.count()}")
 
 spark.stop()
