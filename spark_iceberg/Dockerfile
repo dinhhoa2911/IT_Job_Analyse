@@ -17,20 +17,29 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
     && apt-get install -y ./google-chrome-stable_current_amd64.deb \
     && rm google-chrome-stable_current_amd64.deb
 
-#  Setup thư mục HOME và thư mục chứa Models
+# Setup thư mục HOME và thư mục chứa Models
 RUN mkdir -p /home/spark && \
     mkdir -p /opt/spark/models && \
     mkdir -p /opt/spark/jars-extra
 
-#  Download Jars (Iceberg, Postgres)
+# --- CẬP NHẬT PHẦN NÀY ---
+# Download Jars cho Iceberg, Postgres và AWS S3 (Quan trọng cho MinIO)
+# Spark 3.5.3 sử dụng Hadoop 3.3.4, nên ta cần hadoop-aws 3.3.4 và aws-java-sdk-bundle tương thích (1.12.x)
+
 RUN wget -q -O /opt/spark/jars-extra/iceberg-spark-runtime-3.5_2.12-1.6.1.jar \
     https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.6.1/iceberg-spark-runtime-3.5_2.12-1.6.1.jar
 
 RUN wget -q -O /opt/spark/jars-extra/postgresql.jar \
     https://jdbc.postgresql.org/download/postgresql-42.6.0.jar
 
-RUN cp /opt/spark/jars-extra/*.jar $SPARK_HOME/jars/
+# Thêm JARs để Spark nói chuyện với MinIO
+RUN wget -q -O /opt/spark/jars-extra/hadoop-aws-3.3.4.jar \
+    https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar
 
+RUN wget -q -O /opt/spark/jars-extra/aws-java-sdk-bundle-1.12.262.jar \
+    https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+
+RUN cp /opt/spark/jars-extra/*.jar $SPARK_HOME/jars/
 #  Cài đặt Python Libraries ()
 RUN pip install --no-cache-dir \
     pandas \
@@ -43,7 +52,9 @@ RUN pip install --no-cache-dir \
     matplotlib \
     joblib \
     prophet \
-    openpyxl
+    openpyxl \
+    pymilvus \
+    sentence-transformers
 
 #  Cấu hình Permissions & Environment
 ENV PATH="$SPARK_HOME/bin:$PATH"

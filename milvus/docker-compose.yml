@@ -1,0 +1,60 @@
+version: '3.5'
+
+services:
+  # --- 1. ETCD (Vẫn cần riêng cho Milvus) ---
+  milvus-etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.0
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ./volumes/etcd:/etcd
+    command: etcd -advertise-client-urls=http://milvus-etcd:2379 -listen-client-urls=http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - system_network
+
+  # --- 2. Milvus Standalone (Kết nối vào MinIO cũ) ---
+  milvus-standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.3.21
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      
+      # --- CẤU HÌNH DÙNG CHUNG MINIO CŨ ---
+      MINIO_ADDRESS: minio:9000  # Trỏ về container 'minio' cũ của bạn
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY_ID: minioadmin
+      MINIO_SECRET_ACCESS_KEY: minioadmin
+      MINIO_BUCKET_NAME: milvus-bucket # Milvus sẽ dùng bucket riêng này
+      
+    volumes:
+      - ./volumes/milvus:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "milvus-etcd"
+      # Không cần depends_on milvus-minio nữa
+    networks:
+      - system_network
+
+  # --- 3. Attu Management UI ---
+  attu:
+    container_name: attu
+    image: zilliz/attu:v2.2.8
+    environment:
+      MILVUS_URL: milvus-standalone:19530
+    ports:
+      - "8005:3000"
+    depends_on:
+      - "milvus-standalone"
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true

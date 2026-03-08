@@ -2,33 +2,53 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 # ===========================================================
-# System Configuration
+# 1. Cấu hình hệ thống (MinIO & Iceberg)
 # ===========================================================
+MINIO_ENDPOINT = "http://minio:9000"
+MINIO_ACCESS_KEY = "minioadmin"
+MINIO_SECRET_KEY = "minioadmin"
+
+# Đường dẫn Warehouse trên S3
+WAREHOUSE_PATH = "s3a://warehouse/iceberg_data"
 HIVE_METASTORE = "thrift://hive-metastore:9083"
-WAREHOUSE_PATH = "hdfs://dinhhoa-master:9000/user/ndh/warehouse"
+
+# Tên Catalog thống nhất với các bước trước
+CATALOG_NAME = "iceberg" 
+
 DATABASE_SILVER = "silver"
 TABLE_SILVER = "it_jobs_clean"
 DATABASE_GOLD = "gold"
 
 spark = (
     SparkSession.builder
-    .appName("Build_Gold_Layer_Star_Schema_JobCategory")
+    .appName("Build_Gold_Layer_Star_Schema")
+    # --- Cấu hình MinIO (S3) ---
+    .config("spark.hadoop.fs.s3a.endpoint", MINIO_ENDPOINT)
+    .config("spark.hadoop.fs.s3a.access.key", MINIO_ACCESS_KEY)
+    .config("spark.hadoop.fs.s3a.secret.key", MINIO_SECRET_KEY)
+    .config("spark.hadoop.fs.s3a.path.style.access", "true")
+    .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+    .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+    
+    # --- Cấu hình Iceberg & Hive Metastore ---
     .config("hive.metastore.uris", HIVE_METASTORE)
     .enableHiveSupport()
-    .config("spark.sql.catalog.hive_catalog", "org.apache.iceberg.spark.SparkCatalog")
-    .config("spark.sql.catalog.hive_catalog.type", "hive")
-    .config("spark.sql.catalog.hive_catalog.uri", HIVE_METASTORE)
-    .config("spark.sql.catalog.hive_catalog.warehouse", WAREHOUSE_PATH)
+    .config(f"spark.sql.catalog.{CATALOG_NAME}", "org.apache.iceberg.spark.SparkCatalog")
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.type", "hive")
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.uri", HIVE_METASTORE)
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.warehouse", WAREHOUSE_PATH)
     .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
     .getOrCreate()
 )
 
 # ===========================================================
-#  Prepare Gold Namespace & Cleanup
+# 2. Chuẩn bị Gold Namespace & Cleanup (Full Refresh)
 # ===========================================================
-spark.sql(f"CREATE NAMESPACE IF NOT EXISTS hive_catalog.{DATABASE_GOLD}")
+# Tạo Database Gold nếu chưa có
+spark.sql(f"CREATE DATABASE IF NOT EXISTS {CATALOG_NAME}.{DATABASE_GOLD}")
 
 print(">>> Dropping existing GOLD tables for Full Refresh...")
+# Thứ tự drop quan trọng: Drop Fact trước -> Drop Dim sau
 gold_tables = [
     "fact_job_posting",
     "dim_skill",
@@ -36,29 +56,34 @@ gold_tables = [
     "dim_company",
     "dim_date",
     "dim_work_mode",
-    "dim_job_category" # <--- [CHANGED] Table name changed here
+    "dim_job_category"
 ]
 
 for tbl in gold_tables:
-    spark.sql(f"DROP TABLE IF EXISTS hive_catalog.{DATABASE_GOLD}.{tbl}")
+    spark.sql(f"DROP TABLE IF EXISTS {CATALOG_NAME}.{DATABASE_GOLD}.{tbl}")
 
-# Read Silver Data
-df_silver = spark.table(f"hive_catalog.{DATABASE_SILVER}.{TABLE_SILVER}")
-print(f">>> Loaded Silver Data: {df_silver.count()} records.")
+# Đọc dữ liệu từ Silver
+print(f">>> Reading Silver Data from {CATALOG_NAME}.{DATABASE_SILVER}.{TABLE_SILVER}...")
+try:
+    df_silver = spark.table(f"{CATALOG_NAME}.{DATABASE_SILVER}.{TABLE_SILVER}")
+    print(f">>> Loaded Silver Data: {df_silver.count()} records.")
+except Exception as e:
+    print(f"ERROR: Could not read Silver table. Ensure Clean_Silver.py ran successfully. Error: {e}")
+    spark.stop()
+    exit(1)
 
 # ===========================================================
-#  Build Dimensions
+# 3. Build Dimensions
 # ===========================================================
 
-# ---  DIM_SKILL ---
-# Logic: Explode skills array -> Distinct -> Hash ID
+# --- A. DIM_SKILL ---
+print(">>> Building DIM_SKILL...")
 df_dim_skill = (
     df_silver
     .select(F.explode("skills_required").alias("skill_name"))
     .filter(F.col("skill_name").isNotNull() & (F.col("skill_name") != ""))
     .dropDuplicates(["skill_name"])
     .withColumn("skill_id", F.abs(F.xxhash64("skill_name")).cast("bigint"))
-    # Basic skill grouping (Optional)
     .withColumn(
         "skill_group",
         F.when(F.col("skill_name").rlike("(?i)PYTHON|JAVA|NET|PHP|GO|NODE|RUBY"), "Backend")
@@ -68,11 +93,10 @@ df_dim_skill = (
     )
     .select("skill_id", "skill_name", "skill_group")
 )
-df_dim_skill.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_skill").using("iceberg").create()
-print(">>> DIM_SKILL created.")
+df_dim_skill.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.dim_skill").using("iceberg").create()
 
-# ---  DIM_LOCATION ---
-# Logic: Silver Location is an Array -> Explode -> Distinct -> Hash ID
+# --- B. DIM_LOCATION ---
+print(">>> Building DIM_LOCATION...")
 df_dim_location = (
     df_silver
     .select(F.explode("location").alias("city_name"))
@@ -88,10 +112,10 @@ df_dim_location = (
     )
     .select("location_id", "city_name", "region")
 )
-df_dim_location.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_location").using("iceberg").create()
-print(">>> DIM_LOCATION created.")
+df_dim_location.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.dim_location").using("iceberg").create()
 
-# ---  DIM_COMPANY ---
+# --- C. DIM_COMPANY ---
+print(">>> Building DIM_COMPANY...")
 df_dim_company = (
     df_silver
     .select("company_name")
@@ -100,10 +124,10 @@ df_dim_company = (
     .withColumn("company_id", F.abs(F.xxhash64("company_name")).cast("bigint"))
     .select("company_id", "company_name")
 )
-df_dim_company.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_company").using("iceberg").create()
-print(">>> DIM_COMPANY created.")
+df_dim_company.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.dim_company").using("iceberg").create()
 
-# ---  DIM_WORK_MODE ---
+# --- D. DIM_WORK_MODE ---
+print(">>> Building DIM_WORK_MODE...")
 df_dim_work_mode = (
     df_silver
     .select("work_mode")
@@ -112,10 +136,10 @@ df_dim_work_mode = (
     .withColumn("mode_id", F.abs(F.xxhash64("work_mode")).cast("bigint"))
     .select("mode_id", "work_mode")
 )
-df_dim_work_mode.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_work_mode").using("iceberg").create()
-print(">>> DIM_WORK_MODE created.")
+df_dim_work_mode.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.dim_work_mode").using("iceberg").create()
 
-#   DIM_DATE 
+# --- E. DIM_DATE ---
+print(">>> Building DIM_DATE...")
 df_dim_date = (
     df_silver
     .select("date_posted")
@@ -128,12 +152,12 @@ df_dim_date = (
     .withColumn("year", F.year("date_posted"))
     .withColumn("quarter", F.quarter("date_posted"))
     .withColumn("day_of_week", F.date_format("date_posted", "EEEE"))
-    .select("date_id", "date_posted", "day", "month", "year", "quarter", "day_of_week")
+    .select("date_id", "full_date", "day", "month", "year", "quarter", "day_of_week")
 )
-df_dim_date.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_date").using("iceberg").create()
-print(">>> DIM_DATE created.")
+df_dim_date.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.dim_date").using("iceberg").create()
 
-# ---  DIM_JOB_CATEGORY () ---
+# --- F. DIM_JOB_CATEGORY ---
+print(">>> Building DIM_JOB_CATEGORY...")
 df_dim_category = (
     df_silver
     .select("job_title")
@@ -155,22 +179,21 @@ df_dim_category = (
     .dropDuplicates(["category_name"])
     .withColumn("category_id", F.abs(F.xxhash64("category_name")).cast("bigint"))
 )
-#  Write to dim_job_category table
-df_dim_category.writeTo(f"hive_catalog.{DATABASE_GOLD}.dim_job_category").using("iceberg").create()
-print(">>> DIM_JOB_CATEGORY created.")
+df_dim_category.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.dim_job_category").using("iceberg").create()
 
 # ===========================================================
 # 4. Build Fact Table (FACT_JOB_POSTING)
 # ===========================================================
-print(">>> Building FACT Table...")
+print(">>> Building FACT_JOB_POSTING...")
 
-#  Prepare base data (Explode Location and Skill)
+# 1. Chuẩn bị base data (Explode để nhân dòng theo Location và Skill)
+# Lưu ý: Một Job có 3 skill và 2 location sẽ sinh ra 3*2 = 6 dòng Fact
 df_fact_base = (
     df_silver
     .withColumn("loc_single", F.explode("location"))
     .withColumn("skill_single", F.explode("skills_required"))
     
-    # Recalculate category (derived_category) to join with Dim
+    # Tính toán lại category tạm thời để join
     .withColumn("title_lower", F.lower(F.col("job_title")))
     .withColumn(
         "derived_category",
@@ -186,21 +209,20 @@ df_fact_base = (
     )
 )
 
-#  Join with Dimensions
+# 2. Join với Dimensions để lấy ID
 df_fact = (
     df_fact_base.alias("f")
     .join(df_dim_company.alias("c"), F.col("f.company_name") == F.col("c.company_name"), "left")
     .join(df_dim_location.alias("l"), F.col("f.loc_single") == F.col("l.city_name"), "left")
     .join(df_dim_skill.alias("s"), F.col("f.skill_single") == F.col("s.skill_name"), "left")
     .join(df_dim_work_mode.alias("w"), F.col("f.work_mode") == F.col("w.work_mode"), "left")
-    # [CHANGED] Join logic keeps df_dim_category variable (created above)
     .join(df_dim_category.alias("cat"), F.col("f.derived_category") == F.col("cat.category_name"), "left")
     
-    # Date ID
+    # Tạo Date ID
     .withColumn("date_id", F.date_format("f.date_posted", "yyyyMMdd").cast("int"))
 )
 
-# Select ID columns and Measures
+# 3. Chọn cột ID và Metrics
 df_fact_final = (
     df_fact
     .select(
@@ -212,17 +234,18 @@ df_fact_final = (
         F.col("w.mode_id"),
         F.col("cat.category_id"),
         F.col("date_id"),
-        F.lit(1).alias("one_posting")
+        F.lit(1).alias("one_posting") # Metric đếm số lượng
     )
+    # Tạo Fact ID duy nhất cho mỗi dòng
     .withColumn(
         "fact_id", 
         F.abs(F.xxhash64("job_link", "location_id", "skill_id")).cast("bigint")
     )
 )
 
-# Write Fact Table
+# 4. Ghi Fact Table (Partition theo ngày để tối ưu truy vấn)
 (
-    df_fact_final.writeTo(f"hive_catalog.{DATABASE_GOLD}.fact_job_posting")
+    df_fact_final.writeTo(f"{CATALOG_NAME}.{DATABASE_GOLD}.fact_job_posting")
     .using("iceberg")
     .partitionedBy("date_id")
     .create()
