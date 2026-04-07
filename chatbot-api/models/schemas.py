@@ -5,10 +5,10 @@ from pydantic import BaseModel, Field
 
 
 class QueryType(str, Enum):
-    search_job   = "search_job"    # Tìm job cụ thể → Milvus hybrid search 
-    analytics    = "analytics"     # Thống kê thị trường → Trino SQL
-    career_advice = "career_advice" # Tư vấn nghề nghiệp IT → Claude (domain-restricted)
-    out_of_scope = "out_of_scope"  # Ngoài phạm vi → từ chối, không gọi LLM
+    search_job   = "search_job"
+    analytics    = "analytics" 
+    career_advice = "career_advice"
+    out_of_scope = "out_of_scope"  
 
 
 class ChatRequest(BaseModel):
