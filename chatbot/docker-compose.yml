@@ -1,0 +1,57 @@
+version: "3.8"
+
+# ---------------------------------------------------------------------------
+# Chatbot stack — chatbot-api (FastAPI) + chatbot-ui (React)
+#
+# Prerequisites:
+#   1. The shared `system_network` must already exist:
+#        docker network create system_network
+#   2. Milvus, Trino, and the rest of the data stack must be running.
+#   3. Copy chatbot-api/.env.example → chatbot-api/.env and set ANTHROPIC_API_KEY.
+# ---------------------------------------------------------------------------
+
+services:
+  # --------------------------------------------------------------------------
+  # Backend: FastAPI RAG API
+  # --------------------------------------------------------------------------
+  chatbot-api:
+    build:
+      context: ../chatbot-api
+      dockerfile: Dockerfile
+    container_name: chatbot-api
+    restart: unless-stopped
+    env_file:
+      - ../chatbot-api/.env
+    ports:
+      - "8100:8100"
+    networks:
+      - system_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s   # allow time for model download on first start
+
+  # --------------------------------------------------------------------------
+  # Frontend: React (development server)
+  # --------------------------------------------------------------------------
+  chatbot-ui:
+    image: node:20-slim
+    container_name: chatbot-ui
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ../frontend-chatbot-main:/app
+      - /app/node_modules          # anonymous volume to isolate node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8100
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm start"
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true

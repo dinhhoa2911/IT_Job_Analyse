@@ -52,9 +52,8 @@ RUN pip install --no-cache-dir \
     matplotlib \
     joblib \
     prophet \
-    openpyxl \
-    pymilvus \
-    sentence-transformers
+    openpyxl 
+
 
 #  Cấu hình Permissions & Environment
 ENV PATH="$SPARK_HOME/bin:$PATH"

@@ -38,6 +38,7 @@ services:
       - "9083:9083"
     volumes:
       - ./hive-config/hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./hive-config/core-site.xml:/etc/hadoop/conf/core-site.xml
     # --- SỬA PHẦN NÀY: Đợi Postgres "Healthy" rồi mới chạy ---
     depends_on:
       postgres-metastore:

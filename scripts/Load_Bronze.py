@@ -72,7 +72,7 @@ df_bronze_new = (
     .withColumn("source", F.lit("ITviec"))
     # Ép kiểu date_only về DateType chuẩn để Iceberg tối ưu Partition (nếu cần sau này)
     # Giả sử format trong CSV là YYYY-MM-DD
-    .withColumn("date_only", F.to_date(F.col("date_only"), "yyyy-MM-dd"))
+    .withColumn("date_only", F.to_date(F.col("date_posted"), "yyyy-MM-dd"))
 )
 
 # ===========================================================
