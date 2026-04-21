@@ -69,9 +69,7 @@ def _tokenize(text: str) -> list[str]:
 _Doc = dict  # keys: job_id, job_title, job_link, text_content + score fields
 
 
-# ---------------------------------------------------------------------------
 # HybridSearchService
-# ---------------------------------------------------------------------------
 
 class HybridSearchService:
     """
@@ -93,9 +91,7 @@ class HybridSearchService:
         self._corpus: list[_Doc] | None = None
         self._bm25: BM25Okapi | None = None
 
-    # ------------------------------------------------------------------
     # Lazy loaders
-    # ------------------------------------------------------------------
 
     def _get_encoder(self) -> SentenceTransformer:
         """Dense embedding model (must match Vectorize_To_Milvus.py)."""
@@ -157,9 +153,7 @@ class HybridSearchService:
 
         return self._corpus, self._bm25
 
-    # ------------------------------------------------------------------
     # Step 1 — Dense retrieval
-    # ------------------------------------------------------------------
 
     def _dense_search(self, query: str, k: int) -> list[_Doc]:
         """
@@ -199,10 +193,7 @@ class HybridSearchService:
 
         logger.info("Dense search → %d candidates.", len(results))
         return results
-
-    # ------------------------------------------------------------------
     # Step 2 — Sparse retrieval (BM25)
-    # ------------------------------------------------------------------
 
     def _sparse_search(self, query: str, k: int) -> list[_Doc]:
         """
@@ -232,10 +223,7 @@ class HybridSearchService:
 
         logger.info("Sparse (BM25) search → %d candidates.", len(results))
         return results
-
-    # ------------------------------------------------------------------
     # Step 3 — Reciprocal Rank Fusion
-    # ------------------------------------------------------------------
 
     def _rrf_fusion(
         self,
@@ -281,10 +269,7 @@ class HybridSearchService:
             len(dense), len(sparse), len(fused),
         )
         return fused
-
-    # ------------------------------------------------------------------
     # Step 4 — Cross-Encoder Rerank
-    # ------------------------------------------------------------------
 
     def _rerank(self, query: str, candidates: list[_Doc], top_k: int) -> list[_Doc]:
         """

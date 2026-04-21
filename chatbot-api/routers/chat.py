@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from models.schemas import ChatRequest, ChatResponse
+from services.conversation_store import add_turn, get_history
 from services.rag_pipeline import RAGPipeline
 
 logger = logging.getLogger(__name__)
@@ -32,16 +33,27 @@ def chat(request: ChatRequest) -> ChatResponse:
 
     - **message**: Natural-language question or search query (max 2000 chars).
     - **session_id**: Client-generated session identifier (used for logging).
+    - **conversation_id**: Client-generated conversation identifier for multi-turn memory.
     """
-    logger.info("[session=%s] message=%r", request.session_id, request.message[:80])
+    logger.info(
+        "[conv=%s session=%s] message=%r",
+        request.conversation_id or "none",
+        request.session_id,
+        request.message[:80],
+    )
+
+    history = get_history(request.conversation_id) if request.conversation_id else []
 
     try:
-        response = _pipeline.run(request)
+        response = _pipeline.run(request, history=history)
     except Exception as exc:
         logger.error("Unhandled pipeline error: %s", exc, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An internal error occurred. Please try again.",
         ) from exc
+
+    if request.conversation_id:
+        add_turn(request.conversation_id, request.message, response.answer)
 
     return response

@@ -1,42 +1,119 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BsLayoutSidebar } from "react-icons/bs";
 import { CiSearch } from "react-icons/ci";
 import { FiEdit } from "react-icons/fi";
 import { IoMdImages } from "react-icons/io";
 import "./App.css";
 import ChatArea from "./components/ChatArea";
+import LoginModal from "./components/LoginModal";
 import MessageInput from "./components/MessageInput";
+import SettingsModal from "./components/SettingsModal";
 import Sidebar from "./components/Sidebar";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8100";
+const STORAGE_KEY = "it_job_conversations";
 
-function generateSessionId() {
-  return `session_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+function generateConvId() {
+  return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function makeNewConversation() {
+  return { id: generateConvId(), title: "New Conversation", messages: [], active: true, starred: false };
+}
+
+function loadConversations() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return [makeNewConversation()];
+}
+
+function saveConversations(conversations) {
+  try {
+    // Strip large job/chart data before persisting to keep localStorage lean
+    const slim = conversations.map((c) => ({
+      ...c,
+      messages: c.messages.map((m) => ({
+        id: m.id,
+        text: m.text,
+        sender: m.sender,
+        timestamp: m.timestamp,
+        queryType: m.queryType,
+        isError: m.isError,
+        // jobs and chart are intentionally omitted — too large for localStorage
+      })),
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+  } catch {}
 }
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [messages, setMessages] = useState([]);
+  const [openSettings, setOpenSettings] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "system");
   const [isLoading, setIsLoading] = useState(false);
-  const [conversations, setConversations] = useState([
-    { id: 1, title: "New Conversation", active: true },
-  ]);
+  const [conversations, setConversations] = useState(loadConversations);
 
-  // Stable session ID per browser session
-  const sessionIdRef = useRef(generateSessionId());
+  // Persist conversations to localStorage on every change
+  useEffect(() => {
+    saveConversations(conversations);
+  }, [conversations]);
+
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else if (theme === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", isDark);
+    }
+  }, [theme]);
+
+  const activeConv = conversations.find((c) => c.active) || conversations[0];
+  const messages = activeConv?.messages || [];
+
+  // Ref so handleSendMessage always sees the latest activeConv without re-subscribing
+  const activeConvRef = useRef(activeConv);
+  useEffect(() => {
+    activeConvRef.current = activeConv;
+  }, [activeConv]);
 
   const handleSendMessage = useCallback(
     async (text) => {
       if (isLoading) return;
 
-      // Append user message immediately
+      const conv = activeConvRef.current;
+
       const userMessage = {
         id: Date.now(),
         text,
         sender: "user",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, userMessage]);
+
+      // Auto-title the conversation from the first user message
+      const isFirstMessage = conv.messages.length === 0;
+      const newTitle = isFirstMessage
+        ? text.slice(0, 40) + (text.length > 40 ? "…" : "")
+        : null;
+
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (!c.active) return c;
+          return {
+            ...c,
+            title: newTitle || c.title,
+            messages: [...c.messages, userMessage],
+          };
+        })
+      );
       setIsLoading(true);
 
       try {
@@ -45,13 +122,12 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: text,
-            session_id: sessionIdRef.current,
+            session_id: conv.id,
+            conversation_id: conv.id,
           }),
         });
 
-        if (!res.ok) {
-          throw new Error(`Server error: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
         const data = await res.json();
 
@@ -59,19 +135,31 @@ function App() {
           id: Date.now() + 1,
           text: data.answer,
           sender: "bot",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           queryType: data.query_type,
+          jobs: data.jobs || null,
+          sqlQuery: data.sql_query || null,
+          chart: data.chart || null,
         };
-        setMessages((prev) => [...prev, botMessage]);
+
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.active ? { ...c, messages: [...c.messages, botMessage] } : c
+          )
+        );
       } catch (err) {
-        const errorMessage = {
+        const errMessage = {
           id: Date.now() + 1,
           text: `Xin lỗi, đã có lỗi xảy ra: ${err.message}. Vui lòng thử lại.`,
           sender: "bot",
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           isError: true,
         };
-        setMessages((prev) => [...prev, errorMessage]);
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.active ? { ...c, messages: [...c.messages, errMessage] } : c
+          )
+        );
       } finally {
         setIsLoading(false);
       }
@@ -80,65 +168,112 @@ function App() {
   );
 
   const handleNewConversation = useCallback(() => {
-    sessionIdRef.current = generateSessionId();
-    setMessages([]);
     setConversations((prev) => {
-      const updated = prev.map((c) => ({ ...c, active: false }));
+      // Don't create a new one if the current active conversation is already empty
+      const current = prev.find((c) => c.active);
+      if (current && current.messages.length === 0) return prev;
+
       return [
-        ...updated,
-        {
-          id: Date.now(),
-          title: `Conversation ${updated.length + 1}`,
-          active: true,
-        },
+        makeNewConversation(),
+        ...prev.map((c) => ({ ...c, active: false })),
       ];
     });
   }, []);
 
+  const handleSelectConversation = useCallback((id) => {
+    setConversations((prev) =>
+      prev.map((c) => ({ ...c, active: c.id === id }))
+    );
+  }, []);
+
+  const handleStarConversation = useCallback((id) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, starred: !c.starred } : c))
+    );
+  }, []);
+
+  const handleRenameConversation = useCallback((id, newTitle) => {
+    const title = newTitle.trim();
+    if (!title) return;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title } : c))
+    );
+  }, []);
+
+  const handleDeleteConversation = useCallback((id) => {
+    setConversations((prev) => {
+      const remaining = prev.filter((c) => c.id !== id);
+      if (remaining.length === 0) return [makeNewConversation()];
+      // If we deleted the active one, activate the first remaining
+      const hasActive = remaining.some((c) => c.active);
+      if (!hasActive) return remaining.map((c, i) => ({ ...c, active: i === 0 }));
+      return remaining;
+    });
+  }, []);
+
   return (
-    <div className="flex h-screen bg-[#FFFFFF] text-black">
+    <div className="flex h-screen bg-white dark:bg-[#212121] text-black dark:text-white">
+      {/* Sidebar */}
       {sidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30 z-30 md:hidden"
-            onClick={() => setSidebarOpen(false)}
+        <div className="w-64 flex-shrink-0">
+          <Sidebar
+            conversations={conversations}
+            onNewConversation={handleNewConversation}
+            onSelectConversation={handleSelectConversation}
+            onStarConversation={handleStarConversation}
+            onRenameConversation={handleRenameConversation}
+            onDeleteConversation={handleDeleteConversation}
+            onCloseSidebar={() => setSidebarOpen(false)}
+            onOpenSettings={() => setOpenSettings(true)}
           />
-          <div className="fixed inset-y-0 left-0 z-40 w-64 md:relative md:inset-auto md:z-auto md:w-64">
-            <Sidebar
-              conversations={conversations}
-              onNewConversation={handleNewConversation}
-              onCloseSidebar={() => setSidebarOpen(false)}
-            />
-          </div>
-        </>
+        </div>
       )}
 
+      {/* Mini sidebar khi đóng */}
       {!sidebarOpen && (
-        <div className="fixed left-0 top-0 h-screen w-16 z-30 bg-white border-r border-gray-200 flex flex-col items-center pt-4 pb-6 space-y-2">
+        <div className="w-16 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center pt-4 space-y-2">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-[#E2E2E2]"
-            aria-label="Open sidebar"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]"
           >
             <BsLayoutSidebar className="w-5 h-5" />
           </button>
           <button
             onClick={handleNewConversation}
-            className="p-2 rounded-lg hover:bg-[#E2E2E2]"
-            aria-label="New chat"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]"
           >
             <FiEdit className="w-5 h-5" />
           </button>
-          <button className="p-2 rounded-lg hover:bg-[#E2E2E2]" aria-label="Search chats">
+          <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
             <CiSearch className="w-5 h-5" />
           </button>
-          <button className="p-2 rounded-lg hover:bg-[#E2E2E2]" aria-label="Images">
+          <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
             <IoMdImages className="w-5 h-5" />
           </button>
         </div>
       )}
 
+      {/* Main content */}
       <div className="flex flex-col flex-1 min-w-0">
+        {/* Header */}
+        <header className="flex justify-end items-center px-4 py-3 gap-3 border-b border-gray-100 dark:border-gray-800">
+          <button
+            type="button"
+            onClick={() => setLoginOpen(true)}
+            className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={() => setLoginOpen(true)}
+            className="px-4 py-2 text-sm font-medium bg-[#F9F9F9] text-black rounded-full hover:bg-[#F3F3F3] dark:bg-[#2A2A2A] dark:text-white dark:hover:bg-[#333] transition"
+          >
+            Sign up for free
+          </button>
+        </header>
+
+        {/* Chat area */}
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4">
             <div className="text-center mb-8">
@@ -153,12 +288,22 @@ function App() {
         ) : (
           <>
             <ChatArea messages={messages} isLoading={isLoading} />
-            <div className="bg-white px-4 py-6 flex justify-center">
+            <div className="bg-white dark:bg-[#212121] px-4 py-4 flex justify-center">
               <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
             </div>
           </>
         )}
       </div>
+
+      {/* Modals */}
+      {openSettings && (
+        <SettingsModal
+          onClose={() => setOpenSettings(false)}
+          theme={theme}
+          setTheme={setTheme}
+        />
+      )}
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </div>
   );
 }

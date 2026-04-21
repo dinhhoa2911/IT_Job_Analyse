@@ -12,8 +12,9 @@ class QueryType(str, Enum):
 
 
 class ChatRequest(BaseModel):
-    message:    str = Field(..., min_length=1, max_length=2000)
-    session_id: str = Field(default="default", max_length=128)
+    message:         str = Field(..., min_length=1, max_length=2000)
+    session_id:      str = Field(default="default", max_length=128)
+    conversation_id: str = Field(default="", max_length=128)
 
 
 class JobResult(BaseModel):
@@ -30,3 +31,4 @@ class ChatResponse(BaseModel):
     jobs:       Optional[list[JobResult]] = None
     sql_query:  Optional[str] = None
     sql_result: Optional[list[dict]] = None
+    chart:      Optional[dict] = None  # Chart.js spec — None nếu không vẽ được
