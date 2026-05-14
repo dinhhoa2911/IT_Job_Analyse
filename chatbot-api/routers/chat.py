@@ -1,4 +1,11 @@
-"""Chat router — POST /chat, GET /health."""
+"""
+@file chat.py
+@brief FastAPI router for the chat endpoint (POST /chat) and health check (GET /health).
+
+Holds the module-level RAGPipeline singleton and delegates each request to
+RAGPipeline.run().  Conversation history is fetched from and written back to
+ConversationStore so multi-turn context is maintained across calls.
+"""
 
 import logging
 
@@ -18,6 +25,11 @@ _pipeline = RAGPipeline()
 
 @router.get("/health", summary="Health check")
 def health_check() -> dict:
+    """
+    @brief Liveness probe — returns a static JSON payload confirming the API is running.
+
+    @return  Dict with ``status`` and ``service`` keys.
+    """
     return {"status": "ok", "service": "IT Job Chatbot API"}
 
 
@@ -29,11 +41,14 @@ def health_check() -> dict:
 )
 def chat(request: ChatRequest) -> ChatResponse:
     """
-    Process the user's message through the RAG pipeline and return a response.
+    @brief Process the user's message through the RAG pipeline and return a structured response.
 
-    - **message**: Natural-language question or search query (max 2000 chars).
-    - **session_id**: Client-generated session identifier (used for logging).
-    - **conversation_id**: Client-generated conversation identifier for multi-turn memory.
+    Retrieves existing conversation history (if ``conversation_id`` is provided),
+    runs the full RAGPipeline, then appends the new turn to the store.
+
+    @param request  ChatRequest containing the user message, session ID, and conversation ID.
+    @return         ChatResponse with the LLM-generated answer and optional structured data.
+    @throws HTTPException  500 if an unhandled error occurs inside the pipeline.
     """
     logger.info(
         "[conv=%s session=%s] message=%r",

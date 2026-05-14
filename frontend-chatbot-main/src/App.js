@@ -1,29 +1,92 @@
+/**
+ * @fileoverview Root application component for the IT Job Analyse chatbot.
+ * Manages global state: conversations, theme, and modal visibility.
+ * @module App
+ */
+
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { BsLayoutSidebar } from "react-icons/bs";
 import { CiSearch } from "react-icons/ci";
-import { FiEdit } from "react-icons/fi";
+import { FiBriefcase, FiEdit } from "react-icons/fi";
 import { IoMdImages } from "react-icons/io";
 import "./App.css";
 import ChatArea from "./components/ChatArea";
-import LoginModal from "./components/LoginModal";
+import CVUploadModal from "./components/CVUploadModal";
 import MessageInput from "./components/MessageInput";
+import NewChatConfirmModal from "./components/NewChatConfirmModal";
 import SettingsModal from "./components/SettingsModal";
 import Sidebar from "./components/Sidebar";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import LoginPage        from "./pages/LoginPage";
+import RegisterPage     from "./pages/RegisterPage";
+import VerifyOtpPage    from "./pages/VerifyOtpPage";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
+/** Base URL for the chatbot API. Falls back to localhost in development. */
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8100";
-const STORAGE_KEY = "it_job_conversations";
 
+/**
+ * Returns the localStorage key for a user's conversation history.
+ * @param {string|null} uid - Firebase user UID, or null when not logged in.
+ * @returns {string|null} Key to use, or null (no persistence when logged out).
+ */
+function storageKey(uid) {
+  return uid ? `it_job_conversations_${uid}` : null;
+}
+
+/**
+ * @typedef {Object} Message
+ * @property {number}  id          - Unique numeric message ID (Date.now()).
+ * @property {string}  text        - Message body (markdown for bot).
+ * @property {'user'|'bot'} sender - Who sent the message.
+ * @property {string}  timestamp  - ISO 8601 timestamp.
+ * @property {string}  [queryType] - RAG query type returned by the API.
+ * @property {Array}   [jobs]      - Matched job listings (bot only).
+ * @property {string}  [sqlQuery]  - Generated SQL query (bot only).
+ * @property {Object}  [chart]     - Chart.js spec (bot only).
+ * @property {Object}  [marketInsight] - Gold-layer market insight data (bot only).
+ * @property {boolean} [isError]   - True when the message represents an error.
+ */
+
+/**
+ * @typedef {Object} Conversation
+ * @property {string}    id       - Unique conversation ID (`conv_<timestamp>_<random>`).
+ * @property {string}    title    - Display title (auto-generated from first message).
+ * @property {Message[]} messages - Ordered list of messages.
+ * @property {boolean}   active   - Whether this is the currently selected conversation.
+ * @property {boolean}   starred  - Whether the user has starred this conversation.
+ */
+
+/**
+ * Generates a unique conversation ID.
+ * @returns {string} A string of the form `conv_<timestamp>_<randomSuffix>`.
+ */
 function generateConvId() {
   return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/**
+ * Creates a blank conversation object with a generated ID.
+ * @returns {Conversation}
+ */
 function makeNewConversation() {
   return { id: generateConvId(), title: "New Conversation", messages: [], active: true, starred: false };
 }
 
-function loadConversations() {
+/**
+ * Loads persisted conversations from localStorage.
+ * Falls back to a single blank conversation when storage is empty or corrupt.
+ * @returns {Conversation[]}
+ */
+/**
+ * Load conversations for a user from localStorage.
+ * @param {string|null} key - localStorage key, or null → return a fresh conversation.
+ */
+function loadConversations(key) {
+  if (!key) return [makeNewConversation()];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -32,37 +95,142 @@ function loadConversations() {
   return [makeNewConversation()];
 }
 
-function saveConversations(conversations) {
+/**
+ * Persist conversations for a logged-in user.
+ * No-ops when key is null (unauthenticated users are not persisted).
+ * @param {Conversation[]} conversations
+ * @param {string|null}    key
+ */
+function saveConversations(conversations, key) {
+  if (!key) return;
   try {
-    // Strip large job/chart data before persisting to keep localStorage lean
     const slim = conversations.map((c) => ({
       ...c,
       messages: c.messages.map((m) => ({
-        id: m.id,
-        text: m.text,
-        sender: m.sender,
-        timestamp: m.timestamp,
-        queryType: m.queryType,
-        isError: m.isError,
-        // jobs and chart are intentionally omitted — too large for localStorage
+        id: m.id, text: m.text, sender: m.sender,
+        timestamp: m.timestamp, queryType: m.queryType, isError: m.isError,
       })),
     }));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+    localStorage.setItem(key, JSON.stringify(slim));
   } catch {}
 }
 
-function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [openSettings, setOpenSettings] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "system");
-  const [isLoading, setIsLoading] = useState(false);
-  const [conversations, setConversations] = useState(loadConversations);
+/**
+ * @component
+ * @brief Root application component.
+ *
+ * Owns all top-level state and orchestrates communication between the sidebar,
+ * chat area, message input, and modal dialogs.
+ *
+ * @returns {JSX.Element}
+ */
+/**
+ * @component AppInner
+ * @brief Top-level router. Auth pages are always accessible; chat is accessible
+ * to everyone (logged-in users get persistence, guests get a temporary session).
+ */
+function AppInner() {
+  const { user, loading, pendingVerification } = useAuth();
 
-  // Persist conversations to localStorage on every change
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-[#212121]">
+      <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <Routes>
+      {/* Auth pages — redirect to / if already logged in (and OTP done) */}
+      <Route path="/login"           element={(user && !pendingVerification) ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/register"        element={(user && !pendingVerification) ? <Navigate to="/" replace /> : <RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* OTP page — if logged-in user still has pending OTP, force them here */}
+      <Route
+        path="/verify-otp"
+        element={
+          (user && pendingVerification)
+            ? <VerifyOtpPage />
+            : (!user ? <VerifyOtpPage /> : <Navigate to="/" replace />)
+        }
+      />
+
+      {/* Main chat — if logged in but OTP pending, redirect to OTP page */}
+      <Route
+        path="/*"
+        element={
+          (user && pendingVerification)
+            ? <Navigate to={`/verify-otp?email=${encodeURIComponent(pendingVerification)}&type=register`} replace />
+            : <App />
+        }
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  const { user }   = useAuth();
+  const navigate   = useNavigate();
+  const key        = storageKey(user?.uid ?? null); // null when logged out → no persistence
+
+  const [sidebarOpen, setSidebarOpen]   = useState(true);
+  const [openSettings, setOpenSettings] = useState(false);
+  const [cvModalOpen, setCvModalOpen]   = useState(false);
+  const [theme, setTheme]               = useState(localStorage.getItem("theme") || "system");
+  const [isLoading, setIsLoading]       = useState(false);
+  const [isSpeaking, setIsSpeaking]     = useState(false);
+  // {boolean} Whether the "new chat" confirm popup is visible (for guests)
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+
+  // Load the right conversation history whenever auth state changes
+  const [conversations, setConversations] = useState(() => loadConversations(key));
   useEffect(() => {
-    saveConversations(conversations);
-  }, [conversations]);
+    setConversations(loadConversations(storageKey(user?.uid ?? null)));
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const wasVoiceInputRef = useRef(false);
+
+  // Preload TTS voices early (Chrome lazy-loads them)
+  useEffect(() => {
+    if (window.speechSynthesis) window.speechSynthesis.getVoices();
+  }, []);
+
+  /**
+   * @function speakText
+   * @brief Speak bot reply text via Web Speech synthesis.
+   * Only fires when wasVoiceInputRef is true (i.e. last message was via mic).
+   */
+  const speakText = useCallback((text) => {
+    if (!wasVoiceInputRef.current || !window.speechSynthesis) return;
+    wasVoiceInputRef.current = false; // reset after one use
+    const clean = text
+      .replace(/[#*_`[\]()>]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 600);
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang  = "vi-VN";
+    utter.rate  = 1.05;
+    const voices = window.speechSynthesis.getVoices();
+    const viVoice = voices.find((v) => v.lang.startsWith("vi"));
+    if (viVoice) utter.voice = viVoice;
+    utter.onstart = () => setIsSpeaking(true);
+    utter.onend   = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utter);
+  }, []);
+
+  // Called by MessageInput when user sends a message via microphone.
+  // Marks the next bot reply to be auto-spoken.
+  const handleVoiceSubmit = useCallback(() => {
+    wasVoiceInputRef.current = true;
+  }, []);
+
+  // Persist only when logged in (key is null for guests → no-op)
+  useEffect(() => {
+    saveConversations(conversations, key);
+  }, [conversations, key]);
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -85,6 +253,13 @@ function App() {
     activeConvRef.current = activeConv;
   }, [activeConv]);
 
+  /**
+   * Sends a user message to the API and appends the bot reply to the conversation.
+   * Auto-titles the conversation from the first message.
+   * @function
+   * @param {string} text - The user-typed message text.
+   * @returns {Promise<void>}
+   */
   const handleSendMessage = useCallback(
     async (text) => {
       if (isLoading) return;
@@ -140,6 +315,7 @@ function App() {
           jobs: data.jobs || null,
           sqlQuery: data.sql_query || null,
           chart: data.chart || null,
+          marketInsight: data.market_insight || null,
         };
 
         setConversations((prev) =>
@@ -147,6 +323,7 @@ function App() {
             c.active ? { ...c, messages: [...c.messages, botMessage] } : c
           )
         );
+        speakText(data.answer);
       } catch (err) {
         const errMessage = {
           id: Date.now() + 1,
@@ -167,31 +344,64 @@ function App() {
     [isLoading]
   );
 
-  const handleNewConversation = useCallback(() => {
+  /**
+   * Creates a new blank conversation and marks it as active.
+   * No-ops when the current conversation is already empty.
+   * @function
+   * @returns {void}
+   */
+  /** Actually creates a new blank conversation (shared by the direct path and the modal confirm). */
+  const createNewConversation = useCallback(() => {
     setConversations((prev) => {
-      // Don't create a new one if the current active conversation is already empty
       const current = prev.find((c) => c.active);
       if (current && current.messages.length === 0) return prev;
-
-      return [
-        makeNewConversation(),
-        ...prev.map((c) => ({ ...c, active: false })),
-      ];
+      return [makeNewConversation(), ...prev.map((c) => ({ ...c, active: false }))];
     });
   }, []);
 
+  const handleNewConversation = useCallback(() => {
+    const current = conversations.find((c) => c.active);
+    const hasMessages = current && current.messages.length > 0;
+
+    // Guest with unsaved messages → show confirmation popup
+    if (!user && hasMessages) {
+      setShowNewChatModal(true);
+      return;
+    }
+    createNewConversation();
+  }, [user, conversations, createNewConversation]);
+
+  /**
+   * Switches the active conversation.
+   * @function
+   * @param {string} id - The ID of the conversation to activate.
+   * @returns {void}
+   */
   const handleSelectConversation = useCallback((id) => {
     setConversations((prev) =>
       prev.map((c) => ({ ...c, active: c.id === id }))
     );
   }, []);
 
+  /**
+   * Toggles the starred flag on a conversation.
+   * @function
+   * @param {string} id - The conversation ID to star/unstar.
+   * @returns {void}
+   */
   const handleStarConversation = useCallback((id) => {
     setConversations((prev) =>
       prev.map((c) => (c.id === id ? { ...c, starred: !c.starred } : c))
     );
   }, []);
 
+  /**
+   * Renames a conversation. Silently ignores empty titles.
+   * @function
+   * @param {string} id       - The conversation ID to rename.
+   * @param {string} newTitle - The new title string.
+   * @returns {void}
+   */
   const handleRenameConversation = useCallback((id, newTitle) => {
     const title = newTitle.trim();
     if (!title) return;
@@ -200,6 +410,13 @@ function App() {
     );
   }, []);
 
+  /**
+   * Deletes a conversation. Ensures at least one conversation always exists
+   * and that an active conversation is selected after deletion.
+   * @function
+   * @param {string} id - The conversation ID to delete.
+   * @returns {void}
+   */
   const handleDeleteConversation = useCallback((id) => {
     setConversations((prev) => {
       const remaining = prev.filter((c) => c.id !== id);
@@ -250,29 +467,18 @@ function App() {
           <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]">
             <IoMdImages className="w-5 h-5" />
           </button>
+          <button
+            onClick={() => setCvModalOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]"
+            title="Match CV với việc làm"
+          >
+            <FiBriefcase className="w-5 h-5" />
+          </button>
         </div>
       )}
 
       {/* Main content */}
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Header */}
-        <header className="flex justify-end items-center px-4 py-3 gap-3 border-b border-gray-100 dark:border-gray-800">
-          <button
-            type="button"
-            onClick={() => setLoginOpen(true)}
-            className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition"
-          >
-            Login
-          </button>
-          <button
-            type="button"
-            onClick={() => setLoginOpen(true)}
-            className="px-4 py-2 text-sm font-medium bg-[#F9F9F9] text-black rounded-full hover:bg-[#F3F3F3] dark:bg-[#2A2A2A] dark:text-white dark:hover:bg-[#333] transition"
-          >
-            Sign up for free
-          </button>
-        </header>
-
         {/* Chat area */}
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4">
@@ -283,13 +489,38 @@ function App() {
                 Tìm kiếm việc làm IT, phân tích thị trường tuyển dụng, hoặc xin tư vấn nghề nghiệp.
               </p>
             </div>
-            <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+
+            {/* CV Match quick-action card */}
+            <button
+              onClick={() => setCvModalOpen(true)}
+              className="mb-6 flex items-center gap-3 px-5 py-3 rounded-xl border border-dashed border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition text-left max-w-sm"
+            >
+              <FiBriefcase className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Upload CV để tìm việc phù hợp</p>
+                <p className="text-xs text-blue-500 dark:text-blue-500 mt-0.5">AI tự phân tích hồ sơ và gợi ý top jobs</p>
+              </div>
+            </button>
+
+            <MessageInput
+              onSendMessage={handleSendMessage}
+              onOpenCVModal={() => setCvModalOpen(true)}
+              onVoiceSubmit={handleVoiceSubmit}
+              isLoading={isLoading}
+              isSpeaking={isSpeaking}
+            />
           </div>
         ) : (
           <>
             <ChatArea messages={messages} isLoading={isLoading} />
             <div className="bg-white dark:bg-[#212121] px-4 py-4 flex justify-center">
-              <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+              <MessageInput
+                onSendMessage={handleSendMessage}
+                onOpenCVModal={() => setCvModalOpen(true)}
+                onVoiceSubmit={handleVoiceSubmit}
+                isLoading={isLoading}
+                isSpeaking={isSpeaking}
+              />
             </div>
           </>
         )}
@@ -303,9 +534,26 @@ function App() {
           setTheme={setTheme}
         />
       )}
-      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+      {cvModalOpen && <CVUploadModal onClose={() => setCvModalOpen(false)} />}
+
+      {/* New-chat confirmation — shown to unauthenticated users with unsaved messages */}
+      {showNewChatModal && (
+        <NewChatConfirmModal
+          onClear={() => { setShowNewChatModal(false); createNewConversation(); }}
+          onLogin={() => { setShowNewChatModal(false); navigate("/login"); }}
+          onClose={() => setShowNewChatModal(false)}
+        />
+      )}
     </div>
   );
 }
 
-export default App;
+export default function Root() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}

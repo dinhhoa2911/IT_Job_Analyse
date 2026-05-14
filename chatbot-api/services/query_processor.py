@@ -1,16 +1,21 @@
 """
-Pre-retrieval query enhancement — Fast-path / Slow-path architecture.
+@file query_processor.py
+@brief Pre-retrieval query enhancement using a fast-path / slow-path architecture.
 
-Fast-path (0 LLM calls): simple, skill-specific queries.
-    • All metadata loaded from Trino ONCE at startup
-      (dim_skill, dim_location, dim_work_mode, silver job titles)
-    • Fields extracted via regex + lookup sets in <1ms
-    • 3 query variants built from role-pattern templates derived from actual data
+Fast-path (0 LLM calls): for simple, single-skill queries.
+    - All lookup metadata (dim_skill, dim_location, dim_work_mode, role patterns)
+      is loaded from Trino ONCE at startup and cached in memory.
+    - Fields are extracted via regex + lookup sets in under 1 ms.
+    - Three query variants are built from role-pattern templates derived from
+      actual Silver-layer job title data.
 
-Slow-path (2 LLM calls): complex / ambiguous / multi-intent queries.
-    • Unchanged: LLM Decompose → LLM Expand per sub-query
+Slow-path (2 LLM calls): for complex, ambiguous, or multi-intent queries.
+    - LLM Decompose step splits a multi-aspect query into 2-3 sub-queries.
+    - LLM Expand step generates 2 semantic variants per sub-query.
 
-Routing: _is_simple() checks 4 deterministic conditions, no LLM involved.
+Routing: _is_simple() checks four deterministic conditions with no LLM call.
+If Trino is unavailable at startup, fast-path is disabled and all queries fall
+through to slow-path gracefully.
 """
 
 import json
@@ -134,11 +139,22 @@ Output: ["React senior HCM",
 
 class QueryProcessor:
     """
-    Routes each query to fast-path (0 LLM calls) or slow-path (2 LLM calls).
+    @class QueryProcessor
+    @brief Pre-retrieval query enhancer — routes to fast-path or slow-path based on query complexity.
 
-    Fast-path metadata is loaded from Trino once in __init__. If Trino is
-    unavailable at startup, _skill_map is empty and every query falls to
-    slow-path gracefully — no crash, no degraded results.
+    Fast-path (0 LLM calls):
+      Metadata (skills, locations, work modes, role patterns) is loaded from
+      Trino at construction time.  Simple single-skill queries are processed
+      entirely with regex + dict lookups, generating three diverse variants
+      using data-driven role-title suffixes.
+
+    Slow-path (2 LLM calls):
+      Complex or ambiguous queries go through an LLM decompose step (splits
+      into sub-queries) followed by an LLM expand step (synonyms/paraphrases
+      per sub-query).
+
+    The original query is always preserved at index 0 of the returned list
+    so the cross-encoder reranker evaluates against true user intent.
     """
 
     def __init__(self) -> None:
@@ -155,6 +171,13 @@ class QueryProcessor:
     # ── DB metadata loader ────────────────────────────────────────────────────
 
     def _query_trino(self, sql: str) -> list[tuple]:
+        """
+        @brief Execute a SQL string on Trino and return raw result tuples.
+
+        @param sql  Valid Trino SQL string.
+        @return     List of row tuples (column order matches the SELECT list).
+        @throws Exception  Propagated from the Trino driver on connection or query failure.
+        """
         conn = trino.dbapi.connect(
             host=settings.trino_host,
             port=settings.trino_port,
@@ -233,7 +256,14 @@ class QueryProcessor:
     # ── Fast-path helpers ─────────────────────────────────────────────────────
 
     def _detect_skills(self, query_lower: str) -> list[str]:
-        """Return lowercase skill keys found in the query (word-boundary aware)."""
+        """
+        @brief Return lowercase skill keys found in the query using word-boundary-aware matching.
+
+        Handles dotted and special-character skill names (node.js, c#, vue.js).
+
+        @param query_lower  Lowercased query string.
+        @return             List of matched skill keys from self._skill_map.
+        """
         found = []
         for skill_lower in self._skill_map:
             escaped = re.escape(skill_lower)
@@ -244,14 +274,17 @@ class QueryProcessor:
 
     def _is_simple(self, query: str) -> bool:
         """
-        Return True iff the query can be fully processed by the fast-path.
+        @brief Return True if the query can be fully processed by the fast-path.
 
-        Conditions (ALL must pass):
-          1. Metadata was loaded successfully
-          2. ≤ 8 words (short = single intent)
-          3. Exactly 1 known skill detected
-          4. No ambiguity/advisory tokens
-          5. Not an open question
+        All five conditions must hold simultaneously:
+          1. DB metadata was loaded successfully (skill_map is non-empty).
+          2. Query is ≤ 8 words (single-intent heuristic).
+          3. Exactly one known skill is detected.
+          4. No ambiguity or advisory tokens are present.
+          5. Query is not an open statistical question.
+
+        @param query  Raw user query string.
+        @return       True if the fast-path should handle this query.
         """
         if not self._skill_map:
             return False
@@ -274,8 +307,14 @@ class QueryProcessor:
 
     def _fast_process(self, query: str) -> list[str]:
         """
-        Build 3 query variants from extracted fields + data-driven role patterns.
-        Zero LLM calls.
+        @brief Build 3 query variants from extracted fields using data-driven role patterns.
+
+        Extracts skill, level prefix, location, and work mode from the query
+        via regex + lookup tables, then generates one variant per role pattern
+        loaded from the Silver layer at startup.  Zero LLM calls.
+
+        @param query  Simple query string that passed _is_simple().
+        @return       Deduplicated list of query variants with the original at index 0.
         """
         q = query.lower()
 
@@ -332,6 +371,16 @@ class QueryProcessor:
     # ── Slow-path (unchanged from original) ──────────────────────────────────
 
     def _call(self, system: str, user: str, max_tokens: int = 256) -> list[str]:
+        """
+        @brief Make a single LLM call expecting a JSON array of strings as the response.
+
+        Falls back to [user] (the original input) if the response cannot be parsed.
+
+        @param system      System prompt for the LLM call.
+        @param user        User-turn content (the query to decompose or expand).
+        @param max_tokens  Token budget for the LLM response (default 256).
+        @return            Parsed list of strings, or [user] on parse failure.
+        """
         response = self._client.chat.completions.create(
             model=settings.openai_model,
             max_tokens=max_tokens,
@@ -354,6 +403,12 @@ class QueryProcessor:
         return [user]
 
     def _decompose(self, query: str) -> list[str]:
+        """
+        @brief Split a complex query into 2-3 focused sub-queries via LLM.
+
+        @param query  Complex or multi-intent query string.
+        @return       List of sub-query strings (1 element if query is single-intent).
+        """
         sub_queries = self._call(_DECOMPOSE_SYSTEM, query, max_tokens=200)
         if len(sub_queries) > 1:
             logger.info(
@@ -363,6 +418,12 @@ class QueryProcessor:
         return sub_queries
 
     def _expand(self, query: str) -> list[str]:
+        """
+        @brief Generate 2 semantic variants of a query (synonyms/paraphrases) via LLM.
+
+        @param query  Sub-query string to expand.
+        @return       List of 3 strings: [original, variant_1, variant_2].
+        """
         variants = self._call(_EXPAND_SYSTEM, query, max_tokens=200)
         if query not in variants:
             variants.insert(0, query)
@@ -370,6 +431,12 @@ class QueryProcessor:
         return variants
 
     def _slow_process(self, query: str) -> list[str]:
+        """
+        @brief Full slow-path: decompose the query then expand each sub-query.
+
+        @param query  Complex or ambiguous query string.
+        @return       Deduplicated list of all expanded variants with the original at index 0.
+        """
         sub_queries = self._decompose(query)
         all_queries: list[str] = []
         for sq in sub_queries:
@@ -389,9 +456,14 @@ class QueryProcessor:
 
     def process(self, query: str) -> list[str]:
         """
-        Entry point: route to fast-path or slow-path, return deduplicated
-        query list for HybridSearchService.search_multi().
-        Original query is always index 0 (used by reranker for intent alignment).
+        @brief Route the query to fast-path or slow-path and return the expanded query list.
+
+        The returned list is passed directly to HybridSearchService.search_multi().
+        The original query is always at index 0 so the cross-encoder reranker
+        evaluates candidates against the true user intent.
+
+        @param query  Resolved, standalone user query string.
+        @return       Deduplicated list of query variants; queries[0] is the original.
         """
         if self._is_simple(query):
             return self._fast_process(query)

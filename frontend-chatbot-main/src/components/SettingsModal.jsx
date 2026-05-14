@@ -1,6 +1,25 @@
+/**
+ * @fileoverview Application settings modal component.
+ * Currently exposes colour-scheme (theme) selection.
+ * @module SettingsModal
+ */
+
 import React from "react";
 import { GoX } from "react-icons/go";
 
+/**
+ * @component
+ * @brief Full-screen backdrop modal for configuring application settings.
+ *
+ * Provides a two-column layout: a left navigation panel and a right content panel.
+ * The only active setting is the Appearance (theme) selector.
+ *
+ * @param {Object}   props
+ * @param {function(): void}    props.onClose   - Called to close and unmount the modal.
+ * @param {'system'|'light'|'dark'} props.theme - The currently active colour-scheme preference.
+ * @param {function('system'|'light'|'dark'): void} props.setTheme - Called with the newly selected theme.
+ * @returns {JSX.Element}
+ */
 function SettingsModal({ onClose, theme, setTheme }) {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">

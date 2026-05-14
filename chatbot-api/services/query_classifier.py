@@ -1,4 +1,12 @@
-"""Query classifier: routes user messages to the correct pipeline branch."""
+"""
+@file query_classifier.py
+@brief LLM-based query classifier that routes user messages to the correct pipeline branch.
+
+Makes a single low-latency LLM call (max_tokens=16) to classify each incoming
+message into one of four QueryType categories: search_job, analytics,
+career_advice, or out_of_scope.  Falls back to career_advice on any API error
+or unrecognised label to avoid silently dropping valid questions.
+"""
 
 import logging
 
@@ -42,18 +50,29 @@ Không giải thích, không dấu câu."""
 
 
 class QueryClassifier:
-    """Single-call LLM classifier with safe fallback to *career_advice*."""
+    """
+    @class QueryClassifier
+    @brief Single-call LLM classifier with safe fallback to career_advice.
+
+    Sends the user's message to the LLM with a Vietnamese system prompt that
+    defines the four classification categories.  The LLM must return exactly
+    one label word; any unexpected output or API error falls back to
+    career_advice (safer than out_of_scope, which suppresses all retrieval).
+    """
 
     def __init__(self) -> None:
         self._client = OpenAI(api_key=settings.openai_api_key)
 
     def classify(self, question: str) -> QueryType:
         """
-        Return the QueryType for *question*.
+        @brief Classify a user question into one of the four QueryType branches.
 
         Fallback logic:
-          - Unknown label  → career_advice  (safer than out_of_scope)
-          - API error      → career_advice  (never silently drop a valid question)
+          - Unknown label → career_advice  (safer than out_of_scope)
+          - API error     → career_advice  (never silently drop a valid question)
+
+        @param question  Resolved (possibly rewritten) user query string.
+        @return          QueryType enum value for the detected intent.
         """
         try:
             response = self._client.chat.completions.create(

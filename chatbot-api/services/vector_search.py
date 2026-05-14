@@ -1,5 +1,8 @@
 """
-Hybrid retrieval pipeline:
+@file vector_search.py
+@brief Hybrid retrieval pipeline combining dense ANN search with BM25 sparse search.
+
+Pipeline stages:
   Step 1 — Dense search   : Milvus ANN (cosine similarity on 384-dim embeddings)
   Step 2 — Sparse search  : BM25 (exact keyword / TF-IDF matching)
   Step 3 — RRF fusion     : Reciprocal Rank Fusion (Cormack et al. 2009, k=60)
@@ -44,6 +47,16 @@ _HAS_VIET = re.compile(
 _TOKENS = re.compile(r'\.?\w+(?:[+#]+|(?:\.\w+)+)?')
 
 def _tokenize(text: str) -> list[str]:
+    """
+    @brief Tokenize text for BM25 indexing and scoring.
+
+    Splits at Vietnamese/ASCII boundaries and applies underthesea word
+    segmentation for Vietnamese segments when the library is available.
+    Falls back to pure regex tokenization otherwise.
+
+    @param text  Raw document or query text (any language).
+    @return      List of lowercase tokens with length > 1.
+    """
     text = text.lower()
 
     # Tách tại ranh giới Việt / ASCII
@@ -73,10 +86,21 @@ _Doc = dict  # keys: job_id, job_title, job_link, text_content + score fields
 
 class HybridSearchService:
     """
-    Lazy-initialised hybrid retrieval service.
+    @class HybridSearchService
+    @brief Lazy-initialised hybrid retrieval service combining dense and sparse search.
 
-    All heavy resources (models, Milvus connection, BM25 index) are loaded
-    on first use and cached for the lifetime of the process.
+    Architecture (four-stage pipeline):
+      1. Dense  — SentenceTransformer embedding → Milvus ANN cosine search.
+      2. Sparse — BM25Okapi over the full in-memory corpus fetched from Milvus.
+      3. RRF    — Reciprocal Rank Fusion merges both ranked lists without score
+                  normalisation (rank positions are scale-invariant).
+      4. Rerank — CrossEncoder scores (query, document) pairs jointly for
+                  high-precision final ordering.
+
+    All heavy resources (SentenceTransformer, CrossEncoder, Milvus connection,
+    BM25 index) are loaded on first use and cached for the process lifetime.
+    Call warmup() during application startup to avoid cold-start latency on
+    the first user request.
     """
 
     # RRF constant from the original paper — 60 is the community standard
@@ -94,21 +118,37 @@ class HybridSearchService:
     # Lazy loaders
 
     def _get_encoder(self) -> SentenceTransformer:
-        """Dense embedding model (must match Vectorize_To_Milvus.py)."""
+        """
+        @brief Lazy-load and cache the dense embedding model.
+
+        The model name must match the one used during indexing in
+        Vectorize_To_Milvus.py; a mismatch produces silent relevance degradation.
+
+        @return  Loaded SentenceTransformer instance.
+        """
         if self._encoder is None:
             logger.info("Loading dense encoder: %s", settings.embedding_model)
             self._encoder = SentenceTransformer(settings.embedding_model)
         return self._encoder
 
     def _get_reranker(self) -> CrossEncoder:
-        """Cross-encoder for final relevance re-scoring."""
+        """
+        @brief Lazy-load and cache the cross-encoder reranker model.
+
+        @return  Loaded CrossEncoder instance (ms-marco-MiniLM-L-6-v2 by default).
+        """
         if self._reranker is None:
             logger.info("Loading cross-encoder reranker: %s", settings.reranker_model)
             self._reranker = CrossEncoder(settings.reranker_model)
         return self._reranker
 
     def _get_collection(self) -> Collection:
-        """Connect to Milvus and load the job collection."""
+        """
+        @brief Lazy-connect to Milvus and load the configured job collection.
+
+        @return  Loaded Milvus Collection object ready for search and query.
+        @throws RuntimeError  If the configured collection does not exist in Milvus.
+        """
         if self._collection is None:
             logger.info(
                 "Connecting to Milvus at %s:%s",
@@ -132,8 +172,12 @@ class HybridSearchService:
 
     def _get_bm25(self) -> tuple[list[_Doc], BM25Okapi]:
         """
-        Fetch the full corpus from Milvus and build the BM25 index.
-        Executed once; subsequent calls return the cached objects.
+        @brief Fetch the full corpus from Milvus and build the in-memory BM25 index.
+
+        Executed once; subsequent calls return the cached (corpus, bm25) pair.
+        The entire corpus (~3 k documents) fits comfortably in RAM.
+
+        @return  Tuple of (corpus list of _Doc dicts, fitted BM25Okapi index).
         """
         if self._corpus is None or self._bm25 is None:
             logger.info("Fetching corpus from Milvus to build BM25 index...")
@@ -157,9 +201,11 @@ class HybridSearchService:
 
     def _dense_search(self, query: str, k: int) -> list[_Doc]:
         """
-        Embed the query with SentenceTransformer and run Milvus ANN search.
+        @brief Step 1 — Embed the query and run Milvus ANN search (cosine similarity).
 
-        Returns up to *k* candidates with their cosine similarity score.
+        @param query  Natural-language search query.
+        @param k      Maximum number of candidates to retrieve.
+        @return       Up to k _Doc dicts, each with a ``dense_score`` field.
         """
         encoder = self._get_encoder()
         collection = self._get_collection()
@@ -197,10 +243,14 @@ class HybridSearchService:
 
     def _sparse_search(self, query: str, k: int) -> list[_Doc]:
         """
-        Score all corpus documents with BM25 and return the top *k*.
+        @brief Step 2 — Score the corpus with BM25 and return the top k candidates.
 
-        BM25 rewards exact token overlap — strong for skill names, company
-        names, and location keywords that dense embeddings can under-weight.
+        BM25 rewards exact token overlap — particularly strong for skill names,
+        company names, and location keywords that dense embeddings can under-weight.
+
+        @param query  Natural-language search query (tokenized internally).
+        @param k      Maximum number of candidates to return.
+        @return       Up to k _Doc dicts with positive BM25 scores, each carrying a ``sparse_score`` field.
         """
         corpus, bm25 = self._get_bm25()
 
@@ -232,7 +282,7 @@ class HybridSearchService:
         top_n: int,
     ) -> list[_Doc]:
         """
-        Merge two ranked lists using Reciprocal Rank Fusion.
+        @brief Step 3 — Merge dense and sparse ranked lists via Reciprocal Rank Fusion.
 
         Formula (Cormack et al. 2009):
             score(d) = Σ  1 / (rank_i(d) + k)
@@ -243,6 +293,11 @@ class HybridSearchService:
           - Rank positions are scale-invariant (cosine vs BM25 live in different spaces).
           - Proven robust across retrieval tasks.
           - No hyper-parameter tuning beyond k.
+
+        @param dense   Candidates from _dense_search, ordered by cosine similarity.
+        @param sparse  Candidates from _sparse_search, ordered by BM25 score.
+        @param top_n   Number of fused candidates to return.
+        @return        Deduplicated, RRF-sorted list of up to top_n _Doc dicts.
         """
         rrf_scores: dict[int, float] = {}
         doc_map: dict[int, _Doc] = {}
@@ -273,18 +328,22 @@ class HybridSearchService:
 
     def _rerank(self, query: str, candidates: list[_Doc], top_k: int) -> list[_Doc]:
         """
-        Re-score candidates using a cross-encoder model.
+        @brief Step 4 — Re-score candidates with a cross-encoder and return the top k.
 
         Unlike bi-encoders (which embed query and document separately),
-        a cross-encoder receives the concatenated (query, document) pair
-        and outputs a single relevance logit — much more accurate but
-        computationally heavier, hence applied only to a short candidate list.
+        a cross-encoder receives the full (query, document) pair and outputs a
+        single relevance logit — more accurate but heavier, so it is applied
+        only to the short RRF-fused candidate list.
 
         Model: cross-encoder/ms-marco-MiniLM-L-6-v2
-          - Trained on MS MARCO passage retrieval (650k QA pairs)
-          - Input:  (query text, passage text)
-          - Output: relevance logit (higher = more relevant, no fixed range)
-          - Size:   ~22 MB — fast CPU inference
+          - Trained on MS MARCO passage retrieval (650k QA pairs).
+          - Output: unbounded relevance logit (higher = more relevant).
+          - Size: ~22 MB — suitable for CPU inference.
+
+        @param query       Original user query used as the cross-encoder anchor.
+        @param candidates  RRF-fused candidate list to be re-scored.
+        @param top_k       Number of top results to return after sorting.
+        @return            Up to top_k _Doc dicts sorted by ``rerank_score`` descending.
         """
         if not candidates:
             return []
@@ -331,21 +390,18 @@ class HybridSearchService:
 
     def search(self, query: str, top_k: int | None = None) -> list[JobResult]:
         """
-        Execute the full hybrid pipeline and return the final ranked results.
+        @brief Execute the full four-stage hybrid pipeline for a single query.
 
-        Pool sizes:
-          - Dense  : retrieval_k  candidates  (wide net for recall)
-          - Sparse : retrieval_k  candidates  (wide net for recall)
+        Pool sizes at each stage:
+          - Dense  : retrieval_k  candidates  (wide recall net)
+          - Sparse : retrieval_k  candidates  (wide recall net)
           - RRF    : rerank_k     candidates  (deduplicated, merged)
-          - Rerank : top_k        candidates  (final precision)
+          - Rerank : top_k        final results (highest precision)
 
-        Args:
-            query:  User's natural-language search query.
-            top_k:  Number of final results (default: settings.top_k_results).
-
-        Returns:
-            List of JobResult sorted by cross-encoder relevance (highest first).
-            The `score` field contains the rerank logit.
+        @param query  User's natural-language search query.
+        @param top_k  Final result count (default: settings.top_k_results).
+        @return       List of JobResult sorted by cross-encoder relevance descending;
+                      ``score`` holds the raw rerank logit.
         """
         top_k = top_k or settings.top_k_results
 
@@ -392,18 +448,22 @@ class HybridSearchService:
         top_n: int,
     ) -> list[_Doc]:
         """
-        Generalised RRF across an arbitrary number of ranked lists.
+        @brief Generalised RRF fusion across an arbitrary number of ranked lists.
 
-        Used when QueryProcessor returns multiple query variants.
-        Each variant produces its own dense + sparse rank lists, so the
-        total number of lists passed here is  2 × len(queries).
+        Used when QueryProcessor returns multiple query variants; each variant
+        produces its own dense + sparse rank lists, so the total number of
+        lists passed here is 2 × len(queries).
 
         Formula (same as _rrf_fusion, extended to N lists):
             score(d) = Σ_i  1 / (rank_i(d) + k)
 
-        A document appearing in MANY lists (i.e. relevant to many query
-        variants) accumulates a higher score — exactly the desired behaviour
-        for query expansion/decomposition.
+        A document appearing in many lists (relevant to many query variants)
+        accumulates a higher RRF score — the desired behaviour for query
+        expansion and decomposition.
+
+        @param rank_lists  Ordered list of ranked _Doc lists (one per retriever per query).
+        @param top_n       Number of fused candidates to return.
+        @return            Deduplicated, RRF-sorted list of up to top_n _Doc dicts.
         """
         rrf_scores: dict[int, float] = {}
         doc_map: dict[int, _Doc] = {}
@@ -436,8 +496,7 @@ class HybridSearchService:
         top_k: int | None = None,
     ) -> list[JobResult]:
         """
-        Hybrid search over multiple query variants (from query expansion /
-        decomposition) with a single global RRF + cross-encoder rerank pass.
+        @brief Hybrid search over multiple query variants with a single global RRF + rerank pass.
 
         Pipeline:
           For each query qᵢ in queries:
@@ -445,20 +504,15 @@ class HybridSearchService:
             sparse_i = _sparse_search(qᵢ, k=retrieval_k)
           all_lists = [dense_0, sparse_0, dense_1, sparse_1, ...]
           fused     = _rrf_fusion_multi(all_lists, top_n=rerank_k)
-          reranked  = _rerank(queries[0], fused, top_k)   ← original query
+          reranked  = _rerank(queries[0], fused, top_k)   ← always original query
 
         The cross-encoder always uses queries[0] (the original user query,
-        guaranteed to be first by QueryProcessor.process()) so the final
-        relevance scores reflect true user intent rather than any expanded
-        variant.
+        guaranteed to be first by QueryProcessor.process()) so final relevance
+        scores reflect true user intent rather than any expanded variant.
 
-        Args:
-            queries: List produced by QueryProcessor.process().
-                     queries[0] must be the original user query.
-            top_k:  Final result count (default: settings.top_k_results).
-
-        Returns:
-            List of JobResult sorted by cross-encoder relevance.
+        @param queries  List from QueryProcessor.process(); queries[0] must be the original.
+        @param top_k    Final result count (default: settings.top_k_results).
+        @return         List of JobResult sorted by cross-encoder relevance descending.
         """
         top_k = top_k or settings.top_k_results
 

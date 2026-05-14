@@ -1,4 +1,11 @@
-"""Analytics SQL agent: Claude generates Trino SQL, we execute it."""
+"""
+@file sql_agent.py
+@brief Analytics SQL agent: translates natural-language questions to Trino SQL and executes them.
+
+The LLM generates a single valid Trino SQL query against the Gold/Silver star
+schema using a detailed schema context prompt.  The result rows are then
+optionally converted to a Chart.js-compatible spec for frontend visualisation.
+"""
 
 import logging
 import textwrap
@@ -95,17 +102,37 @@ _CHART_COLORS = [
 
 
 def _is_numeric(value: Any) -> bool:
+    """
+    @brief Return True if value is a numeric type (int or float) but not a bool.
+
+    @param value  Any Python value from a SQL result row.
+    @return       True for int/float, False for bool, str, None, etc.
+    """
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def _is_date_like(value: Any) -> bool:
+    """
+    @brief Return True if value is a date or datetime instance.
+
+    @param value  Any Python value from a SQL result row.
+    @return       True for date/datetime objects, False otherwise.
+    """
     return isinstance(value, (date, datetime))
 
 
 def _build_chart_spec(rows: list[dict]) -> dict | None:
     """
-    Phân tích rows và trả về Chart.js spec nếu có thể vẽ biểu đồ.
-    Trả về None nếu không phù hợp để vẽ.
+    @brief Analyse SQL result rows and produce a Chart.js-compatible spec if chartable.
+
+    Chart type selection heuristic:
+      - date column + numeric column  → line chart (time-series trend).
+      - string column + numeric column, ≤ 8 rows → pie chart (distribution).
+      - string column + numeric column, > 8 rows → bar chart (ranking).
+      - string column + multiple numeric columns  → multi-series bar chart.
+
+    @param rows  SQL result rows; each dict maps column name → Python value.
+    @return      Chart.js spec dict, or None if the data is not suitable for charting.
     """
     if not rows or len(rows) < 2:
         return None
@@ -196,7 +223,14 @@ def _build_chart_spec(rows: list[dict]) -> dict | None:
 
 
 class SQLAgentService:
-    """Uses Claude to translate natural-language questions into Trino SQL, then executes them."""
+    """
+    @class SQLAgentService
+    @brief Translate natural-language analytics questions into Trino SQL and execute them.
+
+    Uses the LLM (with a detailed schema context prompt) to generate a single
+    valid Trino SQL query, executes it against the Gold/Silver Iceberg catalog,
+    and optionally produces a Chart.js spec for frontend visualisation.
+    """
 
     def __init__(self) -> None:
         self._client = OpenAI(api_key=settings.openai_api_key)
@@ -205,6 +239,11 @@ class SQLAgentService:
     # Private helpers
 
     def _get_connection(self) -> trino.dbapi.Connection:
+        """
+        @brief Create and return a new Trino DBAPI connection using app settings.
+
+        @return  Open trino.dbapi.Connection ready for cursor operations.
+        """
         return trino.dbapi.connect(
             host=settings.trino_host,
             port=settings.trino_port,
@@ -213,6 +252,15 @@ class SQLAgentService:
         )
 
     def _generate_sql(self, question: str) -> str:
+        """
+        @brief Use the LLM to generate a valid Trino SQL query for the given question.
+
+        Strips accidental markdown fences and trailing semicolons from the
+        LLM output before returning the clean SQL string.
+
+        @param question  Natural-language analytics question from the user.
+        @return          Clean, executable Trino SQL string.
+        """
         response = self._client.chat.completions.create(
             model=settings.openai_model,
             max_tokens=512,
@@ -234,6 +282,13 @@ class SQLAgentService:
         return sql
 
     def _execute(self, sql: str) -> list[dict]:
+        """
+        @brief Execute a SQL string on Trino and return all result rows as dicts.
+
+        @param sql  Valid Trino SQL string (no trailing semicolons).
+        @return     List of dicts mapping column names to row values.
+        @throws Exception  Propagated from the Trino driver on query failure.
+        """
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
@@ -247,12 +302,12 @@ class SQLAgentService:
 
     def query(self, question: str) -> tuple[str, list[dict], dict | None]:
         """
-        Translate *question* to SQL, execute on Trino, return (sql, rows, chart_spec).
+        @brief Translate a question to SQL, execute it, and return results with an optional chart.
 
-        chart_spec is a Chart.js-compatible dict, or None if not chartable.
-
-        Raises:
-            Exception: propagated from Trino on query failure.
+        @param question  Natural-language analytics question from the user.
+        @return          3-tuple of (sql_string, result_rows, chart_spec).
+                         chart_spec is a Chart.js-compatible dict or None if not chartable.
+        @throws Exception  Propagated from Trino on query execution failure.
         """
         sql = self._generate_sql(question)
         logger.info("Generated SQL:\n%s", sql)

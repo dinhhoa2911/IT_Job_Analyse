@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Chart rendering component that wraps Chart.js via react-chartjs-2.
+ * Supports bar, line, and pie chart types.
+ * @module ChartRenderer
+ */
+
 import React from "react";
 import {
   Chart as ChartJS,
@@ -27,6 +33,10 @@ ChartJS.register(
   Filler
 );
 
+/**
+ * Default Chart.js options applied to bar and line charts.
+ * @type {Object}
+ */
 const DEFAULT_OPTIONS = {
   responsive: true,
   maintainAspectRatio: true,
@@ -36,6 +46,11 @@ const DEFAULT_OPTIONS = {
   },
 };
 
+/**
+ * Default Chart.js options applied specifically to pie charts.
+ * Positions the legend on the right and uses nearest-point tooltip mode.
+ * @type {Object}
+ */
 const PIE_OPTIONS = {
   responsive: true,
   maintainAspectRatio: true,
@@ -45,6 +60,24 @@ const PIE_OPTIONS = {
   },
 };
 
+/**
+ * @typedef {Object} ChartSpec
+ * @property {'bar'|'line'|'pie'} type    - Chart type identifier.
+ * @property {Object}             data    - Chart.js `data` object (labels + datasets).
+ * @property {Object}             [options] - Optional Chart.js options to merge with defaults.
+ */
+
+/**
+ * @component
+ * @brief Renders a Chart.js chart from a spec object returned by the RAG API.
+ *
+ * Merges API-supplied options with sensible defaults.
+ * Returns null when no valid chart spec is provided.
+ *
+ * @param {Object}    props
+ * @param {ChartSpec} props.chart - The chart specification object.
+ * @returns {JSX.Element|null}
+ */
 function ChartRenderer({ chart }) {
   if (!chart || !chart.data) return null;
 

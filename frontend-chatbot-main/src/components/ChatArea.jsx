@@ -1,6 +1,16 @@
+/**
+ * @fileoverview Scrollable chat message list with a typing indicator.
+ * @module ChatArea
+ */
+
 import React, { useEffect, useRef } from "react";
 import Message from "./Message";
 
+/**
+ * @component
+ * @brief Animated three-dot indicator shown while the bot is generating a reply.
+ * @returns {JSX.Element}
+ */
 function TypingIndicator() {
   return (
     <div className="flex gap-4 justify-start">
@@ -15,7 +25,20 @@ function TypingIndicator() {
   );
 }
 
+/**
+ * @component
+ * @brief Renders the scrollable list of chat messages for the active conversation.
+ *
+ * Auto-scrolls to the bottom whenever the message list or loading state changes.
+ * Displays a {@link TypingIndicator} while a bot response is in-flight.
+ *
+ * @param {Object}    props
+ * @param {import('./Message').MessageData[]} props.messages      - Ordered list of messages to display.
+ * @param {boolean}   [props.isLoading=false]                    - When true, shows the typing indicator after the last message.
+ * @returns {JSX.Element}
+ */
 function ChatArea({ messages, isLoading = false }) {
+  /** @type {React.RefObject<HTMLDivElement>} Ref to the invisible sentinel div at the bottom of the list. */
   const messagesEndRef = useRef(null);
 
   useEffect(() => {

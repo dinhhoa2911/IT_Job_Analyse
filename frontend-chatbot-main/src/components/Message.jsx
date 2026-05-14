@@ -1,8 +1,31 @@
+/**
+ * @fileoverview Chat message display component.
+ * @module Message
+ */
+
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ChartRenderer from "./ChartRenderer";
+import MarketInsightCard from "./MarketInsightCard";
 
+/**
+ * @typedef {Object} MessageData
+ * @property {number}          id            - Unique message ID.
+ * @property {string}          text          - Message body (markdown for bot messages).
+ * @property {'user'|'bot'}    sender        - Who sent the message.
+ * @property {string}          timestamp     - ISO 8601 timestamp.
+ * @property {string}          [queryType]   - RAG query type (bot only).
+ * @property {Object}          [chart]       - Chart.js spec (bot only).
+ * @property {Object}          [marketInsight] - Gold-layer market insight data (bot only).
+ * @property {boolean}         [isError]     - True when the message is an error reply.
+ */
+
+/**
+ * Custom renderer overrides passed to ReactMarkdown.
+ * Maps standard HTML elements to Tailwind-styled equivalents.
+ * @type {Object}
+ */
 const markdownComponents = {
   a: ({ href, children }) => (
     <a
@@ -37,6 +60,18 @@ const markdownComponents = {
     ),
 };
 
+/**
+ * @component
+ * @brief Renders a single chat message bubble.
+ *
+ * Bot messages are rendered as markdown with optional chart and market insight card.
+ * User messages are displayed as plain text in a gray bubble.
+ * Error messages from the bot use a red styling variant.
+ *
+ * @param {Object}      props
+ * @param {MessageData} props.message - The message object to display.
+ * @returns {JSX.Element}
+ */
 function Message({ message }) {
   const isBot = message.sender === "bot";
 
@@ -64,6 +99,9 @@ function Message({ message }) {
         )}
 
         {isBot && message.chart && <ChartRenderer chart={message.chart} />}
+        {isBot && message.marketInsight && (
+          <MarketInsightCard insight={message.marketInsight} />
+        )}
 
         <span className="text-xs text-gray-400 mt-2 block">
           {new Date(message.timestamp).toLocaleTimeString([], {

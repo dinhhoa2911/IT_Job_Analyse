@@ -1,12 +1,29 @@
+/**
+ * @fileoverview Login / sign-up modal component with OAuth and email options.
+ * @module LoginModal
+ */
+
 import React, { useState } from "react";
 import { GoX } from "react-icons/go";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 import { GiPhone } from "react-icons/gi";
 
+/**
+ * @component
+ * @brief Modal dialog presenting login and sign-up options.
+ *
+ * Supports OAuth flows (Google, Apple, Phone) and an email/password entry.
+ * Renders nothing when `isOpen` is false.
+ *
+ * @param {Object}       props
+ * @param {boolean}      props.isOpen  - Controls whether the modal is visible.
+ * @param {function(): void} props.onClose - Called to close and unmount the modal.
+ * @returns {JSX.Element|null}
+ */
 function LoginModal({ isOpen, onClose }) {
+  // {string} Current value of the email address input
   const [email, setEmail] = useState("");
-  const [method, setMethod] = useState(null);
 
   if (!isOpen) return null;
 
@@ -73,7 +90,7 @@ function LoginModal({ isOpen, onClose }) {
 
         {/* Continue Button */}
         <button
-          onClick={() => email && setMethod("email")}
+          onClick={() => { /* TODO: implement email auth */ }}
           disabled={!email}
           className="w-full px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >

@@ -1,7 +1,28 @@
+"""
+@file config.py
+@brief Application-wide settings loaded from the environment / .env file.
+
+All tuneable knobs (model names, pool sizes, service hostnames) are centralised
+here via Pydantic's BaseSettings so they can be overridden without code changes.
+Import the ``settings`` singleton to access values throughout the application.
+"""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """
+    @class Settings
+    @brief Pydantic settings model — values are read from environment variables or .env.
+
+    Field groups:
+      - OpenAI     : LLM model and API key.
+      - Milvus     : Vector database connection and target collection.
+      - Trino      : Analytical query engine connection.
+      - Embedding  : SentenceTransformer model used during both indexing and retrieval.
+      - Reranker   : CrossEncoder model for final relevance scoring.
+      - Search pool: Controls candidate counts at each stage of the hybrid pipeline.
+    """
     # OpenAI
     openai_api_key: str
     openai_model: str = "gpt-4o-mini"

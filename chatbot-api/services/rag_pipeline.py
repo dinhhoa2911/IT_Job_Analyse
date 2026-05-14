@@ -1,4 +1,17 @@
-"""RAG pipeline: classify → retrieve → generate."""
+"""
+@file rag_pipeline.py
+@brief Orchestrates the full RAG pipeline: classify → retrieve → generate.
+
+Each incoming chat message is routed through four branches depending on the
+QueryClassifier's decision:
+  - search_job    → HybridSearchService (Milvus) → LLM with job-card prompt.
+  - analytics     → SQLAgentService (Trino)      → LLM with chain-of-thought prompt.
+  - career_advice → LLM only (no retrieval).
+  - out_of_scope  → fixed canned response, no LLM call.
+
+Helper utilities handle language detection, query-level post-filtering, prompt
+construction, and the optional market-context block from the Gold layer.
+"""
 
 import logging
 
@@ -6,6 +19,7 @@ from openai import OpenAI
 
 from config import settings
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
+from services.market_context import MarketContextService, format_market_block
 from services.query_classifier import QueryClassifier
 from services.query_processor import QueryProcessor
 from services.sql_agent import SQLAgentService
@@ -20,6 +34,12 @@ _VI_CHARS = set(
 )
 
 def _detect_lang(text: str) -> str:
+    """
+    @brief Detect whether text is Vietnamese or English based on diacritic presence.
+
+    @param text  Input string to inspect.
+    @return      "Vietnamese" if any Vietnamese diacritic character is found, else "English".
+    """
     return "Vietnamese" if any(c in _VI_CHARS for c in text.lower()) else "English"
 
 
@@ -130,7 +150,12 @@ _LOCATION_ALIASES: dict[str, list[str]] = {
 
 
 def _extract_filters(query: str) -> dict:
-    """Return {work_mode: str | None, location: str | None} from query text."""
+    """
+    @brief Parse work-mode and location keywords from the raw query string.
+
+    @param query  User's natural-language query.
+    @return       Dict with keys ``work_mode`` (str | None) and ``location`` (str | None).
+    """
     q = query.lower()
     work_mode = next(
         (k for k, kws in _WORK_MODE_KEYWORDS.items() if any(kw in q for kw in kws)),
@@ -144,7 +169,13 @@ def _extract_filters(query: str) -> dict:
 
 
 def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
-    """Hard-filter retrieved jobs by work_mode and/or location."""
+    """
+    @brief Hard-filter retrieved jobs by work_mode and/or location keywords.
+
+    @param jobs     Reranked job list from the hybrid search pipeline.
+    @param filters  Dict produced by _extract_filters(); may contain None values.
+    @return         Subset of jobs that satisfy every non-None filter.
+    """
     if not filters["work_mode"] and not filters["location"]:
         return jobs
 
@@ -168,7 +199,15 @@ def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
 
 
 def _parse_job_fields(text_content: str) -> dict:
-    """Extract structured fields from the concatenated text_content string."""
+    """
+    @brief Split a job's ``text_content`` string into a field → value dict.
+
+    text_content is stored as "Key1: value1. Key2: value2. …" by the indexing
+    pipeline; this function reverses that encoding for prompt building.
+
+    @param text_content  The raw concatenated text from a job document.
+    @return              Dict mapping field names (e.g. "Job Title") to their values.
+    """
     fields = {}
     for part in text_content.split(". "):
         if ": " in part:
@@ -177,7 +216,21 @@ def _parse_job_fields(text_content: str) -> dict:
     return fields
 
 
-def _build_search_prompt(question: str, jobs: list[JobResult], lang: str) -> str:
+def _build_search_prompt(
+    question:     str,
+    jobs:         list[JobResult],
+    lang:         str,
+    market_block: str | None = None,
+) -> str:
+    """
+    @brief Assemble the user-turn prompt for the search_job LLM call.
+
+    @param question      The resolved (possibly rewritten) user query.
+    @param jobs          Filtered and ranked JobResult list from hybrid search.
+    @param lang          "Vietnamese" or "English" — injected into the prompt.
+    @param market_block  Optional pre-formatted Gold-layer market context string.
+    @return              Complete user-turn prompt string ready for the LLM.
+    """
     if not jobs:
         return (
             f"[LANG={lang}] User query: {question}\n\n"
@@ -201,7 +254,7 @@ def _build_search_prompt(question: str, jobs: list[JobResult], lang: str) -> str
         block += f"\n  URL: {job.job_link}"
         job_blocks.append(block)
 
-    return (
+    prompt = (
         f"[LANG={lang}] User query: {question}\n\n"
         f"=== {len(jobs)} JOBS FROM DATABASE ===\n\n"
         + "\n\n".join(job_blocks)
@@ -210,8 +263,20 @@ def _build_search_prompt(question: str, jobs: list[JobResult], lang: str) -> str
         "Open with a 1-sentence summary. Close with 1 relevant tip."
     )
 
+    if market_block:
+        prompt += f"\n\n{market_block}"
+
+    return prompt
+
 
 def _format_rows_as_table(rows: list[dict], limit: int = 20) -> str:
+    """
+    @brief Render a list of SQL result rows as a plain markdown table string.
+
+    @param rows   SQL result rows; each dict maps column name → value.
+    @param limit  Maximum number of rows to render (default 20).
+    @return       Markdown-style table string, with a note if rows were truncated.
+    """
     if not rows:
         return ""
     sample = rows[:limit]
@@ -227,6 +292,14 @@ def _format_rows_as_table(rows: list[dict], limit: int = 20) -> str:
 
 
 def _build_analytics_prompt(question: str, rows: list[dict], lang: str) -> str:
+    """
+    @brief Assemble the user-turn prompt for the analytics LLM call.
+
+    @param question  The user's analytics question.
+    @param rows      SQL result rows from SQLAgentService.
+    @param lang      "Vietnamese" or "English".
+    @return          Complete user-turn prompt string including the data table.
+    """
     if not rows:
         return (
             f"[LANG={lang}] User query: {question}\n\n"
@@ -247,12 +320,21 @@ def _build_analytics_prompt(question: str, rows: list[dict], lang: str) -> str:
 
 class RAGPipeline:
     """
-    classify → retrieve (Milvus or Trino) → generate
+    @class RAGPipeline
+    @brief Top-level orchestrator: classify → retrieve → generate.
 
-    search_job    → HybridSearchService → LLM (_SEARCH_SYSTEM_PROMPT)
-    analytics     → SQLAgentService     → LLM (_ANALYTICS_SYSTEM_PROMPT, CoT)
-    career_advice → (no retrieval)      → LLM (_CAREER_ADVICE_SYSTEM_PROMPT)
-    out_of_scope  → fixed message (no LLM call)
+    Architecture:
+      - search_job    → HybridSearchService (Milvus ANN + BM25 + RRF + rerank)
+                        → MarketContextService (Trino Gold layer, non-blocking)
+                        → LLM with _SEARCH_SYSTEM_PROMPT
+      - analytics     → SQLAgentService (LLM-generated Trino SQL)
+                        → LLM with _ANALYTICS_SYSTEM_PROMPT (chain-of-thought)
+      - career_advice → LLM only with _CAREER_ADVICE_SYSTEM_PROMPT (no retrieval)
+      - out_of_scope  → canned bilingual message, zero LLM calls
+
+    All heavy service objects are initialised once in __init__ and reused
+    across requests.  The pipeline also resolves vague follow-up messages
+    into standalone queries using recent conversation history.
     """
 
     def __init__(self) -> None:
@@ -261,6 +343,7 @@ class RAGPipeline:
         self._query_processor = QueryProcessor()
         self._vector_search   = HybridSearchService()
         self._sql_agent       = SQLAgentService()
+        self._market_ctx      = MarketContextService()
 
     def _generate(
         self,
@@ -269,6 +352,18 @@ class RAGPipeline:
         lang: str,
         history: list[dict] | None = None,
     ) -> str:
+        """
+        @brief Call the LLM and return the generated text response.
+
+        Builds the message list as [system, *history, user] so multi-turn
+        context is injected before the current user prompt.
+
+        @param prompt            User-turn content (assembled by a _build_*_prompt helper).
+        @param system_template   System prompt template; must contain a ``{lang}`` placeholder.
+        @param lang              "Vietnamese" or "English", substituted into the template.
+        @param history           Optional prior conversation turns (role/content dicts).
+        @return                  The LLM's text completion.
+        """
         system = system_template.format(lang=lang)
         messages: list[dict] = [{"role": "system", "content": system}]
         if history:
@@ -283,7 +378,17 @@ class RAGPipeline:
         return response.choices[0].message.content
 
     def _resolve_query(self, message: str, history: list[dict]) -> str:
-        """Rewrite a vague follow-up into a standalone query using recent context."""
+        """
+        @brief Rewrite a vague follow-up into a self-contained query using conversation context.
+
+        Uses up to the last 4 turns of history so the LLM can resolve pronouns
+        and shorthand references (e.g. "lọc thêm remote", "còn job nào khác?").
+        Falls back to the original message on any LLM error.
+
+        @param message  The raw user message, possibly a vague follow-up.
+        @param history  Recent conversation turns as role/content dicts.
+        @return         Standalone query string suitable for classification and retrieval.
+        """
         if not history:
             return message
 
@@ -311,6 +416,16 @@ class RAGPipeline:
             return message
 
     def run(self, request: ChatRequest, history: list[dict] | None = None) -> ChatResponse:
+        """
+        @brief Execute the full RAG pipeline for a single chat request.
+
+        Resolves the query, classifies it, runs the appropriate retrieval branch,
+        and generates the LLM response.
+
+        @param request  Validated ChatRequest from the HTTP layer.
+        @param history  Prior conversation turns for multi-turn resolution and LLM context.
+        @return         ChatResponse with answer, query_type, and branch-specific fields.
+        """
         history = history or []
         lang = _detect_lang(request.message)
 
@@ -336,9 +451,18 @@ class RAGPipeline:
             jobs = _post_filter(jobs, filters)
             logger.info("Post-filter %s → %d jobs remain", filters, len(jobs))
 
-            prompt = _build_search_prompt(resolved, jobs, lang)
+            # Query Gold layer for market intelligence (non-blocking — returns None on failure)
+            market_insight = self._market_ctx.get_insight(jobs, resolved, filters)
+            market_block   = format_market_block(market_insight) if market_insight else None
+
+            prompt = _build_search_prompt(resolved, jobs, lang, market_block)
             answer = self._generate(prompt, _SEARCH_SYSTEM_PROMPT, lang, history)
-            return ChatResponse(answer=answer, query_type=query_type, jobs=jobs)
+            return ChatResponse(
+                answer=answer,
+                query_type=query_type,
+                jobs=jobs,
+                market_insight=market_insight,
+            )
 
         # ── analytics ────────────────────────────────────────────────────
         if query_type == QueryType.analytics:
