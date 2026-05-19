@@ -1,3 +1,66 @@
+/* Message enter animations */
+@keyframes msgSlideRight {
+  from { opacity: 0; transform: translateX(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)    scale(1); }
+}
+@keyframes msgSlideLeft {
+  from { opacity: 0; transform: translateX(-16px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)     scale(1); }
+}
+.msg-user { animation: msgSlideRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.msg-bot  { animation: msgSlideLeft  0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Typing indicator dots */
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+  30%            { transform: translateY(-6px); opacity: 1;   }
+}
+.typing-dot { animation: typingDot 1.2s ease-in-out infinite; }
+
+/* Page transition animation */
+@keyframes pageSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageSlideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Sidebar slide in/out */
+@keyframes sidebarSlideIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes sidebarSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-16px); }
+}
+.sidebar-enter {
+  animation: sidebarSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.sidebar-exit {
+  animation: sidebarSlideOut 0.24s cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+
+/* Conversation item enter */
+@keyframes convItemIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.conv-item-enter {
+  animation: convItemIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Dropdown scale-in */
+@keyframes dropdownScaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.dropdown-enter {
+  animation: dropdownScaleIn 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: bottom left;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

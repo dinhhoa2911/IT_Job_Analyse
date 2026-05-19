@@ -13,13 +13,11 @@ import Message from "./Message";
  */
 function TypingIndicator() {
   return (
-    <div className="flex gap-4 justify-start">
-      <div className="text-black dark:text-white rounded-lg px-6 py-4">
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-        </div>
+    <div className="flex justify-start msg-bot">
+      <div className="bg-gray-100 dark:bg-[#2F2F2F] rounded-2xl rounded-bl-sm px-4 py-3.5 flex items-center gap-1.5">
+        <span className="typing-dot w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ animationDelay: "0ms" }} />
+        <span className="typing-dot w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ animationDelay: "200ms" }} />
+        <span className="typing-dot w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ animationDelay: "400ms" }} />
       </div>
     </div>
   );
@@ -46,8 +44,8 @@ function ChatArea({ messages, isLoading = false }) {
   }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white dark:bg-[#212121] px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-4">
+    <div className="flex-1 overflow-y-auto bg-white dark:bg-[#212121] px-4 py-6">
+      <div className="max-w-3xl mx-auto space-y-1.5">
         {messages.map((message) => (
           <Message key={message.id} message={message} />
         ))}

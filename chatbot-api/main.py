@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.chat import router, _pipeline
 from routers.cv_match import router as cv_router
+from routers.user_cvs import router as user_cvs_router
 
 # ---------------------------------------------------------------------------
 # Logging — structured, goes to stdout so Docker can capture it.
@@ -84,3 +85,4 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(cv_router)
+app.include_router(user_cvs_router)

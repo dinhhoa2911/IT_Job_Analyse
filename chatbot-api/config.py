@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     # multilingual alternative: cross-encoder/mmarco-mMiniLMv2-L12-H384-v1
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
+    # MinIO — object storage for user CV files
+    minio_endpoint: str  = "minio:9000"
+    minio_access_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin"
+    minio_cv_bucket: str  = "user-cvs"
+
     # Search pool sizes (final top_k is the result count returned to user)
     top_k_results: int = 5       # final results returned to user
     retrieval_k: int = 20        # candidates fetched per retriever (dense & sparse)

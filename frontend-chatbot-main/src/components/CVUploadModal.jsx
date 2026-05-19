@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiBriefcase, FiCheckCircle, FiExternalLink, FiFileText,
   FiUploadCloud, FiX, FiMapPin, FiAward, FiClock,
 } from "react-icons/fi";
+import { useAuth } from "../contexts/AuthContext";
+import { FiTrash2 } from "react-icons/fi";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8100";
 
@@ -381,11 +383,33 @@ function ProcessingView({ fileName }) {
 // ── Main Modal ────────────────────────────────────────────────────────────────
 
 export default function CVUploadModal({ onClose }) {
-  const [stage, setStage]       = useState("upload");
-  const [fileName, setFileName] = useState("");
-  const [result, setResult]     = useState(null);
-  const [errMsg, setErrMsg]     = useState("");
-  const [topK]                  = useState(10);
+  const { user }                = useAuth();
+  const [stage, setStage]       = useState("checking");
+  const [cvList, setCvList]       = useState([]);
+  const [fileName, setFileName]   = useState("");
+  const [result, setResult]       = useState(null);
+  const [errMsg, setErrMsg]       = useState("");
+  const [deleting, setDeleting]   = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [topK]                    = useState(10);
+
+  const refreshCVList = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${API_URL}/user/${user.uid}/cvs`);
+      const cvs = res.ok ? await res.json() : [];
+      setCvList(cvs);
+      setStage("list");
+    } catch {
+      setStage("list");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) { setStage("list"); return; }
+    refreshCVList();
+  }, [user]); // eslint-disable-line
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -393,41 +417,66 @@ export default function CVUploadModal({ onClose }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const handleFile = useCallback(async (file) => {
+  const handleDeleteCV = useCallback(async (cv) => {
+    setDeleting(cv.cv_id);
+    try {
+      await fetch(`${API_URL}/user/${user.uid}/cvs/${cv.cv_id}`, { method: "DELETE" });
+      setCvList(prev => prev.filter(c => c.cv_id !== cv.cv_id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    } finally {
+      setDeleting(null);
+    }
+  }, [user]);
+
+  // Upload CV → chỉ LƯU vào MinIO + Iceberg, KHÔNG match ngay
+  const handleSaveCV = useCallback(async (file) => {
     if (!file.name.toLowerCase().endsWith(".pdf")) {
-      setErrMsg("Chỉ hỗ trợ file PDF. Vui lòng chọn lại.");
-      setStage("error");
-      return;
+      setErrMsg("Chỉ hỗ trợ file PDF."); return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setErrMsg(`File quá lớn (${(file.size / 1024 / 1024).toFixed(1)} MB). Giới hạn tối đa là 5 MB.`);
-      setStage("error");
-      return;
+      setErrMsg(`File quá lớn (${(file.size / 1024 / 1024).toFixed(1)} MB). Tối đa 5 MB.`); return;
     }
+    if (!user) { setErrMsg("Bạn cần đăng nhập để lưu CV."); return; }
 
-    setFileName(file.name);
-    setStage("processing");
-
-    const form = new FormData();
-    form.append("file",  file);
-    form.append("top_k", topK);
-
+    setUploading(true);
+    setErrMsg("");
     try {
-      const res  = await fetch(`${API_URL}/match-cv`, { method: "POST", body: form });
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`${API_URL}/user/${user.uid}/cvs`, { method: "POST", body: form });
+      if (!res.ok) throw new Error("Upload thất bại.");
+      const saved = await res.json();
+      setCvList(prev => [saved, ...prev]);
+      setShowUpload(false);
+    } catch (err) {
+      setErrMsg(err.message || "Lưu CV thất bại. Vui lòng thử lại.");
+    } finally {
+      setUploading(false);
+    }
+  }, [user]);
+
+  // Dùng lại CV đã lưu → backend tải từ MinIO rồi match
+  const handleReuseCV = useCallback(async (cv) => {
+    setFileName(cv.filename);
+    setStage("processing");
+    try {
+      const res  = await fetch(`${API_URL}/user/${user.uid}/cvs/${cv.cv_id}/match?top_k=${topK}`, {
+        method: "POST",
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || `Server error ${res.status}`);
       setResult(data);
       setStage("results");
     } catch (err) {
-      setErrMsg(err.message || "Đã xảy ra lỗi không xác định. Vui lòng thử lại.");
+      setErrMsg(err.message || "Không thể tải lại CV. Vui lòng upload CV mới.");
       setStage("error");
     }
-  }, [topK]);
+  }, [user, topK]);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-[#111] rounded-3xl shadow-2xl shadow-black/20 dark:shadow-black/60 overflow-hidden border border-gray-100 dark:border-gray-800">
 
@@ -456,22 +505,106 @@ export default function CVUploadModal({ onClose }) {
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
-          {/* Upload */}
-          {stage === "upload" && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                Upload CV của bạn dưới dạng PDF. AI sẽ phân tích kỹ năng và kinh nghiệm, sau đó tìm những việc làm phù hợp nhất từ ITviec.
-              </p>
-              <DropZone onFile={handleFile} />
+          {/* Checking */}
+          {stage === "checking" && (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
 
-              {/* Info chips */}
-              <div className="flex items-center justify-center gap-4 pt-1">
-                {["Phân tích AI", "Matching thông minh", "Kết quả tức thì"].map((t) => (
-                  <span key={t} className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-                    <FiCheckCircle className="w-3 h-3 text-emerald-400" />{t}
-                  </span>
-                ))}
-              </div>
+          {/* List stage: hiển thị CVs + inline upload */}
+          {stage === "list" && (
+            <div className="space-y-3">
+
+              {cvList.length === 0 ? (
+                /* ── Chưa có CV: hiển thị dropzone full ── */
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Chưa có CV nào. Upload CV của bạn để AI phân tích và gợi ý việc làm phù hợp.
+                  </p>
+                  {uploading ? (
+                    <div className="flex flex-col items-center gap-3 py-12">
+                      <div className="w-8 h-8 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm text-gray-400">Đang lưu CV…</p>
+                    </div>
+                  ) : (
+                    <DropZone onFile={handleSaveCV} />
+                  )}
+                  {errMsg && <p className="text-xs text-red-500 text-center">{errMsg}</p>}
+                  <div className="flex items-center justify-center gap-4 pt-1">
+                    {["Phân tích AI", "Matching thông minh", "Kết quả tức thì"].map((t) => (
+                      <span key={t} className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <FiCheckCircle className="w-3 h-3 text-emerald-400" />{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* ── Có CV: hiển thị list + toggle inline upload ── */
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      CV đã lưu ({cvList.length})
+                    </p>
+                    <button
+                      onClick={() => { setShowUpload(v => !v); setErrMsg(""); }}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      <FiUploadCloud className="w-3.5 h-3.5" />
+                      {showUpload ? "← Ẩn" : "+ Thêm CV"}
+                    </button>
+                  </div>
+
+                  {/* Inline upload zone */}
+                  {showUpload && (
+                    <div className="rounded-xl border border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-950/20 p-4">
+                      {uploading ? (
+                        <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-400">
+                          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          Đang lưu CV…
+                        </div>
+                      ) : (
+                        <DropZone onFile={handleSaveCV} />
+                      )}
+                      {errMsg && <p className="text-xs text-red-500 mt-2 text-center">{errMsg}</p>}
+                    </div>
+                  )}
+
+                  {/* CV items */}
+                  {cvList.map((cv) => {
+                    const date = cv.uploaded_at
+                      ? new Date(cv.uploaded_at).toLocaleDateString("vi-VN") : "";
+                    return (
+                      <div key={cv.cv_id} className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 hover:border-blue-200 dark:hover:border-blue-800 transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center flex-shrink-0">
+                          <FiFileText className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{cv.filename}</p>
+                          {date && <p className="text-xs text-gray-400 mt-0.5">Tải lên {date}</p>}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleReuseCV(cv)}
+                            className="px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition shadow-sm"
+                          >
+                            Dùng CV này
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCV(cv)}
+                            disabled={deleting === cv.cv_id}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                          >
+                            {deleting === cv.cv_id
+                              ? <div className="w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                              : <FiTrash2 className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
           )}
 
@@ -489,7 +622,7 @@ export default function CVUploadModal({ onClose }) {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 max-w-sm leading-relaxed">{errMsg}</p>
               </div>
               <button
-                onClick={() => { setStage("upload"); setErrMsg(""); }}
+                onClick={() => { setErrMsg(""); setStage("list"); }}
                 className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition shadow-md shadow-blue-200 dark:shadow-blue-900/40"
               >
                 Thử lại
@@ -502,7 +635,7 @@ export default function CVUploadModal({ onClose }) {
             <div>
               {/* Summary */}
               <div className="flex items-center justify-between mb-4 py-2.5 px-4 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
-                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{result.message}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{result.message?.replace(/\*\*/g, "")}</p>
                 <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 ml-3 flex items-center gap-1">
                   <FiClock className="w-3 h-3" />
                   {(result.processing_time_ms / 1000).toFixed(1)}s
@@ -538,10 +671,10 @@ export default function CVUploadModal({ onClose }) {
         {stage === "results" && (
           <div className="flex items-center justify-between px-6 py-3.5 border-t border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm">
             <button
-              onClick={() => { setStage("upload"); setResult(null); setFileName(""); }}
+              onClick={() => { setResult(null); setFileName(""); setStage("list"); }}
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-medium flex items-center gap-1.5"
             >
-              ← Upload CV khác
+              ← {cvList.length > 0 ? "Quản lý CV" : "Upload CV khác"}
             </button>
             <button
               onClick={onClose}

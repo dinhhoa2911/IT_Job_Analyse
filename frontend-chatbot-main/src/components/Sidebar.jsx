@@ -58,7 +58,7 @@ function UserWidget() {
     <div ref={ref} className="relative border-t border-[#E2E2E2] dark:border-[#2F2F2F] p-2">
       {/* Popup menu */}
       {open && (
-        <div className="absolute bottom-full left-2 right-2 mb-1 bg-white dark:bg-[#2A2A2A] border border-[#E2E2E2] dark:border-[#3F3F3F] rounded-xl shadow-lg py-1 text-sm overflow-hidden z-50">
+        <div className="dropdown-enter absolute bottom-full left-2 right-2 mb-1 bg-white dark:bg-[#2A2A2A] border border-[#E2E2E2] dark:border-[#3F3F3F] rounded-xl shadow-lg py-1 text-sm overflow-hidden z-50">
           {/* User info (read-only) */}
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#E2E2E2] dark:border-[#3F3F3F]">
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
@@ -131,6 +131,8 @@ function UserWidget() {
  */
 function ConversationItem({
   conv,
+  index,
+  stagger,
   onSelect,
   onStar,
   onRename,
@@ -190,11 +192,12 @@ function ConversationItem({
 
   return (
     <div
-      className={`group relative flex items-center rounded-lg text-sm cursor-pointer ${
+      className={`conv-item-enter group relative flex items-center rounded-lg text-sm cursor-pointer ${
         conv.active
           ? "bg-[#E2E2E2] dark:bg-[#2F2F2F]"
           : "hover:bg-[#E2E2E2] dark:hover:bg-[#2F2F2F]"
       }`}
+      style={{ animationDelay: stagger ? `${index * 35}ms` : "0ms" }}
     >
       {/* Main row */}
       <div
@@ -238,7 +241,7 @@ function ConversationItem({
 
           {/* Dropdown */}
           {menuOpen && (
-            <div className="absolute right-0 top-8 z-50 w-44 bg-white dark:bg-[#2A2A2A] border border-[#E2E2E2] dark:border-[#3F3F3F] rounded-xl shadow-lg py-1 text-sm">
+            <div className="dropdown-enter absolute right-0 top-8 z-50 w-44 bg-white dark:bg-[#2A2A2A] border border-[#E2E2E2] dark:border-[#3F3F3F] rounded-xl shadow-lg py-1 text-sm">
               {/* Star */}
               <button
                 onClick={(e) => {
@@ -315,12 +318,16 @@ function Sidebar({
   onDeleteConversation,
   onCloseSidebar,
   onOpenSettings,
+  isClosing,
 }) {
-  const starred = conversations.filter((c) => c.starred);
-  const recent  = conversations.filter((c) => !c.starred);
+  const starred      = conversations.filter((c) => c.starred);
+  const recent       = conversations.filter((c) => !c.starred);
+  // Track whether this is the initial mount so we can stagger items on first load
+  const isFirstRender = useRef(true);
+  useEffect(() => { isFirstRender.current = false; }, []);
 
   return (
-    <div className="w-64 bg-[#F9F9F9] dark:bg-[#171717] border-r border-[#E2E2E2] dark:border-[#2F2F2F] flex flex-col h-screen text-black dark:text-white">
+    <div className={`w-64 bg-[#F9F9F9] dark:bg-[#171717] border-r border-[#E2E2E2] dark:border-[#2F2F2F] flex flex-col h-screen text-black dark:text-white ${isClosing ? "sidebar-exit" : "sidebar-enter"}`}>
 
       {/* Header */}
       <div className="p-1 flex items-center justify-between">
@@ -373,10 +380,12 @@ function Sidebar({
           <div>
             <p className="text-xs text-gray-500 px-2 mb-1">Starred</p>
             <div className="space-y-0.5">
-              {starred.map((conv) => (
+              {starred.map((conv, i) => (
                 <ConversationItem
                   key={conv.id}
                   conv={conv}
+                  index={i}
+                  stagger={isFirstRender.current}
                   onSelect={onSelectConversation}
                   onStar={onStarConversation}
                   onRename={onRenameConversation}
@@ -391,10 +400,12 @@ function Sidebar({
           <div>
             <p className="text-xs text-gray-500 px-2 mb-1">Recent</p>
             <div className="space-y-0.5">
-              {recent.map((conv) => (
+              {recent.map((conv, i) => (
                 <ConversationItem
                   key={conv.id}
                   conv={conv}
+                  index={i}
+                  stagger={isFirstRender.current}
                   onSelect={onSelectConversation}
                   onStar={onStarConversation}
                   onRename={onRenameConversation}

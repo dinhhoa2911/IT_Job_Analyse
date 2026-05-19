@@ -4,7 +4,7 @@ import RegisterForm from '../components/auth/RegisterForm';
 
 export default function RegisterPage() {
   return (
-    <div className="relative flex min-h-screen bg-[#f5f3ef]">
+    <div className="page-enter relative flex min-h-screen bg-[#f5f3ef]">
       <AuthBackground />
       <div className="relative flex w-full items-center justify-center px-4 lg:w-1/2">
         <div className="absolute top-6 left-1/2 -translate-x-1/2 lg:hidden flex items-center gap-2">

@@ -173,8 +173,9 @@ function App() {
   const navigate   = useNavigate();
   const key        = storageKey(user?.uid ?? null); // null when logged out → no persistence
 
-  const [sidebarOpen, setSidebarOpen]   = useState(true);
-  const [openSettings, setOpenSettings] = useState(false);
+  const [sidebarOpen, setSidebarOpen]     = useState(true);
+  const [sidebarClosing, setSidebarClosing] = useState(false);
+  const [openSettings, setOpenSettings]   = useState(false);
   const [cvModalOpen, setCvModalOpen]   = useState(false);
   const [theme, setTheme]               = useState(localStorage.getItem("theme") || "system");
   const [isLoading, setIsLoading]       = useState(false);
@@ -189,6 +190,19 @@ function App() {
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wasVoiceInputRef = useRef(false);
+
+  const handleCloseSidebar = useCallback(() => {
+    setSidebarClosing(true);
+    setTimeout(() => { setSidebarOpen(false); setSidebarClosing(false); }, 240);
+  }, []);
+
+  const handleOpenCVModal = useCallback(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setCvModalOpen(true);
+  }, [user, navigate]);
 
   // Preload TTS voices early (Chrome lazy-loads them)
   useEffect(() => {
@@ -325,9 +339,26 @@ function App() {
         );
         speakText(data.answer);
       } catch (err) {
+        const raw = err?.message ?? "";
+        let friendly;
+        if (raw.includes("Failed to fetch") || raw.includes("NetworkError") || raw.includes("network")) {
+          friendly = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.";
+        } else if (raw.includes("504") || raw.includes("timeout") || err?.name === "AbortError") {
+          friendly = "Máy chủ phản hồi quá lâu. Câu hỏi của bạn có thể phức tạp — hãy thử lại sau vài giây.";
+        } else if (raw.includes("503") || raw.includes("502")) {
+          friendly = "Hệ thống đang bảo trì hoặc khởi động lại. Vui lòng thử lại sau ít phút.";
+        } else if (raw.includes("500")) {
+          friendly = "Đã có lỗi phía máy chủ khi xử lý câu hỏi của bạn. Vui lòng thử lại.";
+        } else if (raw.includes("404")) {
+          friendly = "Không tìm thấy dịch vụ. Vui lòng thử lại sau.";
+        } else if (raw.includes("SyntaxError") || raw.includes("JSON")) {
+          friendly = "Máy chủ trả về dữ liệu không hợp lệ. Vui lòng thử lại.";
+        } else {
+          friendly = "Có sự cố xảy ra. Vui lòng thử lại sau giây lát.";
+        }
         const errMessage = {
           id: Date.now() + 1,
-          text: `Xin lỗi, đã có lỗi xảy ra: ${err.message}. Vui lòng thử lại.`,
+          text: friendly,
           sender: "bot",
           timestamp: new Date().toISOString(),
           isError: true,
@@ -431,7 +462,7 @@ function App() {
   return (
     <div className="flex h-screen bg-white dark:bg-[#212121] text-black dark:text-white">
       {/* Sidebar */}
-      {sidebarOpen && (
+      {(sidebarOpen || sidebarClosing) && (
         <div className="w-64 flex-shrink-0">
           <Sidebar
             conversations={conversations}
@@ -440,8 +471,9 @@ function App() {
             onStarConversation={handleStarConversation}
             onRenameConversation={handleRenameConversation}
             onDeleteConversation={handleDeleteConversation}
-            onCloseSidebar={() => setSidebarOpen(false)}
+            onCloseSidebar={handleCloseSidebar}
             onOpenSettings={() => setOpenSettings(true)}
+            isClosing={sidebarClosing}
           />
         </div>
       )}
@@ -468,7 +500,7 @@ function App() {
             <IoMdImages className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setCvModalOpen(true)}
+            onClick={handleOpenCVModal}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a]"
             title="Match CV với việc làm"
           >
@@ -482,33 +514,31 @@ function App() {
         {/* Chat area */}
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-5xl font-bold mb-4">🤖</h2>
-              <h1 className="text-5xl font-bold mb-6">How can I help?</h1>
-              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                Tìm kiếm việc làm IT, phân tích thị trường tuyển dụng, hoặc xin tư vấn nghề nghiệp.
-              </p>
-            </div>
-
-            {/* CV Match quick-action card */}
-            <button
-              onClick={() => setCvModalOpen(true)}
-              className="mb-6 flex items-center gap-3 px-5 py-3 rounded-xl border border-dashed border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition text-left max-w-sm"
-            >
-              <FiBriefcase className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Upload CV để tìm việc phù hợp</p>
-                <p className="text-xs text-blue-500 dark:text-blue-500 mt-0.5">AI tự phân tích hồ sơ và gợi ý top jobs</p>
+            <div className="flex flex-col items-center w-full max-w-2xl">
+              {/* Logo */}
+              <div className="mb-6">
+                <span className="text-6xl">🤖</span>
               </div>
-            </button>
 
-            <MessageInput
-              onSendMessage={handleSendMessage}
-              onOpenCVModal={() => setCvModalOpen(true)}
-              onVoiceSubmit={handleVoiceSubmit}
-              isLoading={isLoading}
-              isSpeaking={isSpeaking}
-            />
+              {/* Heading */}
+              <div className="text-center mb-12">
+                <h1 className="text-4xl font-bold mb-3">How can I help?</h1>
+                <p className="text-gray-400 text-base leading-relaxed">
+                  Tìm kiếm việc làm IT, phân tích thị trường tuyển dụng, hoặc xin tư vấn nghề nghiệp.
+                </p>
+              </div>
+
+              {/* Input */}
+              <div className="w-full">
+                <MessageInput
+                  onSendMessage={handleSendMessage}
+                  onOpenCVModal={handleOpenCVModal}
+                  onVoiceSubmit={handleVoiceSubmit}
+                  isLoading={isLoading}
+                  isSpeaking={isSpeaking}
+                />
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -516,7 +546,7 @@ function App() {
             <div className="bg-white dark:bg-[#212121] px-4 py-4 flex justify-center">
               <MessageInput
                 onSendMessage={handleSendMessage}
-                onOpenCVModal={() => setCvModalOpen(true)}
+                onOpenCVModal={handleOpenCVModal}
                 onVoiceSubmit={handleVoiceSubmit}
                 isLoading={isLoading}
                 isSpeaking={isSpeaking}

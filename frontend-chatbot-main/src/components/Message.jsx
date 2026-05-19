@@ -76,14 +76,14 @@ function Message({ message }) {
   const isBot = message.sender === "bot";
 
   return (
-    <div className={`flex gap-4 ${isBot ? "justify-start" : "justify-end"}`}>
+    <div className={`flex gap-4 ${isBot ? "justify-start msg-bot" : "justify-end msg-user"}`}>
       <div
         className={`max-w-2xl ${
           isBot
             ? message.isError
-              ? "text-red-600 rounded-lg px-6 py-3 bg-red-50 border border-red-200"
-              : "text-black dark:text-white rounded-lg px-6 py-3"
-            : "bg-[#F4F4F4] dark:bg-[#2F2F2F] text-black dark:text-white rounded-lg px-6 py-3"
+              ? "text-red-600 rounded-2xl px-4 py-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40"
+              : "text-black dark:text-white rounded-2xl px-4 py-2.5"
+            : "bg-[#F4F4F4] dark:bg-[#2F2F2F] text-black dark:text-white rounded-2xl rounded-tr-sm px-4 py-2.5"
         }`}
       >
         {isBot && !message.isError ? (
@@ -103,7 +103,7 @@ function Message({ message }) {
           <MarketInsightCard insight={message.marketInsight} />
         )}
 
-        <span className="text-xs text-gray-400 mt-2 block">
+        <span className="text-xs text-gray-400 mt-1 block">
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",

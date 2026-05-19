@@ -14,13 +14,14 @@ construction, and the optional market-context block from the Gold layer.
 """
 
 import logging
+import re
 
 from openai import OpenAI
 
 from config import settings
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
 from services.market_context import MarketContextService, format_market_block
-from services.query_classifier import QueryClassifier
+from services.query_classifier import QueryClassifier, is_greeting, is_short_off_topic
 from services.query_processor import QueryProcessor
 from services.sql_agent import SQLAgentService
 from services.vector_search import HybridSearchService
@@ -34,13 +35,26 @@ _VI_CHARS = set(
 )
 
 def _detect_lang(text: str) -> str:
-    """
-    @brief Detect whether text is Vietnamese or English based on diacritic presence.
-
-    @param text  Input string to inspect.
-    @return      "Vietnamese" if any Vietnamese diacritic character is found, else "English".
-    """
     return "Vietnamese" if any(c in _VI_CHARS for c in text.lower()) else "English"
+
+
+# Chart type keywords user có thể nói trong query
+_CHART_PREF_RULES = [
+    (re.compile(r'line chart|biểu đồ đường|đường kẻ|dạng đường', re.IGNORECASE), "line"),
+    (re.compile(r'area chart|biểu đồ vùng|dạng vùng', re.IGNORECASE),            "area"),
+    (re.compile(r'pie chart|biểu đồ tròn|biểu đồ bánh|dạng tròn', re.IGNORECASE),"pie"),
+    (re.compile(r'doughnut|donut|biểu đồ nhẫn|dạng nhẫn', re.IGNORECASE),        "doughnut"),
+    (re.compile(r'horizontal|biểu đồ ngang|dạng ngang|nằm ngang', re.IGNORECASE),"horizontalBar"),
+    (re.compile(r'bar chart|biểu đồ cột|dạng cột', re.IGNORECASE),               "bar"),
+]
+
+
+def _extract_chart_preference(question: str) -> str | None:
+    """Trả về chart type nếu user nêu rõ loại biểu đồ, ngược lại None."""
+    for pattern, ctype in _CHART_PREF_RULES:
+        if pattern.search(question):
+            return ctype
+    return None
 
 
 # ── System prompts ────────────────────────────────────────────────────────────
@@ -269,7 +283,7 @@ def _build_search_prompt(
     return prompt
 
 
-def _format_rows_as_table(rows: list[dict], limit: int = 20) -> str:
+def _format_rows_as_table(rows: list[dict], limit: int = 50) -> str:
     """
     @brief Render a list of SQL result rows as a plain markdown table string.
 
@@ -392,18 +406,31 @@ class RAGPipeline:
         if not history:
             return message
 
-        recent = history[-4:]
+        # Dùng toàn bộ history (store đã giới hạn _MAX_TURNS=10 tức 20 messages)
         context_lines = "\n".join(
-            f"{m['role'].upper()}: {m['content'][:300]}" for m in recent
+            f"{m['role'].upper()}: {m['content'][:300]}" for m in history
         )
         prompt = (
+            f"You help an IT job market chatbot understand follow-up messages.\n\n"
             f"Conversation history:\n{context_lines}\n\n"
-            f'Current message: "{message}"\n\n'
-            "If the current message is a vague follow-up that references prior context "
-            "(pronouns, shorthand like 'lọc thêm', 'còn', 'remote', 'higher salary', etc.), "
-            "rewrite it as a complete standalone query in the same language. "
-            "If it is already self-contained, return it unchanged. "
-            "Return ONLY the rewritten query — no explanation."
+            f'New message: "{message}"\n\n'
+            "Rewrite the new message as a COMPLETE standalone query that preserves the full intent.\n"
+            "Rules:\n"
+            "- Keep the SAME request type as the prior context "
+            "(chart→chart, job search→job search, analytics→analytics)\n"
+            "- Include all details: topic, time period, filters, chart/visualization if applicable\n"
+            "- If prior context asked for a chart and the follow-up only changes the time period, "
+            "keep 'biểu đồ' or 'chart' in the rewrite\n"
+            "Examples:\n"
+            '• Prior: "biểu đồ job tháng 4 2026" → New: "còn tháng 3?" '
+            '→ Output: "biểu đồ số lượng job tháng 3 năm 2026"\n'
+            '• Prior: "thống kê job tháng 3 2026" → New: "tháng 2 thì sao" '
+            '→ Output: "thống kê biểu đồ số lượng job tháng 2 năm 2026"\n'
+            '• Prior: "tìm job Python remote HCM" → New: "còn Java?" '
+            '→ Output: "tìm job Java remote HCM"\n'
+            '• Prior: "top 10 công ty tuyển nhiều nhất" → New: "tháng 3 thì sao?" '
+            '→ Output: "top 10 công ty tuyển nhiều nhất tháng 3 năm 2026"\n'
+            "Return ONLY the rewritten query — no explanation, no quotes."
         )
         try:
             resp = self._llm.chat.completions.create(
@@ -428,6 +455,13 @@ class RAGPipeline:
         """
         history = history or []
         lang = _detect_lang(request.message)
+
+        # Check greeting/off-topic TRƯỚC khi resolve — tránh resolver rewrite "xin chào" → job query
+        raw = request.message.strip()
+        if is_greeting(raw) or is_short_off_topic(raw):
+            lang = _detect_lang(raw)
+            canned = _OUT_OF_SCOPE_VI if lang == "Vietnamese" else _OUT_OF_SCOPE_EN
+            return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
 
         resolved = self._resolve_query(request.message, history) if history else request.message
         query_type = self._classifier.classify(resolved)
@@ -470,7 +504,12 @@ class RAGPipeline:
             sql_result: list[dict] | None = None
             chart: dict | None = None
             try:
-                sql_query, sql_result, chart = self._sql_agent.query(resolved)
+                # Check original message first — resolver may strip chart type keywords
+                preferred_chart = (
+                    _extract_chart_preference(request.message)
+                    or _extract_chart_preference(resolved)
+                )
+                sql_query, sql_result, chart = self._sql_agent.query(resolved, preferred_chart)
                 prompt = _build_analytics_prompt(resolved, sql_result, lang)
             except Exception as exc:
                 logger.error("SQL agent failed: %s", exc, exc_info=True)

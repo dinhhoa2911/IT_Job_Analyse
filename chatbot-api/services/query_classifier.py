@@ -1,14 +1,17 @@
 """
 @file query_classifier.py
-@brief LLM-based query classifier that routes user messages to the correct pipeline branch.
+@brief LLM-based query classifier với multi-layer fast-path detection.
 
-Makes a single low-latency LLM call (max_tokens=16) to classify each incoming
-message into one of four QueryType categories: search_job, analytics,
-career_advice, or out_of_scope.  Falls back to career_advice on any API error
-or unrecognised label to avoid silently dropping valid questions.
+Priority order:
+  1. Greeting / casual / off-topic fast-path → out_of_scope  (no LLM)
+  2. Chart / visualization fast-path         → analytics     (no LLM)
+  3. Short message without IT keywords       → out_of_scope  (no LLM)
+  4. LLM call with enriched Vietnamese prompt
+  5. Fallback to career_advice on error
 """
 
 import logging
+import re
 
 from openai import OpenAI
 
@@ -16,6 +19,99 @@ from config import settings
 from models.schemas import QueryType
 
 logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Greeting / casual fast-path
+#    Lời chào, filler words, cảm ơn, tạm biệt, nonsense → out_of_scope ngay.
+#    Phải check TRƯỚC resolve_query để tránh bị rewrite thành job query.
+# ─────────────────────────────────────────────────────────────────────────────
+_GREETING_RE = re.compile(
+    r"^\s*("
+
+    # ── Greetings (EN) ──
+    r"hi+|hello+|hey+|howdy|sup|yo+|hiya|heya|helo+"
+
+    # ── Greetings (VI) ──
+    r"|xin chào|chào mừng|chào bạn|chào anh|chào chị|chào em|chào thầy|chào cô"
+    r"|chào buổi sáng|chào buổi chiều|chào buổi tối|chào ngày mới"
+    r"|chào|ê bạn|ê mày|ê|này bạn|này mày|nè"
+    r"|alo+|a lô|alô"
+
+    # ── Good morning / evening ──
+    r"|good morning|good afternoon|good evening|good night|good day"
+
+    # ── Thanks (EN + VI) ──
+    r"|thank you|thanks+|thank u|ty|thx|thk|tks|cảm ơn bạn nhiều|cảm ơn nhiều"
+    r"|cảm ơn bạn|cảm ơn|cám ơn|cảm ơn nhé|cảm ơn nha|cảm ơn mày"
+    r"|không có gì|không có chi|không dám|không sao"
+
+    # ── Affirmations / fillers ──
+    r"|vâng|dạ|dạ vâng|dạ ok|yes|no|nope|yep|yeah|yup|nah"
+    r"|ok+|oke+|okay+|okie+|okey+|k\b|okk+|oke bạn"
+    r"|ừ+|ừa+|uh+|uhm+|hmm+|hm+|à+|ờ+|ô+|ổn|được|vậy à|vậy hả|ừ thì"
+    r"|rồi|xong|thôi|được rồi|hiểu rồi|hiểu|oke hiểu"
+
+    # ── Goodbye (EN + VI) ──
+    r"|bye+|goodbye+|see you|see ya|later|cya"
+    r"|tạm biệt|bái bai|bái|chào nhé|chào tạm biệt|hẹn gặp lại|hẹn gặp|đi nhé"
+
+    # ── Laugh / reaction ──
+    r"|haha+|hihi+|hehe+|hoho+|lol|lmao|rofl|😂|🤣|😊|😄|👍|👌|❤️|🙏"
+
+    # ── Nonsense / test ──
+    r"|test+|testing+|demo|ping|pong|check|thử|thử thôi|thử tí|thử xem"
+    r"|123+|1234+|aaa+|bbb+|ccc+|zzz+|xyz|abc+|\.\.\.|…"
+
+    # ── Filler questions ──
+    r"|còn đó không|bạn có đó không|có ai đó không|đang online không"
+
+    r")\s*[!?.,:;🙂😊👋🤗]*\s*$",
+    re.IGNORECASE | re.UNICODE,
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. IT keyword set — dùng để check short message có liên quan IT không
+# ─────────────────────────────────────────────────────────────────────────────
+_IT_KEYWORD_RE = re.compile(
+    r"\b(job|việc|tuyển|lương|salary|wage|skill|kỹ năng|công ty|company|employer"
+    r"|developer|engineer|programmer|coder|devops|fullstack|frontend|backend"
+    r"|python|java|javascript|react|node|angular|vue|kotlin|swift|golang|rust|php|ruby"
+    r"|sql|mysql|postgresql|mongodb|redis|kafka|docker|kubernetes|aws|azure|gcp|cloud"
+    r"|data|ai|ml|machine learning|deep learning|nlp|llm|analyst|scientist"
+    r"|intern|fresher|junior|senior|lead|manager|architect|cto|ceo"
+    r"|remote|hybrid|onsite|hcm|hanoi|đà nẵng|da nang|hà nội|ho chi minh"
+    r"|cv|resume|portfolio|interview|phỏng vấn|thi tuyển|ứng tuyển|apply"
+    r"|thống kê|phân tích|xu hướng|thị trường|tuyển dụng|tìm việc|xin việc"
+    r"|biểu đồ|chart|graph|trend|analytics|statistics)\b",
+    re.IGNORECASE | re.UNICODE,
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Chart / visualization fast-path
+# ─────────────────────────────────────────────────────────────────────────────
+_CHART_TRIGGER = r"(vẽ|show|draw|plot|hiển thị|cho.*xem|display)"
+_CHART_NOUN    = r"(biểu đồ|chart|graph|histogram|pie|bar chart|line chart)"
+_IT_DOMAIN     = r"(job|việc|tuyển|lương|skill|kỹ năng|công ty|thị trường|số lượng|thống kê|developer|engineer|salary)"
+
+_CHART_RE = re.compile(
+    rf"(?:{_CHART_TRIGGER}[\s\S]{{0,30}}{_CHART_NOUN})"
+    rf"|(?:{_CHART_NOUN}[\s\S]{{0,60}}{_IT_DOMAIN})",
+    re.IGNORECASE,
+)
+
+
+def is_greeting(text: str) -> bool:
+    """Public helper — dùng trong rag_pipeline để check TRƯỚC resolve_query."""
+    return bool(_GREETING_RE.match(text.strip()))
+
+
+def is_short_off_topic(text: str) -> bool:
+    """Message ngắn (< 8 từ) mà không có từ khóa IT → out_of_scope."""
+    words = text.strip().split()
+    if len(words) >= 8:
+        return False
+    return not bool(_IT_KEYWORD_RE.search(text))
+
 
 _SYSTEM_PROMPT = """Bạn là bộ phân loại câu hỏi cho hệ thống chatbot tuyển dụng CNTT.
 
@@ -28,10 +124,20 @@ search_job
           "tìm vị trí Data Engineer ở HCM"
 
 analytics
-  Người dùng muốn THỐNG KÊ, XU HƯỚNG, hoặc PHÂN TÍCH thị trường tuyển dụng.
+  Người dùng muốn THỐNG KÊ, XU HƯỚNG, PHÂN TÍCH, hoặc VẼ BIỂU ĐỒ về thị trường tuyển dụng.
   Ví dụ: "skill nào hot nhất hiện tại", "lương trung bình Data Engineer",
           "công ty nào tuyển nhiều nhất", "xu hướng tuyển dụng AI 2024",
-          "bao nhiêu job remote hiện tại", "top ngôn ngữ lập trình được tuyển"
+          "bao nhiêu job remote hiện tại", "top ngôn ngữ lập trình được tuyển",
+          "vẽ biểu đồ số lượng job theo tháng",
+          "cho tôi biểu đồ xu hướng tuyển dụng 2026",
+          "biểu đồ lương trung bình theo kỹ năng",
+          "show chart of job count by month",
+          "số lượng job trong 4 tháng đầu năm",
+          "thống kê số lượng job theo ngày trong tháng 2",
+          "tỷ lệ remote vs onsite hiện tại",
+          "phân bố việc làm theo thành phố",
+          "top 10 công ty tuyển dụng nhiều nhất",
+          "có bao nhiêu job Python được đăng trong tháng 3"
 
 career_advice
   Người dùng hỏi về ĐỊNH HƯỚNG NGHỀ NGHIỆP, LỘ TRÌNH HỌC, hoặc câu hỏi
@@ -42,60 +148,55 @@ career_advice
 
 out_of_scope
   Câu hỏi KHÔNG LIÊN QUAN đến tuyển dụng CNTT, nghề nghiệp IT, hoặc thị trường việc làm.
-  Ví dụ: thời tiết, nấu ăn, thể thao, chính trị, viết thơ, dịch thuật,
-          toán học thuần túy, lịch sử, câu hỏi cá nhân không liên quan IT.
+  Bao gồm: lời chào, cảm ơn, tạm biệt, thời tiết, nấu ăn, thể thao, chính trị,
+           câu hỏi ngắn vô nghĩa, tin nhắn thử nghiệm.
 
 Chỉ trả lời ĐÚNG MỘT từ: search_job, analytics, career_advice, out_of_scope.
 Không giải thích, không dấu câu."""
 
 
 class QueryClassifier:
-    """
-    @class QueryClassifier
-    @brief Single-call LLM classifier with safe fallback to career_advice.
-
-    Sends the user's message to the LLM with a Vietnamese system prompt that
-    defines the four classification categories.  The LLM must return exactly
-    one label word; any unexpected output or API error falls back to
-    career_advice (safer than out_of_scope, which suppresses all retrieval).
-    """
-
     def __init__(self) -> None:
         self._client = OpenAI(api_key=settings.openai_api_key)
 
     def classify(self, question: str) -> QueryType:
-        """
-        @brief Classify a user question into one of the four QueryType branches.
+        stripped = question.strip()
 
-        Fallback logic:
-          - Unknown label → career_advice  (safer than out_of_scope)
-          - API error     → career_advice  (never silently drop a valid question)
+        # ── Layer 1: Greeting / casual ────────────────────────────────────────
+        if is_greeting(stripped):
+            logger.info("Fast-path [greeting]: '%s' → out_of_scope", stripped[:50])
+            return QueryType.out_of_scope
 
-        @param question  Resolved (possibly rewritten) user query string.
-        @return          QueryType enum value for the detected intent.
-        """
+        # ── Layer 2: Chart / visualization ────────────────────────────────────
+        if _CHART_RE.search(stripped):
+            logger.info("Fast-path [chart]: '%s' → analytics", stripped[:60])
+            return QueryType.analytics
+
+        # ── Layer 3: Short message without IT keywords ─────────────────────────
+        if is_short_off_topic(stripped):
+            logger.info("Fast-path [short-off-topic]: '%s' → out_of_scope", stripped[:50])
+            return QueryType.out_of_scope
+
+        # ── Layer 4: LLM classifier ────────────────────────────────────────────
         try:
             response = self._client.chat.completions.create(
                 model=settings.openai_model,
                 max_tokens=16,
                 messages=[
                     {"role": "system", "content": _SYSTEM_PROMPT},
-                    {"role": "user", "content": question},
+                    {"role": "user", "content": stripped},
                 ],
             )
             label = response.choices[0].message.content.strip().lower()
         except Exception as exc:
-            logger.error("Classifier API error: %s — defaulting to career_advice", exc)
+            logger.error("Classifier API error: %s — fallback to career_advice", exc)
             return QueryType.career_advice
 
         try:
             query_type = QueryType(label)
         except ValueError:
-            logger.warning(
-                "Unknown label '%s' for question '%s...' — defaulting to career_advice",
-                label, question[:50],
-            )
+            logger.warning("Unknown label '%s' for '%s' — fallback to career_advice", label, stripped[:50])
             query_type = QueryType.career_advice
 
-        logger.info("Classified '%s...' → %s", question[:50], query_type.value)
+        logger.info("LLM classified '%s' → %s", stripped[:60], query_type.value)
         return query_type

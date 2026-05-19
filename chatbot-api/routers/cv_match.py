@@ -180,15 +180,26 @@ async def match_cv(
 
     # ── 8. Build summary message ───────────────────────────────────────────────
     if matched_jobs:
-        best         = matched_jobs[0]
-        role_hint    = profile.preferred_roles[0] if profile.preferred_roles else "IT"
-        level_hint   = profile.level or "IT"
-        message = (
-            f"Tìm thấy {len(matched_jobs)} việc làm phù hợp với hồ sơ "
-            f"{level_hint} {role_hint} của bạn. "
-            f"Kết quả tốt nhất: **{best.job_title}** "
-            f"({best.match_score:.0f}% phù hợp)."
-        )
+        top_ai        = matched_jobs[0]                                    # AI hybrid ranking
+        top_score     = max(matched_jobs, key=lambda j: j.match_score)    # highest skill match
+        role_hint     = profile.preferred_roles[0] if profile.preferred_roles else "IT"
+        level_hint    = profile.level or "IT"
+
+        if top_ai.job_title == top_score.job_title:
+            # Cả 2 metrics đồng thuận → gộp 1 dòng
+            message = (
+                f"Tìm thấy {len(matched_jobs)} việc làm phù hợp với hồ sơ "
+                f"{level_hint} {role_hint} của bạn. "
+                f"Phù hợp nhất: {top_ai.job_title} ({top_score.match_score:.0f}% match)."
+            )
+        else:
+            # 2 metrics khác nhau → giải thích rõ cả 2
+            message = (
+                f"Tìm thấy {len(matched_jobs)} việc làm phù hợp với hồ sơ "
+                f"{level_hint} {role_hint} của bạn. "
+                f"AI gợi ý hàng đầu: {top_ai.job_title} ({top_ai.match_score:.0f}% match). "
+                f"Tỉ lệ kỹ năng cao nhất: {top_score.job_title} ({top_score.match_score:.0f}% match)."
+            )
     else:
         message = (
             "Không tìm thấy việc làm phù hợp trong cơ sở dữ liệu hiện tại. "
