@@ -40,6 +40,7 @@ Required JSON schema:
 {
   "name": "Full Name or null",
   "skills": ["Skill1", "Skill2"],
+  "languages": ["English (IELTS 6.0)", "Vietnamese (Native)"],
   "experience_years": 2,
   "level": "intern|fresher|junior|mid|senior|lead",
   "preferred_roles": ["Backend Developer", "Data Engineer"],
@@ -50,15 +51,24 @@ Required JSON schema:
 }
 
 EXTRACTION RULES:
-- skills: technical only (languages, frameworks, databases, tools, cloud). Max 20 items.
+- skills: technical only (programming languages, frameworks, databases, tools, cloud platforms).
+  Max 25 items. Prioritize the explicit "Skills" / "Technical Skills" / "Technologies" section
+  over skills mentioned inside project descriptions. Extract the Skills section FIRST.
+- languages: ALL spoken/written language proficiencies the candidate mentions.
+  Include the certification name and score if available.
+  Format: "Language (Certification Score)" or just "Language (Native/Fluent/etc.)".
+  Examples: "English (IELTS 6.0)", "English (TOEIC 800)", "Vietnamese (Native)", "Japanese (N3)".
+  If the CV lists English under Soft Skills or Certifications without a score, still extract it.
+  NEVER leave this empty if the CV mentions any language or language certification.
 - experience_years: total professional years as integer. 0 for fresh graduates / students.
-- level: infer from years + job titles  (student/0 yr → intern or fresher, <1 yr → junior, 1-3 → junior, 3-6 → mid, 6-10 → senior, 10+ → lead).
+- level: infer from years + job titles (0 yr → intern or fresher, <1 yr → junior,
+  1-3 → junior, 3-6 → mid, 6-10 → senior, 10+ → lead).
 - preferred_roles: job title categories in English. Infer from past titles and skills. Max 5.
 - preferred_locations: only if explicitly stated in the CV; otherwise [].
 - summary_text: MUST mention top 5 skills, level, years of experience, and target role type.
   Write as if addressing a job recommender engine. Example:
-  "Mid-level Backend Developer with 3 years of experience in Python, FastAPI, PostgreSQL, Docker, and Redis.
-   Looking for backend or data engineering roles. Strong in API design and microservices."
+  "Junior Backend Developer with 1 year of experience in Java, Spring Boot, MySQL, JavaScript, and Python.
+   Looking for backend or software engineering roles in HCM."
 """
 
 # ── Text helpers ───────────────────────────────────────────────────────────────
@@ -204,18 +214,33 @@ class CVProcessor:
         raw = _extract_pdf_text(pdf_bytes)
 
         # 2. Clean
-        clean = _clean(raw)
+        full_clean = _clean(raw)   # keep full text for rule-based post-processing
 
-        # 3. Truncate to token budget (~4 k chars ≈ 1 k tokens, well within gpt-4o-mini)
-        budget = 4_000
-        if len(clean) > budget:
-            logger.info("CV text truncated %d → %d chars.", len(clean), budget)
-            clean = clean[:budget]
+        # 3. Smart truncation for LLM — keep head (experience) + tail (skills section).
+        # Skills sections typically appear at the END of a CV.  A naive head-only
+        # truncation at 4k chars cuts off page 3+ entirely on multi-page CVs.
+        HEAD = 5_000
+        TAIL = 3_000
+        if len(full_clean) > HEAD + TAIL:
+            logger.info(
+                "CV text smart-truncated %d → %d chars (head=%d + tail=%d).",
+                len(full_clean), HEAD + TAIL, HEAD, TAIL,
+            )
+            clean = full_clean[:HEAD] + "\n\n[...]\n\n" + full_clean[-TAIL:]
+        else:
+            clean = full_clean
 
         # 4. LLM extraction
         profile = self._summarize(clean)
 
-        # 5. Build search queries
+        # 5. Merge languages into skills so the skill gap analyzer can compare them
+        #    against market requirements (e.g. "English" appears in 23% of job postings).
+        for lang in profile.languages:
+            lang_clean = lang.split("(")[0].strip()   # "English (IELTS 6.0)" → "English"
+            if lang_clean and lang_clean.lower() not in {s.lower() for s in profile.skills}:
+                profile.skills.append(lang_clean)
+
+        # 6. Build search queries
         profile.search_queries = _build_search_queries(profile)
 
         logger.info(
@@ -239,7 +264,7 @@ class CVProcessor:
             resp = self._llm.chat.completions.create(
                 model=settings.openai_model,
                 temperature=0.1,
-                max_tokens=700,
+                max_tokens=900,
                 messages=[
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user",   "content": f"CV TEXT:\n{text}"},
@@ -262,7 +287,8 @@ class CVProcessor:
 
         return CVProfile(
             name                = data.get("name"),
-            skills              = (data.get("skills") or [])[:20],
+            skills              = (data.get("skills") or [])[:25],
+            languages           = (data.get("languages") or [])[:10],
             experience_years    = _safe_int(data.get("experience_years")),
             level               = data.get("level"),
             preferred_roles     = (data.get("preferred_roles") or [])[:5],

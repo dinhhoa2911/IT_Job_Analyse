@@ -156,7 +156,7 @@ export default function MarketInsightCard({ insight }) {
                     <span className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300 text-[10px] font-bold flex-shrink-0">
                       {i + 1}
                     </span>
-                    <span className="text-gray-700 dark:text-gray-300 truncate text-xs">{c}</span>
+                    <span className="text-gray-700 dark:text-gray-300 text-xs break-words leading-snug">{c}</span>
                   </li>
                 ))}
               </ul>

@@ -87,7 +87,28 @@ _IT_KEYWORD_RE = re.compile(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Chart / visualization fast-path
+# 3. Forecast / prediction fast-path   (checked BEFORE chart fast-path)
+#    "dự báo Python 3 tháng tới", "xu hướng Data Engineer năm sau",
+#    "forecast backend jobs next quarter", "sẽ tăng hay giảm không?"
+# ─────────────────────────────────────────────────────────────────────────────
+_FORECAST_TIME = (
+    r"(dự báo|dự đoán|forecast|predict|xu hướng.*tháng|tháng tới|năm tới|"
+    r"tương lai|sắp tới|sẽ như thế nào|sẽ tăng|sẽ giảm|"
+    r"trong \d+\s*tháng|next \d+\s*months?|next quarter|"
+    r"trend|outlook|projection)"
+)
+_FORECAST_DOMAIN = (
+    r"(job|việc|tuyển|developer|engineer|data|backend|frontend|python|java|"
+    r"react|devops|mobile|fullstack|software|lập trình|kỹ sư|thị trường)"
+)
+_FORECAST_RE = re.compile(
+    rf"(?:{_FORECAST_TIME}[\s\S]{{0,80}}{_FORECAST_DOMAIN})"
+    rf"|(?:{_FORECAST_DOMAIN}[\s\S]{{0,80}}{_FORECAST_TIME})",
+    re.IGNORECASE,
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Chart / visualization fast-path
 # ─────────────────────────────────────────────────────────────────────────────
 _CHART_TRIGGER = r"(vẽ|show|draw|plot|hiển thị|cho.*xem|display)"
 _CHART_NOUN    = r"(biểu đồ|chart|graph|histogram|pie|bar chart|line chart)"
@@ -115,7 +136,7 @@ def is_short_off_topic(text: str) -> bool:
 
 _SYSTEM_PROMPT = """Bạn là bộ phân loại câu hỏi cho hệ thống chatbot tuyển dụng CNTT.
 
-Phân loại câu hỏi vào ĐÚNG MỘT trong 4 categories:
+Phân loại câu hỏi vào ĐÚNG MỘT trong 5 categories:
 
 search_job
   Người dùng muốn TÌM KIẾM hoặc XEM job posting cụ thể.
@@ -124,20 +145,24 @@ search_job
           "tìm vị trí Data Engineer ở HCM"
 
 analytics
-  Người dùng muốn THỐNG KÊ, XU HƯỚNG, PHÂN TÍCH, hoặc VẼ BIỂU ĐỒ về thị trường tuyển dụng.
+  Người dùng muốn THỐNG KÊ, PHÂN TÍCH DỮ LIỆU HIỆN TẠI, hoặc VẼ BIỂU ĐỒ.
+  Dữ liệu là THỰC TẾ ĐÃ CÓ, không phải dự báo tương lai.
   Ví dụ: "skill nào hot nhất hiện tại", "lương trung bình Data Engineer",
-          "công ty nào tuyển nhiều nhất", "xu hướng tuyển dụng AI 2024",
-          "bao nhiêu job remote hiện tại", "top ngôn ngữ lập trình được tuyển",
-          "vẽ biểu đồ số lượng job theo tháng",
-          "cho tôi biểu đồ xu hướng tuyển dụng 2026",
-          "biểu đồ lương trung bình theo kỹ năng",
-          "show chart of job count by month",
-          "số lượng job trong 4 tháng đầu năm",
-          "thống kê số lượng job theo ngày trong tháng 2",
-          "tỷ lệ remote vs onsite hiện tại",
-          "phân bố việc làm theo thành phố",
-          "top 10 công ty tuyển dụng nhiều nhất",
-          "có bao nhiêu job Python được đăng trong tháng 3"
+          "công ty nào tuyển nhiều nhất", "top ngôn ngữ lập trình được tuyển",
+          "vẽ biểu đồ số lượng job theo tháng", "tỷ lệ remote vs onsite hiện tại",
+          "top 10 công ty tuyển dụng nhiều nhất", "có bao nhiêu job Python tháng 3"
+
+forecast
+  Người dùng muốn DỰ BÁO, DỰ ĐOÁN, hoặc XEM XU HƯỚNG TƯƠNG LAI của thị trường IT.
+  Từ khóa quan trọng: "dự báo", "dự đoán", "forecast", "tháng tới", "năm tới",
+                       "sẽ tăng", "sẽ giảm", "trong X tháng tới", "tương lai", "xu hướng tới".
+  Ví dụ: "dự báo số lượng job Python 3 tháng tới",
+          "xu hướng tuyển dụng Backend năm sau như thế nào?",
+          "forecast Data Engineer jobs next quarter",
+          "DevOps sẽ tăng hay giảm trong 3 tháng tới?",
+          "dự đoán thị trường Frontend năm 2026",
+          "số lượng job Data sẽ thay đổi thế nào?",
+          "trend tuyển dụng AI trong tương lai"
 
 career_advice
   Người dùng hỏi về ĐỊNH HƯỚNG NGHỀ NGHIỆP, LỘ TRÌNH HỌC, hoặc câu hỏi
@@ -151,7 +176,7 @@ out_of_scope
   Bao gồm: lời chào, cảm ơn, tạm biệt, thời tiết, nấu ăn, thể thao, chính trị,
            câu hỏi ngắn vô nghĩa, tin nhắn thử nghiệm.
 
-Chỉ trả lời ĐÚNG MỘT từ: search_job, analytics, career_advice, out_of_scope.
+Chỉ trả lời ĐÚNG MỘT từ: search_job, analytics, forecast, career_advice, out_of_scope.
 Không giải thích, không dấu câu."""
 
 
@@ -167,17 +192,22 @@ class QueryClassifier:
             logger.info("Fast-path [greeting]: '%s' → out_of_scope", stripped[:50])
             return QueryType.out_of_scope
 
-        # ── Layer 2: Chart / visualization ────────────────────────────────────
+        # ── Layer 2: Forecast / prediction (checked BEFORE chart) ────────────
+        if _FORECAST_RE.search(stripped):
+            logger.info("Fast-path [forecast]: '%s' → forecast", stripped[:60])
+            return QueryType.forecast
+
+        # ── Layer 3: Chart / visualization ────────────────────────────────────
         if _CHART_RE.search(stripped):
             logger.info("Fast-path [chart]: '%s' → analytics", stripped[:60])
             return QueryType.analytics
 
-        # ── Layer 3: Short message without IT keywords ─────────────────────────
+        # ── Layer 4: Short message without IT keywords ─────────────────────────
         if is_short_off_topic(stripped):
             logger.info("Fast-path [short-off-topic]: '%s' → out_of_scope", stripped[:50])
             return QueryType.out_of_scope
 
-        # ── Layer 4: LLM classifier ────────────────────────────────────────────
+        # ── Layer 5: LLM classifier ────────────────────────────────────────────
         try:
             response = self._client.chat.completions.create(
                 model=settings.openai_model,

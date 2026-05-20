@@ -19,7 +19,10 @@ import re
 from openai import OpenAI
 
 from config import settings
+from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
+from services.agent import AgentService
+from services.forecast_service import ForecastService
 from services.market_context import MarketContextService, format_market_block
 from services.query_classifier import QueryClassifier, is_greeting, is_short_off_topic
 from services.query_processor import QueryProcessor
@@ -131,36 +134,111 @@ RULES:
 - Do NOT end with "Hope this helps", "Good luck", or any filler closer.\
 """
 
+# forecast: time-series analyst with Prophet expertise
+_FORECAST_SYSTEM_PROMPT = """\
+You are a data scientist and IT labour-market analyst. You interpret Prophet time-series \
+forecasts trained on Vietnam's IT job market data (ITviec) and communicate findings \
+clearly to job seekers, recruiters, and career planners.
+
+LANGUAGE RULE: Respond in {lang}. No exceptions.
+
+CONTEXT: The chart shows:
+  - Solid blue line  : actual monthly job posting counts from the data lakehouse (Gold layer).
+  - Dashed indigo    : Prophet forecast for future months.
+  - Shaded band      : 95% confidence interval (lower–upper bounds from Prophet).
+
+CHAIN-OF-THOUGHT — work through these internally before writing:
+  1. Identify the dominant trend (increasing / decreasing / stable / seasonal).
+  2. Note the magnitude: how many jobs is the market expected to gain or lose?
+  3. Compare the nearest forecast month against the most recent actual month.
+  4. Mention the confidence interval width — narrow = high confidence, wide = uncertain.
+  5. Formulate one concrete, actionable recommendation for the user.
+
+OUTPUT FORMAT:
+**[One direct sentence summarising the forecast trend and key number]**
+
+[2–4 sentences of analysis — cite specific months, numbers, and the confidence band. \
+Note any seasonal patterns or sudden inflection points in the data.]
+
+> [One concrete recommendation: should the user upskill, apply now, or wait?]
+
+RULES:
+- Cite exact numbers from the table (e.g. "predicted 172 jobs in 2026-05").
+- Acknowledge uncertainty: state the confidence range when it is meaningful.
+- Do NOT fabricate numbers not present in the provided table.
+- Do NOT start with "Based on the data", "The results show", or any filler opener.\
+"""
+
+# greeting — detailed feature intro shown when user says hi
+_GREETING_VI = (
+    "Xin chào! Tôi là **IT Job Analyst** — trợ lý AI phân tích thị trường tuyển dụng CNTT Việt Nam.\n\n"
+    "Tôi có thể giúp bạn:\n\n"
+    "**Tìm kiếm việc làm IT**\n"
+    "Tìm job theo kỹ năng, vị trí, địa điểm, mức lương\n"
+    "_Ví dụ: \"React developer HCM lương 20-30 triệu\", \"Senior Python remote\"_\n\n"
+    "**Phân tích thị trường tuyển dụng**\n"
+    "Top công ty tuyển dụng, phân bổ work mode (remote/hybrid/onsite), kỹ năng hot nhất\n"
+    "_Ví dụ: \"Thị trường Java hiện tại thế nào?\", \"Công ty nào tuyển nhiều DevOps nhất?\"_\n\n"
+    "**Dự báo xu hướng (Prophet AI)**\n"
+    "Dự báo số lượng job posting 3 tháng tới theo từng ngành\n"
+    "_Ví dụ: \"Dự báo tuyển dụng Data & AI 3 tháng tới\", \"Xu hướng Backend sắp tới\"_\n\n"
+    "**Phân tích khoảng cách kỹ năng (Skill Gap)**\n"
+    "Upload CV để biết bạn đang thiếu kỹ năng gì so với thị trường, tần suất xuất hiện trong job posting\n"
+    "_Nhấn nút đính kèm để upload CV (PDF/DOCX)_\n\n"
+    "**Tư vấn nghề nghiệp**\n"
+    "Lộ trình học, so sánh stack công nghệ, định hướng phát triển sự nghiệp IT\n"
+    "_Ví dụ: \"Backend hay Frontend phù hợp cho fresher?\", \"Lộ trình để thành Data Engineer\"_\n\n"
+    "---\n"
+    "Hãy đặt câu hỏi hoặc upload CV để bắt đầu nhé!"
+)
+_GREETING_EN = (
+    "Hello! I'm **IT Job Analyst** — an AI assistant for Vietnam's tech job market.\n\n"
+    "Here's what I can do for you:\n\n"
+    "**Job Search**\n"
+    "Find IT jobs by skill, role, location, and salary range\n"
+    "_e.g. \"React developer HCM 20-30M salary\", \"Senior Python remote\"_\n\n"
+    "**Market Analysis**\n"
+    "Top hiring companies, work-mode breakdown, hottest skills in demand\n"
+    "_e.g. \"How is the Java market right now?\", \"Which companies hire the most DevOps?\"_\n\n"
+    "**Trend Forecasting (Prophet AI)**\n"
+    "3-month forecast of job postings per tech category\n"
+    "_e.g. \"Forecast Data & AI hiring next 3 months\", \"Backend trend outlook\"_\n\n"
+    "**Skill Gap Analysis**\n"
+    "Upload your CV to see which skills you're missing vs. the market\n"
+    "_Click the attachment button to upload a PDF or DOCX_\n\n"
+    "**Career Advice**\n"
+    "Learning roadmaps, tech stack comparisons, career path guidance\n"
+    "_e.g. \"Backend vs Frontend for freshers?\", \"How to become a Data Engineer?\"_\n\n"
+    "---\n"
+    "Ask me anything or upload your CV to get started!"
+)
+
 # out_of_scope — no LLM call, returned as-is
 _OUT_OF_SCOPE_VI = (
-    "Tôi chỉ hỗ trợ các câu hỏi về:\n"
-    "• Tìm kiếm việc làm IT\n"
-    "• Phân tích thị trường tuyển dụng CNTT\n"
-    "• Tư vấn nghề nghiệp trong ngành IT\n\n"
+    "Câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi.\n\n"
+    "Tôi chuyên về thị trường tuyển dụng CNTT:\n"
+    "• Tìm kiếm việc làm IT theo kỹ năng/địa điểm/lương\n"
+    "• Phân tích thị trường: top công ty, kỹ năng hot, work mode\n"
+    "• Dự báo xu hướng tuyển dụng (Prophet AI)\n"
+    "• Phân tích khoảng cách kỹ năng từ CV\n"
+    "• Tư vấn nghề nghiệp và lộ trình học\n\n"
     "Hỏi tôi về việc làm, kỹ năng, lương, hoặc xu hướng tuyển dụng IT nhé!"
 )
 _OUT_OF_SCOPE_EN = (
-    "I can only help with:\n"
-    "• IT job search\n"
-    "• Tech job market analysis\n"
-    "• IT career advice\n\n"
-    "Ask me about jobs, skills, salaries, or hiring trends in Vietnam's tech industry."
+    "That's outside my area of expertise.\n\n"
+    "I specialise in Vietnam's IT job market:\n"
+    "• Job search by skill / location / salary\n"
+    "• Market analysis: top companies, hot skills, work modes\n"
+    "• Hiring trend forecasting (Prophet AI)\n"
+    "• Skill gap analysis from your CV\n"
+    "• Career advice and learning roadmaps\n\n"
+    "Ask me about IT jobs, skills, salaries, or hiring trends!"
 )
 
 
 # ── Prompt builders ───────────────────────────────────────────────────────────
 
-_WORK_MODE_KEYWORDS: dict[str, list[str]] = {
-    "remote":  ["remote", "từ xa", "làm tại nhà", "work from home", "wfh"],
-    "hybrid":  ["hybrid", "kết hợp"],
-    "onsite":  ["onsite", "tại văn phòng", "on-site", "office"],
-}
-
-_LOCATION_ALIASES: dict[str, list[str]] = {
-    "hcm":     ["hồ chí minh", "ho chi minh", "hcm", "sài gòn", "saigon", "tp.hcm"],
-    "hanoi":   ["hà nội", "ha noi", "hanoi"],
-    "danang":  ["đà nẵng", "da nang"],
-}
+# LOCATION_ALIASES and WORK_MODE_KEYWORDS imported from constants.py
 
 
 def _extract_filters(query: str) -> dict:
@@ -172,11 +250,11 @@ def _extract_filters(query: str) -> dict:
     """
     q = query.lower()
     work_mode = next(
-        (k for k, kws in _WORK_MODE_KEYWORDS.items() if any(kw in q for kw in kws)),
+        (k for k, kws in WORK_MODE_KEYWORDS.items() if any(kw in q for kw in kws)),
         None,
     )
     location = next(
-        (k for k, aliases in _LOCATION_ALIASES.items() if any(a in q for a in aliases)),
+        (k for k, aliases in LOCATION_ALIASES.items() if any(a in q for a in aliases)),
         None,
     )
     return {"work_mode": work_mode, "location": location}
@@ -201,11 +279,11 @@ def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
         loc_text  = fields.get("Location", "").lower()
 
         if filters["work_mode"]:
-            kws = _WORK_MODE_KEYWORDS[filters["work_mode"]]
+            kws = WORK_MODE_KEYWORDS[filters["work_mode"]]
             if not any(kw in mode_text or kw in content for kw in kws):
                 continue
         if filters["location"]:
-            aliases = _LOCATION_ALIASES[filters["location"]]
+            aliases = LOCATION_ALIASES[filters["location"]]
             if not any(a in loc_text for a in aliases):
                 continue
         result.append(job)
@@ -305,6 +383,49 @@ def _format_rows_as_table(rows: list[dict], limit: int = 50) -> str:
     return "\n".join(lines)
 
 
+def _build_forecast_prompt(question: str, data_rows: list[dict], lang: str) -> str:
+    """
+    @brief Assemble the user-turn prompt for the forecast LLM call.
+
+    Includes a table of merged historical + forecast data so the LLM can cite
+    specific numbers rather than speaking in generalities.
+
+    @param question   The user's forecast question.
+    @param data_rows  Merged rows from ForecastService._build_data_rows().
+    @param lang       "Vietnamese" or "English".
+    @return           Complete user-turn prompt ready for the LLM.
+    """
+    if not data_rows:
+        return (
+            f"[LANG={lang}] User query: {question}\n\n"
+            "[NO FORECAST DATA] The Prophet forecast table is empty or the model "
+            "has not been trained yet. Inform the user politely."
+        )
+
+    # Render only the most recent 8 historical months + all future rows
+    historical = [r for r in data_rows if r.get("type") == "historical"]
+    future     = [r for r in data_rows if r.get("type") == "FORECAST"]
+    display    = historical[-8:] + future   # keep table compact for LLM
+
+    header = "period | actual_jobs | predicted | lower_95 | upper_95 | type"
+    sep    = "---|---|---|---|---|---"
+    rows_  = "\n".join(
+        f"{r['period']} | {r['actual_jobs']} | {r['predicted']} | "
+        f"{r['lower_95']} | {r['upper_95']} | {r['type']}"
+        for r in display
+    )
+    table = f"{header}\n{sep}\n{rows_}"
+
+    return (
+        f"[LANG={lang}] User query: {question}\n\n"
+        f"=== PROPHET FORECAST DATA ({len(historical)} historical + {len(future)} future months) ===\n"
+        f"{table}\n"
+        "=== END OF DATA ===\n\n"
+        "Apply the chain-of-thought steps from your instructions, "
+        "then write your response in the required output format."
+    )
+
+
 def _build_analytics_prompt(question: str, rows: list[dict], lang: str) -> str:
     """
     @brief Assemble the user-turn prompt for the analytics LLM call.
@@ -358,6 +479,15 @@ class RAGPipeline:
         self._vector_search   = HybridSearchService()
         self._sql_agent       = SQLAgentService()
         self._market_ctx      = MarketContextService()
+        self._forecast_svc    = ForecastService()
+        # Agentic RAG — shares all services already instantiated above
+        self._agent = AgentService(
+            query_processor = self._query_processor,
+            vector_search   = self._vector_search,
+            sql_agent       = self._sql_agent,
+            market_ctx      = self._market_ctx,
+            forecast_svc    = self._forecast_svc,
+        )
 
     def _generate(
         self,
@@ -458,76 +588,73 @@ class RAGPipeline:
 
         # Check greeting/off-topic TRƯỚC khi resolve — tránh resolver rewrite "xin chào" → job query
         raw = request.message.strip()
-        if is_greeting(raw) or is_short_off_topic(raw):
+        if is_greeting(raw):
+            lang = _detect_lang(raw)
+            canned = _GREETING_VI if lang == "Vietnamese" else _GREETING_EN
+            return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
+        if is_short_off_topic(raw):
             lang = _detect_lang(raw)
             canned = _OUT_OF_SCOPE_VI if lang == "Vietnamese" else _OUT_OF_SCOPE_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
 
         resolved = self._resolve_query(request.message, history) if history else request.message
+
+        # ── Agentic path (primary) ────────────────────────────────────────
+        # AgentService plans tool calls, executes in parallel, synthesizes.
+        # Returns None only when planning fails → fall back to classic pipeline.
+        agent_response = self._agent.run(resolved, history, lang)
+        if agent_response is not None:
+            return agent_response
+
+        # ── Classic pipeline (fallback) ───────────────────────────────────
+        # Reached only when: (a) agent planning LLM call fails, or
+        # (b) agent returned None because LLM chose no tools (out-of-scope).
+        logger.info("Agent returned None — falling back to classic pipeline.")
         query_type = self._classifier.classify(resolved)
 
-        # ── out_of_scope ─────────────────────────────────────────────────
         if query_type == QueryType.out_of_scope:
-            logger.info("Out-of-scope: '%s...'", request.message[:50])
             answer = _OUT_OF_SCOPE_VI if lang == "Vietnamese" else _OUT_OF_SCOPE_EN
             return ChatResponse(answer=answer, query_type=query_type)
 
-        # ── search_job ───────────────────────────────────────────────────
         if query_type == QueryType.search_job:
             try:
                 expanded = self._query_processor.process(resolved)
-                jobs = self._vector_search.search_multi(expanded)
+                jobs     = self._vector_search.search_multi(expanded)
             except Exception as exc:
                 logger.error("Vector search failed: %s", exc, exc_info=True)
                 jobs = []
-
-            filters = _extract_filters(resolved)
-            jobs = _post_filter(jobs, filters)
-            logger.info("Post-filter %s → %d jobs remain", filters, len(jobs))
-
-            # Query Gold layer for market intelligence (non-blocking — returns None on failure)
+            filters        = _extract_filters(resolved)
+            jobs           = _post_filter(jobs, filters)
             market_insight = self._market_ctx.get_insight(jobs, resolved, filters)
             market_block   = format_market_block(market_insight) if market_insight else None
+            prompt         = _build_search_prompt(resolved, jobs, lang, market_block)
+            answer         = self._generate(prompt, _SEARCH_SYSTEM_PROMPT, lang, history)
+            return ChatResponse(answer=answer, query_type=query_type,
+                                jobs=jobs, market_insight=market_insight)
 
-            prompt = _build_search_prompt(resolved, jobs, lang, market_block)
-            answer = self._generate(prompt, _SEARCH_SYSTEM_PROMPT, lang, history)
-            return ChatResponse(
-                answer=answer,
-                query_type=query_type,
-                jobs=jobs,
-                market_insight=market_insight,
-            )
-
-        # ── analytics ────────────────────────────────────────────────────
         if query_type == QueryType.analytics:
-            sql_query: str | None = None
-            sql_result: list[dict] | None = None
-            chart: dict | None = None
+            sql_query = sql_result = chart = None
             try:
-                # Check original message first — resolver may strip chart type keywords
-                preferred_chart = (
-                    _extract_chart_preference(request.message)
-                    or _extract_chart_preference(resolved)
-                )
+                preferred_chart = (_extract_chart_preference(request.message)
+                                   or _extract_chart_preference(resolved))
                 sql_query, sql_result, chart = self._sql_agent.query(resolved, preferred_chart)
                 prompt = _build_analytics_prompt(resolved, sql_result, lang)
             except Exception as exc:
                 logger.error("SQL agent failed: %s", exc, exc_info=True)
-                prompt = (
-                    f"[LANG={lang}] User query: {resolved}\n\n"
-                    f"[ERROR] Database query failed: {exc}\n"
-                    "Inform the user politely and suggest they try again."
-                )
+                prompt = (f"[LANG={lang}] User query: {resolved}\n\n"
+                          f"[ERROR] {exc}\nInform the user politely.")
             answer = self._generate(prompt, _ANALYTICS_SYSTEM_PROMPT, lang, history)
-            return ChatResponse(
-                answer=answer,
-                query_type=query_type,
-                sql_query=sql_query,
-                sql_result=sql_result,
-                chart=chart,
-            )
+            return ChatResponse(answer=answer, query_type=query_type,
+                                sql_query=sql_query, sql_result=sql_result, chart=chart)
 
-        # ── career_advice ────────────────────────────────────────────────
+        if query_type == QueryType.forecast:
+            chart, data_rows, forecast_insight = self._forecast_svc.get_forecast(resolved)
+            prompt = _build_forecast_prompt(resolved, data_rows, lang)
+            answer = self._generate(prompt, _FORECAST_SYSTEM_PROMPT, lang, history)
+            return ChatResponse(answer=answer, query_type=query_type,
+                                chart=chart, forecast_insight=forecast_insight)
+
+        # career_advice
         prompt = f"[LANG={lang}] {request.message}"
         answer = self._generate(prompt, _CAREER_ADVICE_SYSTEM_PROMPT, lang, history)
         return ChatResponse(answer=answer, query_type=query_type)

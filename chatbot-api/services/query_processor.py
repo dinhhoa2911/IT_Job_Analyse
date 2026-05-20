@@ -26,6 +26,7 @@ import trino
 from openai import OpenAI
 
 from config import settings
+from constants import LOCATION_ALIAS_TO_NAME, LOCATION_CITY_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -43,32 +44,14 @@ _LEVEL_MAP: dict[str, str] = {
     "mid-level": "mid-level", "middle": "mid-level",
 }
 
-# User-typed location aliases → canonical city name stored in dim_location.
-# dim_location only stores canonical forms ("Ho Chi Minh City"), so the informal
-# aliases ("hcm", "sài gòn", …) cannot be derived from DB and are listed here.
-_LOCATION_ALIASES: dict[str, str] = {
-    "hcm": "Ho Chi Minh City",
-    "tphcm": "Ho Chi Minh City",
-    "hồ chí minh": "Ho Chi Minh City",
-    "ho chi minh": "Ho Chi Minh City",
-    "saigon": "Ho Chi Minh City",
-    "sài gòn": "Ho Chi Minh City",
-    "hn": "Ha Noi",
-    "hà nội": "Ha Noi",
-    "ha noi": "Ha Noi",
-    "hanoi": "Ha Noi",
-    "đà nẵng": "Da Nang",
-    "da nang": "Da Nang",
-    "remote": "remote",
-    "wfh": "remote",
-    "từ xa": "remote",
-}
+# LOCATION_ALIAS_TO_NAME imported from constants — maps any alias → canonical city name
+# e.g. "hcm" → "Ho Chi Minh", "sài gòn" → "Ho Chi Minh"
 
-# Shorter aliases used in the 3rd query variant to widen vocabulary coverage.
+# Shorter display names for query variant generation (derived from constants)
 _LOCATION_SHORT: dict[str, str] = {
-    "Ho Chi Minh City": "HCMC",
-    "Ha Noi": "Hanoi",
-    "Da Nang": "Da Nang",
+    LOCATION_CITY_NAME["hcm"]:    "HCMC",
+    LOCATION_CITY_NAME["hanoi"]:  "Hanoi",
+    LOCATION_CITY_NAME["danang"]: "Da Nang",
     "remote": "remote",
 }
 
@@ -208,8 +191,8 @@ class QueryProcessor:
                 "SELECT city_name FROM iceberg.gold.dim_location"
             )
             canonical = {r[0].lower(): r[0] for r in rows}
-            # _LOCATION_ALIASES takes priority (more specific user-typed variants)
-            self._location_lookup = {**canonical, **_LOCATION_ALIASES}
+            # LOCATION_ALIAS_TO_NAME takes priority (more specific user-typed variants)
+            self._location_lookup = {**canonical, **LOCATION_ALIAS_TO_NAME}
 
             # 3. Work modes from dim_work_mode
             rows = self._query_trino(

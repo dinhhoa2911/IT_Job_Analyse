@@ -29,6 +29,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from models.schemas import CVMatchResponse
 from services.cv_matcher import CVMatcherService
 from services.cv_processor import CVProcessor
+from services.skill_gap_analyzer import SkillGapAnalyzerService
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,9 @@ router = APIRouter()
 _MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 # Module-level singletons — shared with chat router via lazy init
-_cv_processor: CVProcessor | None = None
-_cv_matcher:   CVMatcherService | None = None
+_cv_processor:   CVProcessor | None = None
+_cv_matcher:     CVMatcherService | None = None
+_skill_gap_analyzer: SkillGapAnalyzerService | None = None
 
 
 def _get_processor() -> CVProcessor:
@@ -68,6 +70,18 @@ def _get_matcher() -> CVMatcherService:
         from routers.chat import _pipeline  # noqa: PLC0415
         _cv_matcher = CVMatcherService(_pipeline._vector_search)
     return _cv_matcher
+
+
+def _get_skill_gap_analyzer() -> SkillGapAnalyzerService:
+    """
+    @brief Lazy-initialise and return the module-level SkillGapAnalyzerService singleton.
+
+    @return  The shared SkillGapAnalyzerService instance.
+    """
+    global _skill_gap_analyzer
+    if _skill_gap_analyzer is None:
+        _skill_gap_analyzer = SkillGapAnalyzerService()
+    return _skill_gap_analyzer
 
 
 @router.post(
@@ -176,6 +190,11 @@ async def match_cv(
             detail="Job matching failed. Please try again.",
         ) from exc
 
+    # ── 8. Skill gap analysis (non-blocking — Gold layer via Trino) ───────────
+    skill_gaps = _get_skill_gap_analyzer().analyze_multi(profile)
+    logger.info("Skill gaps | count=%d | categories=%s",
+                len(skill_gaps), [g.role_category for g in skill_gaps])
+
     elapsed_ms = round((time.monotonic() - t0) * 1000)
 
     # ── 8. Build summary message ───────────────────────────────────────────────
@@ -219,4 +238,5 @@ async def match_cv(
         total_found        = len(matched_jobs),
         processing_time_ms = elapsed_ms,
         message            = message,
+        skill_gaps         = skill_gaps,
     )

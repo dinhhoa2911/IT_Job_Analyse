@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import emailjs from '@emailjs/browser';
-import { auth, db, googleProvider } from '../firebase';
+import { auth, db, googleProvider, facebookProvider } from '../firebase';
 
 const AuthContext = createContext(null);
 
@@ -151,7 +151,8 @@ export function AuthProvider({ children }) {
   };
 
   const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
-  const googleLogin = () => signInWithPopup(auth, googleProvider);
+  const googleLogin   = () => signInWithPopup(auth, googleProvider);
+  const facebookLogin = () => signInWithPopup(auth, facebookProvider);
   const logout = () => {
     setPending(null);
     return signOut(auth);
@@ -162,7 +163,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, loading, pendingVerification,
       checkEmailExists, register, resendOtp, verifyOtp,
-      login, googleLogin, logout, forgotPassword,
+      login, googleLogin, facebookLogin, logout, forgotPassword,
     }}>
       {!loading && children}
     </AuthContext.Provider>

@@ -11,8 +11,11 @@ import numpy as np
 # ============================================
 warnings.filterwarnings("ignore")
 
-HIVE_METASTORE = "thrift://hive-metastore:9083"
-WAREHOUSE_PATH = "hdfs://dinhhoa-master:9000/user/ndh/warehouse"
+HIVE_METASTORE  = "thrift://hive-metastore:9083"
+WAREHOUSE_PATH  = "s3a://warehouse/iceberg_data"   # MinIO — same as Build_Gold.py
+MINIO_ENDPOINT  = "http://minio:9000"
+MINIO_ACCESS    = "minioadmin"
+MINIO_SECRET    = "minioadmin"
 CATALOG = "iceberg"
 DATABASE_GOLD = "gold"
 TABLE_FACT = "fact_job_posting"
@@ -30,11 +33,19 @@ os.makedirs(MODEL_OUTPUT_DIR, exist_ok=True)
 spark = (
     SparkSession.builder
     .appName("ML_Forecast_No_Plot_Superset_Ready")
+    # MinIO (S3A) — required to read/write Iceberg tables stored in MinIO
+    .config("spark.hadoop.fs.s3a.endpoint",              MINIO_ENDPOINT)
+    .config("spark.hadoop.fs.s3a.access.key",            MINIO_ACCESS)
+    .config("spark.hadoop.fs.s3a.secret.key",            MINIO_SECRET)
+    .config("spark.hadoop.fs.s3a.path.style.access",     "true")
+    .config("spark.hadoop.fs.s3a.impl",                  "org.apache.hadoop.fs.s3a.S3AFileSystem")
+    .config("spark.hadoop.fs.s3a.connection.ssl.enabled","false")
+    # Hive Metastore + Iceberg
     .config("hive.metastore.uris", HIVE_METASTORE)
     .enableHiveSupport()
-    .config(f"spark.sql.catalog.{CATALOG}", "org.apache.iceberg.spark.SparkCatalog")
-    .config(f"spark.sql.catalog.{CATALOG}.type", "hive")
-    .config(f"spark.sql.catalog.{CATALOG}.uri", HIVE_METASTORE)
+    .config(f"spark.sql.catalog.{CATALOG}",           "org.apache.iceberg.spark.SparkCatalog")
+    .config(f"spark.sql.catalog.{CATALOG}.type",      "hive")
+    .config(f"spark.sql.catalog.{CATALOG}.uri",       HIVE_METASTORE)
     .config(f"spark.sql.catalog.{CATALOG}.warehouse", WAREHOUSE_PATH)
     .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
     .getOrCreate()

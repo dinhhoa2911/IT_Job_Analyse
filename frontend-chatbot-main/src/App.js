@@ -328,8 +328,11 @@ function App() {
           queryType: data.query_type,
           jobs: data.jobs || null,
           sqlQuery: data.sql_query || null,
+          // charts: multi-chart (agent mode); chart: single-chart (classic)
+          charts: data.charts?.length > 0 ? data.charts : (data.chart ? [data.chart] : []),
           chart: data.chart || null,
           marketInsight: data.market_insight || null,
+          forecastInsight: data.forecast_insight || null,
         };
 
         setConversations((prev) =>

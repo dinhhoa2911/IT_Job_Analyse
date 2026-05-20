@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCLRELukeaUeY2kgfEhHwNcsQBkQh03wB4",
@@ -18,3 +18,9 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope("email");
 googleProvider.addScope("profile");
+
+// Facebook App ID (số nguyên, lấy tại developers.facebook.com → Settings → Basic)
+// App Secret đặt ở Firebase Console → Authentication → Sign-in method → Facebook
+export const facebookProvider = new FacebookAuthProvider();
+facebookProvider.addScope("email");
+facebookProvider.addScope("public_profile");

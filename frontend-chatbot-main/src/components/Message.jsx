@@ -7,6 +7,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ChartRenderer from "./ChartRenderer";
+import ForecastInsightCard from "./ForecastInsightCard";
 import MarketInsightCard from "./MarketInsightCard";
 
 /**
@@ -98,7 +99,26 @@ function Message({ message }) {
           </p>
         )}
 
-        {isBot && message.chart && <ChartRenderer chart={message.chart} />}
+        {isBot && message.charts?.length > 0 && (
+          <div className="space-y-4 mt-3">
+            {message.charts.map((chart, idx) => (
+              <div key={idx}>
+                {message.charts.length > 1 && (
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 px-1">
+                    {idx === 0 ? "📊 Phân tích thị trường" : "🔮 Dự báo Prophet"}
+                  </p>
+                )}
+                <ChartRenderer chart={chart} />
+              </div>
+            ))}
+          </div>
+        )}
+        {isBot && !message.charts?.length && message.chart && (
+          <ChartRenderer chart={message.chart} />
+        )}
+        {isBot && message.forecastInsight && (
+          <ForecastInsightCard insight={message.forecastInsight} />
+        )}
         {isBot && message.marketInsight && (
           <MarketInsightCard insight={message.marketInsight} />
         )}

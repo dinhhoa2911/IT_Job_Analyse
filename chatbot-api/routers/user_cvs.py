@@ -19,7 +19,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 import services.cv_storage as storage
 from models.schemas import CVMatchResponse
-from routers.cv_match import _get_matcher, _get_processor
+from routers.cv_match import _get_matcher, _get_processor, _get_skill_gap_analyzer
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +82,7 @@ async def match_saved_cv(uid: str, cv_id: str, top_k: int = 10):
         t0      = time.monotonic()
         profile = _get_processor().process(data)
         matched = _get_matcher().match(profile, top_k=top_k)
+        skill_gaps = _get_skill_gap_analyzer().analyze_multi(profile)
         elapsed = round((time.monotonic() - t0) * 1000)
 
         # Giống hệt cv_match.py: message 2 metrics, dùng CVMatchResponse để serialize đúng
@@ -112,6 +113,7 @@ async def match_saved_cv(uid: str, cv_id: str, top_k: int = 10):
             total_found        = len(matched),
             processing_time_ms = elapsed,
             message            = message,
+            skill_gaps         = skill_gaps,
         )
     except Exception as exc:
         logger.error("CV matching failed: %s", exc, exc_info=True)

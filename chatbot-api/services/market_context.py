@@ -43,17 +43,12 @@ from collections import Counter
 import trino
 
 from config import settings
+from constants import LOCATION_CITY_NAME
 from models.schemas import JobResult, MarketInsight
 
 logger = logging.getLogger(__name__)
 
-# ── Location mapping (filter key → Gold city name fragment) ──────────────────
-
-_LOC_KEY_TO_CITY: dict[str, str] = {
-    "hcm":    "Ho Chi Minh",
-    "hanoi":  "Ha Noi",
-    "danang": "Da Nang",
-}
+# Location key → Gold city name: imported from constants.LOCATION_CITY_NAME
 
 # ── SQL templates ─────────────────────────────────────────────────────────────
 
@@ -138,49 +133,20 @@ def _build_location_clauses(city: str | None) -> tuple[str, str]:
     return join, where
 
 
-def _extract_primary_skill(jobs: list[JobResult], query: str) -> str | None:
-    """
-    @brief Determine the primary skill to use for Gold-layer market queries.
-
-    Strategy (in order of reliability):
-      1. Parse the 'Skills:' field from returned job text_content and pick the
-         most frequent skill — reflects what the search actually found.
-      2. Fall back to the first recognisable tech keyword in the query string.
-
-    @param jobs   Reranked job results from hybrid search.
-    @param query  Original user query (used as fallback for skill detection).
-    @return       Primary skill string, or None if no skill can be determined
-                  (e.g., location-only searches like "jobs in HCM").
-    """
+def _extract_from_jobs(jobs: list[JobResult]) -> str | None:
+    """Strategy 1: pick the most frequent skill from returned job text_content."""
     skill_counter: Counter = Counter()
-
     for job in jobs:
-        # text_content format: "Job Title: X. Company: Y. ... Skills: A, B, C"
         match = re.search(r"Skills:\s*([^.]+)", job.text_content, re.IGNORECASE)
         if match:
             for s in match.group(1).split(","):
                 s = s.strip()
                 if s:
                     skill_counter[s] += 1
-
     if skill_counter:
-        top_skill = skill_counter.most_common(1)[0][0]
-        logger.debug("Primary skill from job results: '%s'", top_skill)
-        return top_skill
-
-    # Fallback: first capitalised tech-looking token in query
-    tech_pattern = re.compile(
-        r'\b(Python|Java|JavaScript|TypeScript|React|Vue|Angular|Node|Go|Golang|'
-        r'PHP|Ruby|Swift|Kotlin|Rust|C\+\+|C#|\.NET|SQL|NoSQL|MongoDB|PostgreSQL|'
-        r'MySQL|Redis|Docker|Kubernetes|AWS|Azure|GCP|Kafka|Spark|Hadoop|'
-        r'FastAPI|Django|Spring|Laravel|Flutter|ReactNative|React Native)\b',
-        re.IGNORECASE,
-    )
-    m = tech_pattern.search(query)
-    if m:
-        logger.debug("Primary skill from query fallback: '%s'", m.group())
-        return m.group()
-
+        top = skill_counter.most_common(1)[0][0]
+        logger.debug("Primary skill from job results: '%s'", top)
+        return top
     return None
 
 
@@ -200,6 +166,9 @@ def _run(conn: trino.dbapi.Connection, sql: str) -> list[dict]:
 
 # ── Main service ──────────────────────────────────────────────────────────────
 
+_SQL_LOAD_SKILLS = "SELECT skill_name FROM iceberg.gold.dim_skill"
+
+
 class MarketContextService:
     """
     @class MarketContextService
@@ -210,7 +179,88 @@ class MarketContextService:
     MarketInsight object.  All queries are wrapped in a single try/except block —
     on any Trino failure the service returns None silently so the RAG pipeline
     can continue without market context.
+
+    At construction time, the full skill list is loaded from dim_skill and cached
+    so the query-fallback skill detector never needs a hard-coded list.
     """
+
+    def __init__(self) -> None:
+        # lowercase → original-case mapping built from Gold dim_skill.
+        # Populated lazily on first get_insight() call (so logging is ready).
+        self._skill_lookup: dict[str, str] = {}
+        self._skills_loaded: bool = False
+
+    def _load_skills(self) -> None:
+        """
+        @brief Load all skill_name values from iceberg.gold.dim_skill into memory.
+
+        Called once at startup.  Fails silently — if Trino is unavailable the
+        fallback strategy will simply return None instead of a skill name, which
+        is acceptable (market context is optional and non-blocking).
+        """
+        try:
+            conn = trino.dbapi.connect(
+                host=settings.trino_host,
+                port=settings.trino_port,
+                user=settings.trino_user,
+                catalog=settings.trino_catalog,
+                request_timeout=5,
+            )
+            rows = _run(conn, _SQL_LOAD_SKILLS)
+            conn.close()
+            # Build lookup sorted by skill name length (longest first) so that
+            # multi-word skills like "React Native" are checked before "React".
+            self._skill_lookup = {
+                r["skill_name"].lower(): r["skill_name"]
+                for r in rows
+                if r.get("skill_name")
+            }
+            logger.info(
+                "MarketContextService: loaded %d skills from dim_skill.",
+                len(self._skill_lookup),
+            )
+        except Exception as exc:
+            logger.warning(
+                "MarketContextService: could not load skills from Trino at startup: %s. "
+                "Query fallback will be unavailable.",
+                exc,
+            )
+
+    def _extract_primary_skill(self, jobs: list[JobResult], query: str) -> str | None:
+        """
+        @brief Detect the primary skill for Gold-layer market queries.
+
+        Priority order (highest first):
+          Strategy 0 — query intent (user explicitly named a skill):
+            Scan the query against dim_skill. Longest match wins so "React Native"
+            beats "React" and "Spring Boot" beats "Spring".
+            This ensures "tìm job React remote" → React market context, NOT
+            JavaScript (which is more frequent in React job results but irrelevant).
+
+          Strategy 1 — job result frequency (fallback for skill-agnostic queries):
+            Parse 'Skills:' from returned job text_content and pick the most
+            frequent skill.  Used when the query has no explicit skill mention,
+            e.g. "tìm job senior remote HCM".
+
+        @param jobs   Reranked JobResult list from hybrid search.
+        @param query  Original user query string.
+        @return       Primary skill string with original casing, or None.
+        """
+        # Strategy 0 — user intent: scan query against dim_skill (highest priority)
+        if self._skill_lookup:
+            query_lower = query.lower()
+            for skill_lower in sorted(self._skill_lookup, key=len, reverse=True):
+                if re.search(r"(?<!\w)" + re.escape(skill_lower) + r"(?!\w)", query_lower):
+                    matched = self._skill_lookup[skill_lower]
+                    logger.debug("Primary skill from query intent: '%s'", matched)
+                    return matched
+
+        # Strategy 1 — frequency from job results (fallback when query has no skill)
+        skill = _extract_from_jobs(jobs)
+        if skill:
+            return skill
+
+        return None
 
     def get_insight(
         self,
@@ -226,13 +276,18 @@ class MarketContextService:
         @param filters  Dict with keys ``work_mode`` and ``location`` (values may be None).
         @return         Populated MarketInsight, or None if Trino is unavailable or no skill found.
         """
-        primary_skill = _extract_primary_skill(jobs, query)
+        # Lazy-load skill list on first real request (logging is ready by then)
+        if not self._skills_loaded:
+            self._load_skills()
+            self._skills_loaded = True
+
+        primary_skill = self._extract_primary_skill(jobs, query)
         if not primary_skill:
             logger.info("Market context skipped: no primary skill detected.")
             return None
 
         location_key  = filters.get("location")
-        city_name     = _LOC_KEY_TO_CITY.get(location_key) if location_key else None
+        city_name     = LOCATION_CITY_NAME.get(location_key) if location_key else None
         loc_join, loc_where = _build_location_clauses(city_name)
 
         safe_skill = _escape(primary_skill)

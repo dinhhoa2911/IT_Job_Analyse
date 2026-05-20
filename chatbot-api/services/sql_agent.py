@@ -77,7 +77,15 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
     === SQL RULES ===
     - Always prefix tables with catalog.schema (e.g. iceberg.gold.fact_job_posting)
     - Use LIMIT ≤ 50 to keep results manageable (daily charts need up to 31 rows)
+    - BANNED FUNCTIONS (Trino does not support these — never use them):
+        array_contains()  → use CROSS JOIN UNNEST or JOIN dim_skill instead
+        collect_list()    → use ARRAY_AGG()
+        size()            → use CARDINALITY()
     - For ARRAY columns use CROSS JOIN UNNEST(col) AS t(val)
+    - PREFER Gold layer JOINs over Silver ARRAY operations for skill-based queries:
+        WRONG: WHERE array_contains(s.skills_required, 'Python')
+        RIGHT: JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id
+               WHERE LOWER(ds.skill_name) = 'python'
     - JOIN fact_job_posting to dimensions via their respective *_id foreign keys
     - Avoid SELECT *; pick only columns needed to answer the question
     - Order results meaningfully (e.g. COUNT DESC)

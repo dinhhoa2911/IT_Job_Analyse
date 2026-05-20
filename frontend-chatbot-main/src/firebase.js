@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -18,6 +18,13 @@ const app = initializeApp(firebaseConfig);
 export const auth           = getAuth(app);
 export const db             = getFirestore(app);
 export const storage        = getStorage(app);
+
 export const googleProvider = new GoogleAuthProvider();
+
+// Facebook: App ID đặt tại Firebase Console → Authentication → Sign-in method → Facebook
+// App Secret (chuỗi hex 32 ký tự) chỉ đặt trong Firebase Console, KHÔNG đưa vào code này
+export const facebookProvider = new FacebookAuthProvider();
+facebookProvider.addScope('email');
+facebookProvider.addScope('public_profile');
 
 export default app;

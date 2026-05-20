@@ -20,10 +20,12 @@ class QueryType(str, Enum):
 
     Each value maps to a distinct retrieval strategy inside RAGPipeline.run().
     """
-    search_job   = "search_job"
-    analytics    = "analytics"
+    search_job    = "search_job"
+    analytics     = "analytics"
+    forecast      = "forecast"      # Prophet time-series forecast from Gold layer
+    agent         = "agent"         # Agentic RAG — LLM selected multiple tools
     career_advice = "career_advice"
-    out_of_scope = "out_of_scope"
+    out_of_scope  = "out_of_scope"
 
 
 class ChatRequest(BaseModel):
@@ -69,6 +71,25 @@ class MarketInsight(BaseModel):
     location_filter: Optional[str]   = None                         # "Ho Chi Minh" | None
 
 
+# ── Forecast schemas ──────────────────────────────────────────────────────────
+
+class ForecastInsight(BaseModel):
+    """
+    @class ForecastInsight
+    @brief Metadata for a Prophet forecast response.
+
+    Attached to ChatResponse when query_type == forecast.
+    Shown in the frontend as a compact badge below the chart.
+
+    ``mape`` is the Mean Absolute Percentage Error on the hold-out test set;
+    lower is better (< 15% is considered good for job market forecasts).
+    """
+    category:      str             # Gold dim_job_category name
+    mape:          Optional[float] = None   # model accuracy %; None if evaluation not available
+    periods_ahead: int  = 0        # number of future months in the forecast
+    model:         str  = "Prophet"
+
+
 class ChatResponse(BaseModel):
     """
     @class ChatResponse
@@ -77,15 +98,57 @@ class ChatResponse(BaseModel):
     Fields are populated selectively based on ``query_type``:
       - search_job  → jobs + market_insight filled; sql_* are None.
       - analytics   → sql_query, sql_result, chart filled; jobs are None.
+      - forecast    → chart + forecast_insight filled.
+      - agent       → any combination; charts[] may contain multiple Chart.js specs.
       - career_advice / out_of_scope → only ``answer`` and ``query_type`` are set.
     """
-    answer:          str
-    query_type:      QueryType
-    jobs:            Optional[list[JobResult]]  = None
-    sql_query:       Optional[str]              = None
-    sql_result:      Optional[list[dict]]       = None
-    chart:           Optional[dict]             = None   # Chart.js spec
-    market_insight:  Optional[MarketInsight]    = None   # Gold layer market context
+    answer:           str
+    query_type:       QueryType
+    jobs:             Optional[list[JobResult]]  = None
+    sql_query:        Optional[str]              = None
+    sql_result:       Optional[list[dict]]       = None
+    chart:            Optional[dict]             = None         # single Chart.js spec (classic pipeline)
+    charts:           list[dict]                 = Field(default_factory=list)  # multi-chart (agent)
+    market_insight:   Optional[MarketInsight]    = None         # Gold layer market context
+    forecast_insight: Optional[ForecastInsight]  = None         # Prophet model metadata
+
+
+# ── Skill Gap schemas ─────────────────────────────────────────────────────────
+
+class SkillGap(BaseModel):
+    """
+    @class SkillGap
+    @brief A single market skill with its frequency in the target role category.
+
+    Returned as part of SkillGapAnalysis.  ``market_frequency`` is the percentage
+    of distinct job postings in the role category that require this skill.
+    """
+    skill_name:        str
+    market_frequency:  float   # % of jobs in the category requiring this skill
+    job_count:         int     # raw count of distinct job_link requiring this skill
+    skill_group:       str     # Backend | Frontend | Data & Cloud | Other
+
+
+class SkillGapAnalysis(BaseModel):
+    """
+    @class SkillGapAnalysis
+    @brief Skill gap report comparing a CVProfile against Gold-layer market data.
+
+    Populated by SkillGapAnalyzerService.analyze() via Trino queries on the
+    Gold star schema (fact_job_posting ⋈ dim_skill ⋈ dim_job_category).
+
+    ``cv_coverage_score`` = (# of top-15 market skills found in CV) / 15 × 100
+    ``present_skills``    = CV skills that appear in market's top-15
+    ``missing_skills``    = top-10 market skills absent from the CV (sorted by frequency)
+    ``all_market_skills`` = top-15 market skills for the inferred role category
+    """
+    role_category:        str               # Gold dim_job_category name
+    total_jobs_analyzed:  int               # total distinct jobs for this category
+    cv_coverage_score:    float             # 0–100 coverage percentage
+    cv_skill_count:       int               # total skills in the CV
+    present_skills:       list[str]         # CV skills matching market top-15
+    missing_skills:       list[SkillGap]    # top-10 market skills not in CV
+    all_market_skills:    list[SkillGap]    # top-15 market skills (for chart)
 
 
 # ── CV Matching schemas ────────────────────────────────────────────────────────
@@ -101,6 +164,7 @@ class CVProfile(BaseModel):
     """
     name:                Optional[str]       = None
     skills:              list[str]           = Field(default_factory=list)
+    languages:           list[str]           = Field(default_factory=list)  # ["English (IELTS 6.0)"]
     experience_years:    Optional[int]       = None
     level:               Optional[str]       = None   # intern|junior|mid|senior|lead
     preferred_roles:     list[str]           = Field(default_factory=list)
@@ -136,10 +200,12 @@ class CVMatchResponse(BaseModel):
     @brief Response returned by POST /match-cv.
 
     Contains the structured CV profile, the ranked list of matched jobs,
-    total count, wall-clock processing time, and a brief Vietnamese summary.
+    total count, wall-clock processing time, a brief Vietnamese summary,
+    and an optional skill gap analysis against the Gold lakehouse layer.
     """
-    cv_profile:        CVProfile
-    matched_jobs:      list[MatchedJob]
-    total_found:       int
+    cv_profile:         CVProfile
+    matched_jobs:       list[MatchedJob]
+    total_found:        int
     processing_time_ms: int
-    message:           str   # brief Vietnamese summary
+    message:            str                          # brief Vietnamese summary
+    skill_gaps:         list[SkillGapAnalysis]       = Field(default_factory=list)

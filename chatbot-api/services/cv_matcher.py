@@ -20,6 +20,7 @@ import logging
 import math
 import re
 
+from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import CVProfile, JobResult, MatchedJob
 from services.vector_search import HybridSearchService
 
@@ -132,18 +133,7 @@ def _label(score: float) -> str:
 
 # ── Location / work-mode helpers ───────────────────────────────────────────────
 
-_LOC_ALIASES: dict[str, list[str]] = {
-    "hcm":     ["hồ chí minh", "ho chi minh", "hcm", "sài gòn", "saigon", "tp.hcm", "tphcm"],
-    "hanoi":   ["hà nội", "ha noi", "hanoi"],
-    "danang":  ["đà nẵng", "da nang", "danang"],
-    "remote":  ["remote", "từ xa", "work from home", "wfh"],
-}
-
-_MODE_KW: dict[str, list[str]] = {
-    "remote":  ["remote", "từ xa", "work from home", "wfh"],
-    "hybrid":  ["hybrid", "kết hợp"],
-    "onsite":  ["onsite", "tại văn phòng", "on-site", "office"],
-}
+# LOCATION_ALIASES and WORK_MODE_KEYWORDS imported from constants.py
 
 
 def _matches_preference(
@@ -162,12 +152,12 @@ def _matches_preference(
     content = job_text.lower()
 
     for loc in preferred_locations:
-        aliases = _LOC_ALIASES.get(loc.lower(), [loc.lower()])
+        aliases = LOCATION_ALIASES.get(loc.lower(), [loc.lower()])
         if any(a in content for a in aliases):
             return True
 
     if work_mode:
-        kws = _MODE_KW.get(work_mode.lower(), [work_mode.lower()])
+        kws = WORK_MODE_KEYWORDS.get(work_mode.lower(), [work_mode.lower()])
         if any(kw in content for kw in kws):
             return True
 

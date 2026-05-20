@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiBriefcase, FiCheckCircle, FiExternalLink, FiFileText,
   FiUploadCloud, FiX, FiMapPin, FiAward, FiClock,
+  FiAlertCircle, FiTrendingUp, FiBarChart2,
 } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
 import { FiTrash2 } from "react-icons/fi";
@@ -9,9 +10,10 @@ import { FiTrash2 } from "react-icons/fi";
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8100";
 
 const PROCESSING_STEPS = [
-  { id: 1, label: "Đang đọc nội dung PDF…",          duration: 1400 },
-  { id: 2, label: "AI đang phân tích hồ sơ…",        duration: 2800 },
-  { id: 3, label: "Đang tìm kiếm việc làm phù hợp…", duration: 9999 },
+  { id: 1, label: "Đang đọc nội dung PDF…",               duration: 1400 },
+  { id: 2, label: "AI đang phân tích hồ sơ…",             duration: 2800 },
+  { id: 3, label: "Đang tìm kiếm việc làm phù hợp…",      duration: 6000 },
+  { id: 4, label: "Đang phân tích khoảng cách kỹ năng…",  duration: 9999 },
 ];
 
 const SCORE_CONFIG = (score) => {
@@ -234,6 +236,184 @@ function CVProfileCard({ profile }) {
             </span>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Skill Gap Card ────────────────────────────────────────────────────────────
+
+const SKILL_GROUP_COLOR = {
+  "Backend":       "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  "Frontend":      "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+  "Data & Cloud":  "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  "Other":         "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+};
+
+function CoverageGauge({ score }) {
+  const r = 36;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
+  const color = score >= 70 ? "#10b981" : score >= 40 ? "#f59e0b" : "#ef4444";
+  const label = score >= 70 ? "Tốt" : score >= 40 ? "Trung bình" : "Cần bổ sung";
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative w-24 h-24">
+        <svg width="96" height="96" className="-rotate-90">
+          <circle cx="48" cy="48" r={r} fill="none" stroke="currentColor" strokeWidth="7"
+            className="text-gray-100 dark:text-gray-800" />
+          <circle cx="48" cy="48" r={r} fill="none" stroke={color} strokeWidth="7"
+            strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)" }} />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-bold leading-none" style={{ color }}>{Math.round(score)}</span>
+          <span className="text-[10px] text-gray-400 leading-none mt-0.5">%</span>
+        </div>
+      </div>
+      <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+    </div>
+  );
+}
+
+function SkillGapCard({ gap }) {
+  const [expanded,        setExpanded]        = useState(false);
+  const [expandPresent,   setExpandPresent]   = useState(false);
+  if (!gap) return null;
+
+  const maxFreq = gap.all_market_skills[0]?.market_frequency || 1;
+  const PRESENT_SHOW = 6;
+
+  return (
+    <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50 via-orange-50/40 to-white dark:from-amber-950/20 dark:via-orange-950/10 dark:to-gray-900 overflow-hidden mb-4">
+      {/* Top accent */}
+      <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
+
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-200 dark:shadow-amber-900/40 flex-shrink-0">
+            <FiBarChart2 className="w-4.5 h-4.5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-[14px] text-gray-900 dark:text-gray-100 leading-tight">
+              Phân tích khoảng cách kỹ năng
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {gap.role_category} · {gap.total_jobs_analyzed.toLocaleString()} job postings từ Gold layer
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Iceberg + Trino
+        </span>
+      </div>
+
+      {/* Coverage + summary */}
+      <div className="px-5 pb-4 flex items-center gap-5 border-b border-amber-100 dark:border-amber-900/30">
+        <CoverageGauge score={gap.cv_coverage_score} />
+        <div className="flex-1 space-y-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            CV của bạn bao phủ{" "}
+            <span className="font-semibold text-gray-800 dark:text-gray-200">
+              {gap.present_skills.length}/{gap.all_market_skills.length}
+            </span>{" "}
+            kỹ năng top thị trường cho vị trí{" "}
+            <span className="font-semibold text-amber-700 dark:text-amber-400">{gap.role_category}</span>.
+          </p>
+          {gap.present_skills.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {(expandPresent ? gap.present_skills : gap.present_skills.slice(0, PRESENT_SHOW)).map((s) => (
+                <span key={s}
+                  className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full font-medium">
+                  <FiCheckCircle className="w-2.5 h-2.5" />{s}
+                </span>
+              ))}
+              {gap.present_skills.length > PRESENT_SHOW && (
+                <button
+                  onClick={() => setExpandPresent((v) => !v)}
+                  className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium px-1"
+                >
+                  {expandPresent
+                    ? "Thu gọn ▲"
+                    : `+${gap.present_skills.length - PRESENT_SHOW} kỹ năng khác ▼`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Missing skills */}
+      {gap.missing_skills.length > 0 && (
+        <div className="px-5 py-4">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="w-full flex items-center justify-between mb-3 group"
+          >
+            <div className="flex items-center gap-2">
+              <FiAlertCircle className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                Kỹ năng thị trường cần bổ sung ({gap.missing_skills.length})
+              </span>
+            </div>
+            <span className="text-[10px] text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+              {expanded ? "Thu gọn ▲" : "Xem chi tiết ▼"}
+            </span>
+          </button>
+
+          <div className={`space-y-2.5 overflow-hidden transition-all duration-300 ${expanded ? "max-h-[600px]" : "max-h-[180px]"}`}>
+            {gap.missing_skills.map((skill) => {
+              const barWidth = Math.round((skill.market_frequency / maxFreq) * 100);
+              const groupCls = SKILL_GROUP_COLOR[skill.skill_group] || SKILL_GROUP_COLOR["Other"];
+              return (
+                <div key={skill.skill_name} className="flex items-center gap-3">
+                  {/* Skill name + group badge */}
+                  <div className="w-[140px] flex-shrink-0 flex items-center gap-1.5 min-w-0">
+                    <span className="text-[12px] font-semibold text-gray-800 dark:text-gray-200 truncate">
+                      {skill.skill_name}
+                    </span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${groupCls}`}>
+                      {skill.skill_group}
+                    </span>
+                  </div>
+
+                  {/* Frequency bar */}
+                  <div className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+                        style={{ width: `${barWidth}%`, transition: "width 0.8s ease" }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 w-10 text-right flex-shrink-0">
+                      {skill.market_frequency}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {!expanded && gap.missing_skills.length > 4 && (
+            <button
+              onClick={() => setExpanded(true)}
+              className="mt-2 text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
+            >
+              Xem thêm {gap.missing_skills.length - 4} kỹ năng còn thiếu ↓
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="px-5 pb-3 flex items-center gap-2">
+        <FiTrendingUp className="w-3 h-3 text-amber-400 flex-shrink-0" />
+        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          Tần suất xuất hiện trong {gap.total_jobs_analyzed.toLocaleString()} job postings · Gold layer (fact_job_posting ⋈ dim_skill ⋈ dim_job_category)
+        </span>
       </div>
     </div>
   );
@@ -643,6 +823,10 @@ export default function CVUploadModal({ onClose }) {
               </div>
 
               <CVProfileCard profile={result.cv_profile} />
+
+              {(result.skill_gaps ?? (result.skill_gap ? [result.skill_gap] : [])).map((gap) => (
+                <SkillGapCard key={gap.role_category} gap={gap} />
+              ))}
 
               {result.matched_jobs?.length > 0 ? (
                 <div className="space-y-2.5">

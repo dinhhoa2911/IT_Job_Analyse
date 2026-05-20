@@ -44,23 +44,24 @@ function buildOptions(type, data, extra = {}) {
       color: "#6b7280",
       font: { size: 12, family: FONT },
       generateLabels: (chart) =>
-        chart.data.datasets.map((ds, i) => {
-          const bg = Array.isArray(ds.backgroundColor)
-            ? ds.backgroundColor[0]
-            : ds.backgroundColor;
-          // Line charts: borderColor là màu đường (solid), backgroundColor là fill vùng (transparent)
-          // Bar/Pie: borderColor thường không set → fallback về backgroundColor
-          const color = ds.borderColor || bg || "#6b7280";
-          return {
-            text: ds.label || "",
-            fillStyle: color,
-            strokeStyle: color,
-            lineWidth: 0,
-            pointStyle: "rect",
-            hidden: false,
-            datasetIndex: i,
-          };
-        }),
+        chart.data.datasets
+          .map((ds, i) => {
+            const bg = Array.isArray(ds.backgroundColor)
+              ? ds.backgroundColor[0]
+              : ds.backgroundColor;
+            const color = ds.borderColor || bg || "#6b7280";
+            return {
+              text: ds.label || "",
+              fillStyle: color,
+              strokeStyle: color,
+              lineWidth: 0,
+              pointStyle: "rect",
+              hidden: false,
+              datasetIndex: i,
+            };
+          })
+          // Datasets labelled with '_' prefix are confidence-band helpers — hide from legend
+          .filter((item) => item.text && !item.text.startsWith("_")),
     },
   };
 
