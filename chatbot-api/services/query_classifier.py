@@ -87,27 +87,6 @@ _IT_KEYWORD_RE = re.compile(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Forecast / prediction fast-path   (checked BEFORE chart fast-path)
-#    "dự báo Python 3 tháng tới", "xu hướng Data Engineer năm sau",
-#    "forecast backend jobs next quarter", "sẽ tăng hay giảm không?"
-# ─────────────────────────────────────────────────────────────────────────────
-_FORECAST_TIME = (
-    r"(dự báo|dự đoán|forecast|predict|xu hướng.*tháng|tháng tới|năm tới|"
-    r"tương lai|sắp tới|sẽ như thế nào|sẽ tăng|sẽ giảm|"
-    r"trong \d+\s*tháng|next \d+\s*months?|next quarter|"
-    r"trend|outlook|projection)"
-)
-_FORECAST_DOMAIN = (
-    r"(job|việc|tuyển|developer|engineer|data|backend|frontend|python|java|"
-    r"react|devops|mobile|fullstack|software|lập trình|kỹ sư|thị trường)"
-)
-_FORECAST_RE = re.compile(
-    rf"(?:{_FORECAST_TIME}[\s\S]{{0,80}}{_FORECAST_DOMAIN})"
-    rf"|(?:{_FORECAST_DOMAIN}[\s\S]{{0,80}}{_FORECAST_TIME})",
-    re.IGNORECASE,
-)
-
-# ─────────────────────────────────────────────────────────────────────────────
 # 4. Chart / visualization fast-path
 # ─────────────────────────────────────────────────────────────────────────────
 _CHART_TRIGGER = r"(vẽ|show|draw|plot|hiển thị|cho.*xem|display)"
@@ -192,12 +171,7 @@ class QueryClassifier:
             logger.info("Fast-path [greeting]: '%s' → out_of_scope", stripped[:50])
             return QueryType.out_of_scope
 
-        # ── Layer 2: Forecast / prediction (checked BEFORE chart) ────────────
-        if _FORECAST_RE.search(stripped):
-            logger.info("Fast-path [forecast]: '%s' → forecast", stripped[:60])
-            return QueryType.forecast
-
-        # ── Layer 3: Chart / visualization ────────────────────────────────────
+        # ── Layer 2: Chart / visualization ────────────────────────────────────
         if _CHART_RE.search(stripped):
             logger.info("Fast-path [chart]: '%s' → analytics", stripped[:60])
             return QueryType.analytics

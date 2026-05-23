@@ -22,7 +22,6 @@ from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
 from services.agent import AgentService
-from services.forecast_service import ForecastService
 from services.market_context import MarketContextService, format_market_block
 from services.query_classifier import QueryClassifier, is_greeting, is_short_off_topic
 from services.query_processor import QueryProcessor
@@ -134,41 +133,6 @@ RULES:
 - Do NOT end with "Hope this helps", "Good luck", or any filler closer.\
 """
 
-# forecast: time-series analyst with Prophet expertise
-_FORECAST_SYSTEM_PROMPT = """\
-You are a data scientist and IT labour-market analyst. You interpret Prophet time-series \
-forecasts trained on Vietnam's IT job market data (ITviec) and communicate findings \
-clearly to job seekers, recruiters, and career planners.
-
-LANGUAGE RULE: Respond in {lang}. No exceptions.
-
-CONTEXT: The chart shows:
-  - Solid blue line  : actual monthly job posting counts from the data lakehouse (Gold layer).
-  - Dashed indigo    : Prophet forecast for future months.
-  - Shaded band      : 95% confidence interval (lower–upper bounds from Prophet).
-
-CHAIN-OF-THOUGHT — work through these internally before writing:
-  1. Identify the dominant trend (increasing / decreasing / stable / seasonal).
-  2. Note the magnitude: how many jobs is the market expected to gain or lose?
-  3. Compare the nearest forecast month against the most recent actual month.
-  4. Mention the confidence interval width — narrow = high confidence, wide = uncertain.
-  5. Formulate one concrete, actionable recommendation for the user.
-
-OUTPUT FORMAT:
-**[One direct sentence summarising the forecast trend and key number]**
-
-[2–4 sentences of analysis — cite specific months, numbers, and the confidence band. \
-Note any seasonal patterns or sudden inflection points in the data.]
-
-> [One concrete recommendation: should the user upskill, apply now, or wait?]
-
-RULES:
-- Cite exact numbers from the table (e.g. "predicted 172 jobs in 2026-05").
-- Acknowledge uncertainty: state the confidence range when it is meaningful.
-- Do NOT fabricate numbers not present in the provided table.
-- Do NOT start with "Based on the data", "The results show", or any filler opener.\
-"""
-
 # greeting — detailed feature intro shown when user says hi
 _GREETING_VI = (
     "Xin chào! Tôi là **IT Job Analyst** — trợ lý AI phân tích thị trường tuyển dụng CNTT Việt Nam.\n\n"
@@ -179,9 +143,6 @@ _GREETING_VI = (
     "**Phân tích thị trường tuyển dụng**\n"
     "Top công ty tuyển dụng, phân bổ work mode (remote/hybrid/onsite), kỹ năng hot nhất\n"
     "_Ví dụ: \"Thị trường Java hiện tại thế nào?\", \"Công ty nào tuyển nhiều DevOps nhất?\"_\n\n"
-    "**Dự báo xu hướng (Prophet AI)**\n"
-    "Dự báo số lượng job posting 3 tháng tới theo từng ngành\n"
-    "_Ví dụ: \"Dự báo tuyển dụng Data & AI 3 tháng tới\", \"Xu hướng Backend sắp tới\"_\n\n"
     "**Phân tích khoảng cách kỹ năng (Skill Gap)**\n"
     "Upload CV để biết bạn đang thiếu kỹ năng gì so với thị trường, tần suất xuất hiện trong job posting\n"
     "_Nhấn nút đính kèm để upload CV (PDF/DOCX)_\n\n"
@@ -200,9 +161,6 @@ _GREETING_EN = (
     "**Market Analysis**\n"
     "Top hiring companies, work-mode breakdown, hottest skills in demand\n"
     "_e.g. \"How is the Java market right now?\", \"Which companies hire the most DevOps?\"_\n\n"
-    "**Trend Forecasting (Prophet AI)**\n"
-    "3-month forecast of job postings per tech category\n"
-    "_e.g. \"Forecast Data & AI hiring next 3 months\", \"Backend trend outlook\"_\n\n"
     "**Skill Gap Analysis**\n"
     "Upload your CV to see which skills you're missing vs. the market\n"
     "_Click the attachment button to upload a PDF or DOCX_\n\n"
@@ -383,49 +341,6 @@ def _format_rows_as_table(rows: list[dict], limit: int = 50) -> str:
     return "\n".join(lines)
 
 
-def _build_forecast_prompt(question: str, data_rows: list[dict], lang: str) -> str:
-    """
-    @brief Assemble the user-turn prompt for the forecast LLM call.
-
-    Includes a table of merged historical + forecast data so the LLM can cite
-    specific numbers rather than speaking in generalities.
-
-    @param question   The user's forecast question.
-    @param data_rows  Merged rows from ForecastService._build_data_rows().
-    @param lang       "Vietnamese" or "English".
-    @return           Complete user-turn prompt ready for the LLM.
-    """
-    if not data_rows:
-        return (
-            f"[LANG={lang}] User query: {question}\n\n"
-            "[NO FORECAST DATA] The Prophet forecast table is empty or the model "
-            "has not been trained yet. Inform the user politely."
-        )
-
-    # Render only the most recent 8 historical months + all future rows
-    historical = [r for r in data_rows if r.get("type") == "historical"]
-    future     = [r for r in data_rows if r.get("type") == "FORECAST"]
-    display    = historical[-8:] + future   # keep table compact for LLM
-
-    header = "period | actual_jobs | predicted | lower_95 | upper_95 | type"
-    sep    = "---|---|---|---|---|---"
-    rows_  = "\n".join(
-        f"{r['period']} | {r['actual_jobs']} | {r['predicted']} | "
-        f"{r['lower_95']} | {r['upper_95']} | {r['type']}"
-        for r in display
-    )
-    table = f"{header}\n{sep}\n{rows_}"
-
-    return (
-        f"[LANG={lang}] User query: {question}\n\n"
-        f"=== PROPHET FORECAST DATA ({len(historical)} historical + {len(future)} future months) ===\n"
-        f"{table}\n"
-        "=== END OF DATA ===\n\n"
-        "Apply the chain-of-thought steps from your instructions, "
-        "then write your response in the required output format."
-    )
-
-
 def _build_analytics_prompt(question: str, rows: list[dict], lang: str) -> str:
     """
     @brief Assemble the user-turn prompt for the analytics LLM call.
@@ -479,14 +394,12 @@ class RAGPipeline:
         self._vector_search   = HybridSearchService()
         self._sql_agent       = SQLAgentService()
         self._market_ctx      = MarketContextService()
-        self._forecast_svc    = ForecastService()
         # Agentic RAG — shares all services already instantiated above
         self._agent = AgentService(
             query_processor = self._query_processor,
             vector_search   = self._vector_search,
             sql_agent       = self._sql_agent,
             market_ctx      = self._market_ctx,
-            forecast_svc    = self._forecast_svc,
         )
 
     def _generate(
@@ -646,13 +559,6 @@ class RAGPipeline:
             answer = self._generate(prompt, _ANALYTICS_SYSTEM_PROMPT, lang, history)
             return ChatResponse(answer=answer, query_type=query_type,
                                 sql_query=sql_query, sql_result=sql_result, chart=chart)
-
-        if query_type == QueryType.forecast:
-            chart, data_rows, forecast_insight = self._forecast_svc.get_forecast(resolved)
-            prompt = _build_forecast_prompt(resolved, data_rows, lang)
-            answer = self._generate(prompt, _FORECAST_SYSTEM_PROMPT, lang, history)
-            return ChatResponse(answer=answer, query_type=query_type,
-                                chart=chart, forecast_insight=forecast_insight)
 
         # career_advice
         prompt = f"[LANG={lang}] {request.message}"

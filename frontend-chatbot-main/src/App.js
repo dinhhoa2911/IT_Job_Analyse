@@ -332,7 +332,6 @@ function App() {
           charts: data.charts?.length > 0 ? data.charts : (data.chart ? [data.chart] : []),
           chart: data.chart || null,
           marketInsight: data.market_insight || null,
-          forecastInsight: data.forecast_insight || null,
         };
 
         setConversations((prev) =>

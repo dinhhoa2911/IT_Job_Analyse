@@ -17,7 +17,7 @@ Architecture (replaces the hard-coded classify → route pipeline):
   │  EXECUTE (ThreadPoolExecutor — tools run in parallel)│
   │  search_jobs → HybridSearch + MarketContext          │
   │  run_analytics → SQLAgent (Trino)                   │
-  │  forecast_trend → ForecastService (Prophet tables)  │
+
   │  career_advice → no retrieval, LLM knowledge only   │
   └─────────────────────────────────────────────────────┘
       │
@@ -44,9 +44,8 @@ from openai import OpenAI
 from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import (
-    ChatResponse, ForecastInsight, JobResult, MarketInsight, QueryType,
+    ChatResponse, JobResult, MarketInsight, QueryType,
 )
-from services.forecast_service import ForecastService
 from services.market_context import MarketContextService, format_market_block
 from services.query_processor import QueryProcessor
 from services.sql_agent import SQLAgentService
@@ -105,28 +104,6 @@ TOOL_SPECS: list[dict] = [
     {
         "type": "function",
         "function": {
-            "name": "forecast_trend",
-            "description": (
-                "Get Prophet ML forecast for FUTURE job market trends (3 months ahead). "
-                "Use ONLY when user asks about the future / predictions / upcoming trends. "
-                "Keywords: 'xu hướng tháng tới', 'dự báo', 'dự đoán', 'forecast', 'tương lai', "
-                "'sẽ tăng', 'sẽ giảm', 'next months', 'outlook', 'năm sau'."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Forecast query including role/category and time horizon",
-                    }
-                },
-                "required": ["query"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "career_advice",
             "description": (
                 "Provide IT career guidance, learning roadmaps, and role comparisons. "
@@ -160,14 +137,13 @@ RULES:
    SPECIFIC ROLE+LOCATION (e.g. "Python senior HCM lương thế nào?" needs BOTH search_jobs
    AND run_analytics — the job listings show real salaries and context).
 2. Call run_analytics → user wants aggregate STATISTICS, RANKINGS, or MARKET DATA.
-3. Call forecast_trend → user asks about FUTURE TRENDS or PREDICTIONS.
-4. Call career_advice  → user wants LEARNING ROADMAP or CAREER GUIDANCE (no DB needed).
-5. Call MULTIPLE tools when a query spans multiple intents — never drop an intent.
+3. Call career_advice  → user wants LEARNING ROADMAP or CAREER GUIDANCE (no DB needed).
+4. Call MULTIPLE tools when a query spans multiple intents — never drop an intent.
    Examples of multi-tool queries:
-   • "Python senior HCM lương thế nào và xu hướng?" → search_jobs + run_analytics + forecast_trend
+   • "Python senior HCM lương thế nào và xu hướng?" → search_jobs + run_analytics
    • "tìm job React, thị trường React như thế nào?"  → search_jobs + run_analytics
-   • "Data Engineer tương lai ra sao và nên học gì?" → forecast_trend + career_advice
-6. Call NO tool and reply directly for: greetings, off-topic, or completely unclear queries.
+   • "Data Engineer tương lai ra sao và nên học gì?" → run_analytics + career_advice
+5. Call NO tool and reply directly for: greetings, off-topic, or completely unclear queries.
 
 IMPORTANT: If a query contains a role/skill name AND a location (like "Python HCM", "Java Hà Nội"),
 ALWAYS call search_jobs — even if the query also asks for salary or trend information.\
@@ -196,10 +172,7 @@ OUTPUT STRUCTURE (follow in order, only include sections that have data):
    **[One direct sentence with the key number/finding]**
    [2–3 sentences with supporting data — cite specific numbers.]
 
-3. FORECAST (if forecast_trend was called):
-   Summarize in 1–2 sentences. Add: "*(Biểu đồ dự báo được hiển thị bên dưới.)*"
-
-4. CAREER ADVICE (if career_advice was called):
+3. CAREER ADVICE (if career_advice was called):
    3–5 concrete sentences. Name specific technologies.
 
 FINAL LINE: ONE actionable tip that ties all sections together.
@@ -229,10 +202,6 @@ class ToolResult:
     sql_query:        Optional[str]             = None
     sql_result:       Optional[list[dict]]      = None
     chart:            Optional[dict]            = None
-    # forecast_trend
-    forecast_chart:   Optional[dict]            = None
-    forecast_data:    Optional[list[dict]]      = None
-    forecast_insight: Optional[ForecastInsight] = None
     # career_advice
     advice_question:  Optional[str]             = None
 
@@ -319,14 +288,12 @@ class AgentService:
         vector_search:   HybridSearchService,
         sql_agent:       SQLAgentService,
         market_ctx:      MarketContextService,
-        forecast_svc:    ForecastService,
     ) -> None:
-        self._llm            = OpenAI(api_key=settings.openai_api_key)
-        self._qp             = query_processor
-        self._search         = vector_search
-        self._sql            = sql_agent
-        self._market         = market_ctx
-        self._forecast       = forecast_svc
+        self._llm    = OpenAI(api_key=settings.openai_api_key)
+        self._qp     = query_processor
+        self._search = vector_search
+        self._sql    = sql_agent
+        self._market = market_ctx
 
     # ── Planning ──────────────────────────────────────────────────────────────
 
@@ -391,30 +358,15 @@ class AgentService:
             logger.error("run_analytics failed: %s", e, exc_info=True)
             return ToolResult(name="run_analytics", success=False, error=str(e))
 
-    def _exec_forecast(self, query: str) -> ToolResult:
-        try:
-            chart, data, insight = self._forecast.get_forecast(query)
-            logger.info("forecast_trend → category=%s", insight.category if insight else "?")
-            return ToolResult(
-                name="forecast_trend",
-                forecast_chart=chart,
-                forecast_data=data,
-                forecast_insight=insight,
-            )
-        except Exception as e:
-            logger.error("forecast_trend failed: %s", e, exc_info=True)
-            return ToolResult(name="forecast_trend", success=False, error=str(e))
-
     def _exec_career_advice(self, question: str) -> ToolResult:
         return ToolResult(name="career_advice", advice_question=question)
 
     def _execute_parallel(self, tool_calls: list) -> list[ToolResult]:
         """Run all tool calls concurrently and collect results."""
         dispatch = {
-            "search_jobs":    lambda a: self._exec_search_jobs(a["query"]),
-            "run_analytics":  lambda a: self._exec_analytics(a["question"]),
-            "forecast_trend": lambda a: self._exec_forecast(a["query"]),
-            "career_advice":  lambda a: self._exec_career_advice(a["question"]),
+            "search_jobs":   lambda a: self._exec_search_jobs(a["query"]),
+            "run_analytics": lambda a: self._exec_analytics(a["question"]),
+            "career_advice": lambda a: self._exec_career_advice(a["question"]),
         }
 
         def run_one(tc):
@@ -481,23 +433,6 @@ class AgentService:
                 else:
                     parts.append("[ANALYTICS] Query returned 0 rows.")
 
-            elif r.name == "forecast_trend":
-                if r.forecast_data:
-                    hist   = [x for x in r.forecast_data if x.get("type") == "historical"]
-                    future = [x for x in r.forecast_data if x.get("type") == "FORECAST"]
-                    parts.append("=== FORECAST (Prophet ML) ===")
-                    if hist:
-                        last = hist[-1]
-                        parts.append(f"Last actual: {last['period']} → {last['actual_jobs']} jobs")
-                    for row in future[:3]:
-                        parts.append(
-                            f"Forecast {row['period']}: {row['predicted']} "
-                            f"[CI {row['lower_95']}–{row['upper_95']}]"
-                        )
-                    parts.append("[A forecast chart is rendered in the UI below.]")
-                else:
-                    parts.append("[FORECAST] No forecast data available (run Prophet.py first).")
-
             elif r.name == "career_advice":
                 parts.append(
                     f"=== CAREER ADVICE ===\n"
@@ -530,16 +465,14 @@ class AgentService:
         answer = resp.choices[0].message.content
 
         # Collect response fields from tool results
-        jobs: list[JobResult] | None             = None
-        market_insight: MarketInsight | None      = None
-        sql_query:  str | None                   = None
-        sql_result: list[dict] | None            = None
-        forecast_insight: ForecastInsight | None = None
-        charts: list[dict]                       = []    # ← multiple charts
+        jobs: list[JobResult] | None  = None
+        market_insight: MarketInsight | None = None
+        sql_query:  str | None        = None
+        sql_result: list[dict] | None = None
+        charts: list[dict]            = []
 
         for r in results:
             if r.name == "search_jobs" and r.success:
-                # Use explicit None-check — empty list [] is valid (0 results ≠ no search)
                 if r.jobs is not None:
                     jobs = r.jobs
                 if r.market_insight is not None:
@@ -549,24 +482,19 @@ class AgentService:
                 sql_result = r.sql_result
                 if r.chart:
                     charts.append(r.chart)
-            elif r.name == "forecast_trend" and r.success:
-                forecast_insight = r.forecast_insight
-                if r.forecast_chart:
-                    charts.append(r.forecast_chart)
 
         # primary chart for backward-compat (existing chart field in ChatResponse)
         primary_chart = charts[0] if charts else None
 
         return ChatResponse(
-            answer           = answer,
-            query_type       = QueryType.agent,
-            jobs             = jobs,
-            market_insight   = market_insight,
-            sql_query        = sql_query,
-            sql_result       = sql_result,
-            chart            = primary_chart,
-            charts           = charts,
-            forecast_insight = forecast_insight,
+            answer         = answer,
+            query_type     = QueryType.agent,
+            jobs           = jobs,
+            market_insight = market_insight,
+            sql_query      = sql_query,
+            sql_result     = sql_result,
+            chart          = primary_chart,
+            charts         = charts,
         )
 
     # ── Public entry point ────────────────────────────────────────────────────

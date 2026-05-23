@@ -31,7 +31,7 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
 
     iceberg.gold.fact_job_posting
         fact_id      BIGINT  (PK)
-        job_link     VARCHAR
+        job_link     VARCHAR  ← unique job identifier (one job may appear in MANY rows)
         job_title    VARCHAR
         company_id   BIGINT  (FK → dim_company)
         location_id  BIGINT  (FK → dim_location)
@@ -39,7 +39,12 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
         mode_id      BIGINT  (FK → dim_work_mode)
         category_id  BIGINT  (FK → dim_job_category)
         date_id      INT     (FK → dim_date, format YYYYMMDD)
-        one_posting  INT     (always 1 — use SUM for counts)
+        one_posting  INT     (always 1 — DO NOT USE for job counts, see CRITICAL NOTE below)
+
+    ⚠ CRITICAL — fact_job_posting is EXPLODED by BOTH location AND skills_required.
+      One real job posting is duplicated into N_locations × N_skills rows.
+      ALWAYS use COUNT(DISTINCT f.job_link) to count actual jobs.
+      NEVER use COUNT(*), COUNT(f.fact_id), or SUM(f.one_posting) for job counts — they overcount.
 
     iceberg.gold.dim_skill
         skill_id    BIGINT, skill_name VARCHAR
@@ -89,6 +94,9 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
     - JOIN fact_job_posting to dimensions via their respective *_id foreign keys
     - Avoid SELECT *; pick only columns needed to answer the question
     - Order results meaningfully (e.g. COUNT DESC)
+    - CRITICAL COUNTING RULE: fact_job_posting is exploded — one job_link appears in many rows.
+        CORRECT:   COUNT(DISTINCT f.job_link) AS job_count
+        WRONG:     COUNT(*), COUNT(f.fact_id), SUM(f.one_posting)  ← all massively overcount
 
     === CHART / VISUALIZATION RULES (apply when user asks for a chart or graph) ===
     - Always put the LABEL/CATEGORY column FIRST, the numeric METRIC column SECOND
@@ -100,7 +108,7 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
     - Choose time granularity based on the scope of the query:
         • Query scoped to ONE specific month  → GROUP BY day, only return days that have data:
             SELECT LPAD(CAST(d.day AS VARCHAR), 2, '0') AS ngay,
-                   SUM(f.one_posting) AS job_count
+                   COUNT(DISTINCT f.job_link) AS job_count
             FROM iceberg.gold.fact_job_posting f
             JOIN iceberg.gold.dim_date d ON f.date_id = d.date_id
             WHERE d.month = <month> AND d.year = <year>

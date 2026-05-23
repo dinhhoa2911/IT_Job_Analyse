@@ -22,7 +22,7 @@ class QueryType(str, Enum):
     """
     search_job    = "search_job"
     analytics     = "analytics"
-    forecast      = "forecast"      # Prophet time-series forecast from Gold layer
+
     agent         = "agent"         # Agentic RAG — LLM selected multiple tools
     career_advice = "career_advice"
     out_of_scope  = "out_of_scope"
@@ -71,46 +71,25 @@ class MarketInsight(BaseModel):
     location_filter: Optional[str]   = None                         # "Ho Chi Minh" | None
 
 
-# ── Forecast schemas ──────────────────────────────────────────────────────────
-
-class ForecastInsight(BaseModel):
-    """
-    @class ForecastInsight
-    @brief Metadata for a Prophet forecast response.
-
-    Attached to ChatResponse when query_type == forecast.
-    Shown in the frontend as a compact badge below the chart.
-
-    ``mape`` is the Mean Absolute Percentage Error on the hold-out test set;
-    lower is better (< 15% is considered good for job market forecasts).
-    """
-    category:      str             # Gold dim_job_category name
-    mape:          Optional[float] = None   # model accuracy %; None if evaluation not available
-    periods_ahead: int  = 0        # number of future months in the forecast
-    model:         str  = "Prophet"
-
-
 class ChatResponse(BaseModel):
     """
     @class ChatResponse
     @brief Full response returned by POST /chat.
 
     Fields are populated selectively based on ``query_type``:
-      - search_job  → jobs + market_insight filled; sql_* are None.
-      - analytics   → sql_query, sql_result, chart filled; jobs are None.
-      - forecast    → chart + forecast_insight filled.
-      - agent       → any combination; charts[] may contain multiple Chart.js specs.
+      - search_job    → jobs + market_insight filled; sql_* are None.
+      - analytics     → sql_query, sql_result, chart filled; jobs are None.
+      - agent         → any combination; charts[] may contain multiple Chart.js specs.
       - career_advice / out_of_scope → only ``answer`` and ``query_type`` are set.
     """
-    answer:           str
-    query_type:       QueryType
-    jobs:             Optional[list[JobResult]]  = None
-    sql_query:        Optional[str]              = None
-    sql_result:       Optional[list[dict]]       = None
-    chart:            Optional[dict]             = None         # single Chart.js spec (classic pipeline)
-    charts:           list[dict]                 = Field(default_factory=list)  # multi-chart (agent)
-    market_insight:   Optional[MarketInsight]    = None         # Gold layer market context
-    forecast_insight: Optional[ForecastInsight]  = None         # Prophet model metadata
+    answer:         str
+    query_type:     QueryType
+    jobs:           Optional[list[JobResult]]  = None
+    sql_query:      Optional[str]              = None
+    sql_result:     Optional[list[dict]]       = None
+    chart:          Optional[dict]             = None
+    charts:         list[dict]                 = Field(default_factory=list)
+    market_insight: Optional[MarketInsight]    = None
 
 
 # ── Skill Gap schemas ─────────────────────────────────────────────────────────
