@@ -1,0 +1,380 @@
+[2026-04-09T08:03:38.030+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-04-09T08:03:38.066+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-08T02:00:00+00:00 [queued]>
+[2026-04-09T08:03:38.074+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-08T02:00:00+00:00 [queued]>
+[2026-04-09T08:03:38.074+0000] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2026-04-09T08:03:38.091+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): crawl_data> on 2026-04-08 02:00:00+00:00
+[2026-04-09T08:03:38.096+0000] {standard_task_runner.py:72} INFO - Started process 67 to run task
+[2026-04-09T08:03:38.100+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'crawl_data', 'scheduled__2026-04-08T02:00:00+00:00', '--job-id', '75', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpchwpq6c8']
+[2026-04-09T08:03:38.101+0000] {standard_task_runner.py:105} INFO - Job 75: Subtask crawl_data
+[2026-04-09T08:03:38.125+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2026-04-09T08:03:38.202+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-08T02:00:00+00:00 [running]> on host 64b3786bead1
+[2026-04-09T08:03:38.203+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2026-04-09T08:03:38.335+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='hoa856856@gmail.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='crawl_data' AIRFLOW_CTX_EXECUTION_DATE='2026-04-08T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-04-08T02:00:00+00:00'
+[2026-04-09T08:03:38.336+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2026-04-09T08:03:38.353+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2026-04-09T08:03:38.354+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', 'docker exec spark-submit bash -c "xvfb-run -a python3 /opt/spark/scripts/Crawl_Data.py"']
+[2026-04-09T08:03:38.364+0000] {subprocess.py:99} INFO - Output:
+[2026-04-09T08:03:39.693+0000] {subprocess.py:106} INFO -  Bắt đầu crawl ITviec...
+[2026-04-09T08:03:43.740+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:03:43.742+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 1 ---
+[2026-04-09T08:03:50.288+0000] {subprocess.py:106} INFO -  Trang 1 - Job 1/20 | DevOps Manager | 🔗 https://itviec.com/it-jobs/devops-manager-code88-company-limited-5250
+[2026-04-09T08:03:50.583+0000] {subprocess.py:106} INFO -  Trang 1 - Job 2/20 | DevOps Manager | 🔗 https://itviec.com/it-jobs/senior-nodejs-engineer-chatbot-ai-t-o-nab-innovation-centre-vietnam-4152
+[2026-04-09T08:03:50.827+0000] {subprocess.py:106} INFO -  Trang 1 - Job 3/20 | Senior Nodejs Engineer (Chatbot/AI) -T&O | 🔗 https://itviec.com/it-jobs/ai-engineer-fresher-ung-vien-chuan-bi-tot-nghiep-mb-bank-0708
+[2026-04-09T08:03:53.212+0000] {subprocess.py:106} INFO -  Trang 1 - Job 4/20 | AI Engineer (Computer Vision/NPL/LLM) | 🔗 https://itviec.com/it-jobs/ai-engineer-computer-vision-npl-llm-mb-bank-0353
+[2026-04-09T08:03:58.230+0000] {subprocess.py:106} INFO -  Trang 1 - Job 5/20 | [Middle, Senior] FullStack Developer - Khối CNTT | 🔗 https://itviec.com/it-jobs/middle-senior-fullstack-developer-khoi-cntt-mb-bank-5147
+[2026-04-09T08:03:58.401+0000] {subprocess.py:106} INFO -  Trang 1 - Job 6/20 | [Middle, Senior] FullStack Developer - Khối CNTT | 🔗 https://itviec.com/it-jobs/middle-senior-backend-engineer-java-go-mb-bank-4559
+[2026-04-09T08:04:00.694+0000] {subprocess.py:106} INFO -  Trang 1 - Job 7/20 | Solution Architect - Khối Công nghệ thông tin | 🔗 https://itviec.com/it-jobs/solution-architect-khoi-cong-nghe-thong-tin-mb-bank-3044
+[2026-04-09T08:04:00.844+0000] {subprocess.py:106} INFO -  Trang 1 - Job 8/20 | Solution Architect - Khối Công nghệ thông tin | 🔗 https://itviec.com/it-jobs/backend-engineer-fresher-uv-chuan-bi-tot-nghiep-mb-bank-2044
+[2026-04-09T08:04:01.043+0000] {subprocess.py:106} INFO -  Trang 1 - Job 9/20 | BackEnd Engineer (Fresher, UV chuẩn bị tốt nghiệp) | 🔗 https://itviec.com/it-jobs/chuyen-vien-phan-tich-nghiep-vu-business-analyst-mb-bank-1531
+[2026-04-09T08:04:01.179+0000] {subprocess.py:106} INFO -  Trang 1 - Job 10/20 | Chuyên viên Phân tích nghiệp vụ - Business Analyst | 🔗 https://itviec.com/it-jobs/junior-senior-fullstack-developer-khoi-cntt-mb-bank-0950
+[2026-04-09T08:04:03.536+0000] {subprocess.py:106} INFO -  Trang 1 - Job 11/20 | [Junior, Senior] BackEnd Engineer (Java, Go)- Khối CNTT | 🔗 https://itviec.com/it-jobs/junior-senior-backend-engineer-java-go-khoi-cntt-mb-bank-0347
+[2026-04-09T08:04:05.834+0000] {subprocess.py:106} INFO -  Trang 1 - Job 12/20 | [Da Nang] Agile Delivery Manager | 🔗 https://itviec.com/it-jobs/da-nang-agile-delivery-manager-one-tech-stop-vietnam-company-ltd-0027
+[2026-04-09T08:04:06.006+0000] {subprocess.py:106} INFO -  Trang 1 - Job 13/20 | [Da Nang] Agile Delivery Manager | 🔗 https://itviec.com/it-jobs/mobile-developer-ios-shinhan-ds-4222
+[2026-04-09T08:04:08.300+0000] {subprocess.py:106} INFO -  Trang 1 - Job 14/20 | Android Framework Engineer | 🔗 https://itviec.com/it-jobs/android-framework-engineer-altaa-vistaa-1746
+[2026-04-09T08:04:08.453+0000] {subprocess.py:106} INFO -  Trang 1 - Job 15/20 | Android Framework Engineer | 🔗 https://itviec.com/it-jobs/senior-data-architect-techcombank-3139
+[2026-04-09T08:04:10.744+0000] {subprocess.py:106} INFO -  Trang 1 - Job 16/20 | Unity Developer (Playable Ads/Games/C#) | 🔗 https://itviec.com/it-jobs/unity-developer-playable-ads-games-c-52-entertainment-5801
+[2026-04-09T08:04:10.881+0000] {subprocess.py:106} INFO -  Trang 1 - Job 17/20 | Unity Developer (Playable Ads/Games/C#) | 🔗 https://itviec.com/it-jobs/qa-engineer-qa-qc-automation-test-blockchain-birdeye-so-2710
+[2026-04-09T08:04:11.054+0000] {subprocess.py:106} INFO -  Trang 1 - Job 18/20 | Unity Developer (Playable Ads/Games/C#) | 🔗 https://itviec.com/it-jobs/product-owner-b2b-data-product-blockchain-birdeye-so-2025
+[2026-04-09T08:04:11.233+0000] {subprocess.py:106} INFO -  Trang 1 - Job 19/20 | QA Engineer (QA QC, Automation Test, Blockchain) | 🔗 https://itviec.com/it-jobs/quality-control-executive-manual-and-automation-test-vinsmart-future-0654
+[2026-04-09T08:04:13.517+0000] {subprocess.py:106} INFO -  Trang 1 - Job 20/20 | Senior, Workplace engineer – App/Software Packager | 🔗 https://itviec.com/it-jobs/senior-workplace-engineer-app-software-packager-nab-innovation-centre-vietnam-2913
+[2026-04-09T08:04:16.355+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:04:16.356+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 2 ---
+[2026-04-09T08:04:22.681+0000] {subprocess.py:106} INFO -  Trang 2 - Job 1/20 | Senior Front-end React Developer (Good English) | 🔗 https://itviec.com/it-jobs/senior-front-end-react-developer-good-english-banqup-nxt-3058
+[2026-04-09T08:04:23.128+0000] {subprocess.py:106} INFO -  Trang 2 - Job 2/20 | Website QA Manager (Tester/QA QC/English) | 🔗 https://itviec.com/it-jobs/website-qa-manager-tester-qa-qc-english-nakivo-1520
+[2026-04-09T08:04:23.547+0000] {subprocess.py:106} INFO -  Trang 2 - Job 3/20 | Website QA Manager (Tester/QA QC/English) | 🔗 https://itviec.com/it-jobs/mid-sr-frontend-developer-vuejs-reactjs-javascript-grapecity-5739
+[2026-04-09T08:04:18.907+0000] {subprocess.py:106} INFO -  Trang 2 - Job 4/20 | QA Manager (Automation Test, QA QC, English) | 🔗 https://itviec.com/it-jobs/qa-manager-automation-test-qa-qc-english-nakivo-3751
+[2026-04-09T08:04:31.267+0000] {subprocess.py:106} INFO -  Trang 2 - Job 5/20 | Agentic Coding Specialist | 🔗 https://itviec.com/it-jobs/agentic-coding-specialist-scandinavian-software-park-2850
+[2026-04-09T08:04:31.466+0000] {subprocess.py:106} INFO -  Trang 2 - Job 6/20 | Agentic Coding Specialist | 🔗 https://itviec.com/it-jobs/embedded-software-engineer-c-c-language-4000-excelfore-japan-3044
+[2026-04-09T08:04:31.663+0000] {subprocess.py:106} INFO -  Trang 2 - Job 7/20 | Embedded Software Engineer (C++, C language) ~ 4000$ | 🔗 https://itviec.com/it-jobs/senior-technical-business-analyst-agile-scrum-tag-worldwide-5054
+[2026-04-09T08:04:31.851+0000] {subprocess.py:106} INFO -  Trang 2 - Job 8/20 | Senior Technical Business Analyst (Agile, Scrum) | 🔗 https://itviec.com/it-jobs/frontend-developer-reactjs-react-native-javascript-tag-worldwide-4406
+[2026-04-09T08:04:32.051+0000] {subprocess.py:106} INFO -  Trang 2 - Job 9/20 | Frontend Developer (ReactJS, React Native, JavaScript) | 🔗 https://itviec.com/it-jobs/magento-backend-developer-oop-php-mvvm-tag-worldwide-5404
+[2026-04-09T08:04:32.251+0000] {subprocess.py:106} INFO -  Trang 2 - Job 10/20 | Magento Backend Developer (OOP, PHP, MVVM) | 🔗 https://itviec.com/it-jobs/full-stack-developer-frontend-focus-mti-technology-5436
+[2026-04-09T08:04:32.400+0000] {subprocess.py:106} INFO -  Trang 2 - Job 11/20 | Full-stack Developer (Frontend focus) | 🔗 https://itviec.com/it-jobs/truong-nhom-mlops-khoi-ai-thiet-bi-ai-open-platform-vinsmart-future-3616
+[2026-04-09T08:04:32.633+0000] {subprocess.py:106} INFO -  Trang 2 - Job 12/20 | Full-stack Developer (Frontend focus) | 🔗 https://itviec.com/it-jobs/android-embedded-senior-engineer-embedded-linux-c-datalogic-viet-nam-1824
+[2026-04-09T08:04:32.790+0000] {subprocess.py:106} INFO -  Trang 2 - Job 13/20 | Android Embedded Senior Engineer (Embedded Linux, C++) | 🔗 https://itviec.com/it-jobs/remote-hybrid-backend-engineer-scala-kotlin-golang-semrush-5630
+[2026-04-09T08:04:32.979+0000] {subprocess.py:106} INFO -  Trang 2 - Job 14/20 | [Remote/Hybrid] Backend Engineer (Scala/Kotlin/Golang) | 🔗 https://itviec.com/it-jobs/engineer-manager-money-forward-vietnam-co-ltd-0743
+[2026-04-09T08:04:35.275+0000] {subprocess.py:106} INFO -  Trang 2 - Job 15/20 | Project Manager | 🔗 https://itviec.com/it-jobs/project-manager-leansoft-3658
+[2026-04-09T08:04:35.418+0000] {subprocess.py:106} INFO -  Trang 2 - Job 16/20 | Project Manager | 🔗 https://itviec.com/it-jobs/virtualization-engineer-automotive-altaa-vistaa-5534
+[2026-04-09T08:04:35.591+0000] {subprocess.py:106} INFO -  Trang 2 - Job 17/20 | Virtualization Engineer (Automotive) | 🔗 https://itviec.com/it-jobs/some-ip-protocol-engineer-altaa-vistaa-0051
+[2026-04-09T08:04:35.757+0000] {subprocess.py:106} INFO -  Trang 2 - Job 18/20 | SOME/IP Protocol Engineer | 🔗 https://itviec.com/it-jobs/senior-cloud-architect-itviec-recruitment-consulting-4605
+[2026-04-09T08:04:38.037+0000] {subprocess.py:106} INFO -  Trang 2 - Job 19/20 | Senior Mobile App Developer (React Native / Full Stack) | 🔗 https://itviec.com/it-jobs/senior-mobile-app-developer-react-native-full-stack-itviec-recruitment-consulting-3946
+[2026-04-09T08:04:38.224+0000] {subprocess.py:106} INFO -  Trang 2 - Job 20/20 | Senior Mobile App Developer (React Native / Full Stack) | 🔗 https://itviec.com/it-jobs/mid-senior-java-backend-developer-spring-english-logicentra-4651
+[2026-04-09T08:04:41.716+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:04:41.716+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 3 ---
+[2026-04-09T08:04:49.041+0000] {subprocess.py:106} INFO -  Trang 3 - Job 1/20 | Software Architect | 🔗 https://itviec.com/it-jobs/software-architect-altaa-vistaa-3836
+[2026-04-09T08:04:51.341+0000] {subprocess.py:106} INFO -  Trang 3 - Job 2/20 | Software Engineer (React-Native) | 🔗 https://itviec.com/it-jobs/software-engineer-react-native-pizza-hut-digital-technology-2355
+[2026-04-09T08:04:51.491+0000] {subprocess.py:106} INFO -  Trang 3 - Job 3/20 | Software Engineer (React-Native) | 🔗 https://itviec.com/it-jobs/middle-senior-ai-engineer-st-engineering-0802
+[2026-04-09T08:04:53.771+0000] {subprocess.py:106} INFO -  Trang 3 - Job 4/20 | Manual Tester (Games, QA QC, Tester) | 🔗 https://itviec.com/it-jobs/manual-tester-games-qa-qc-tester-52-entertainment-3313
+[2026-04-09T08:04:53.933+0000] {subprocess.py:106} INFO -  Trang 3 - Job 5/20 | Manual Tester (Games, QA QC, Tester) | 🔗 https://itviec.com/it-jobs/salesforce-developer-soql-sosl-apex-javascript-t2-soft-company-limited-5128
+[2026-04-09T08:04:54.123+0000] {subprocess.py:106} INFO -  Trang 3 - Job 6/20 | Salesforce Developer (SOQL/SOSL, Apex, JavaScript) | 🔗 https://itviec.com/it-jobs/soc-cybersecurity-engineer-manager-st-engineering-5756
+[2026-04-09T08:04:54.302+0000] {subprocess.py:106} INFO -  Trang 3 - Job 7/20 | SOC Cybersecurity Engineer/Manager | 🔗 https://itviec.com/it-jobs/senior-java-developer-st-engineering-4243
+[2026-04-09T08:04:54.480+0000] {subprocess.py:106} INFO -  Trang 3 - Job 8/20 | Senior Java Developer | 🔗 https://itviec.com/it-jobs/ai-scientist-st-engineering-3538
+[2026-04-09T08:04:54.688+0000] {subprocess.py:106} INFO -  Trang 3 - Job 9/20 | AI Scientist | 🔗 https://itviec.com/it-jobs/lumera-site-manager-scandinavian-software-park-2550
+[2026-04-09T08:04:54.851+0000] {subprocess.py:106} INFO -  Trang 3 - Job 10/20 | Lumera - Site Manager | 🔗 https://itviec.com/it-jobs/senior-data-engineer-zuhlke-engineering-vietnam-1015
+[2026-04-09T08:04:55.159+0000] {subprocess.py:106} INFO -  Trang 3 - Job 11/20 | Senior Data Engineer | 🔗 https://itviec.com/it-jobs/senior-lead-fullstack-net-js-software-engineer-kms-technology-5930
+[2026-04-09T08:04:57.479+0000] {subprocess.py:106} INFO -  Trang 3 - Job 12/20 | Middle Automation Tester (Agile/Scrum) | 🔗 https://itviec.com/it-jobs/middle-automation-tester-agile-scrum-vtc-online-1715
+[2026-04-09T08:04:57.670+0000] {subprocess.py:106} INFO -  Trang 3 - Job 13/20 | Middle Automation Tester (Agile/Scrum) | 🔗 https://itviec.com/it-jobs/senior-qa-engineer-5yrs-automation-tester-good-eng-banqup-nxt-0753
+[2026-04-09T08:04:57.848+0000] {subprocess.py:106} INFO -  Trang 3 - Job 14/20 | Senior QA Engineer (5yrs+, Automation Tester, Good Eng) | 🔗 https://itviec.com/it-jobs/senior-devops-engineer-database-k8s-vng-corporation-0507
+[2026-04-09T08:05:02.883+0000] {subprocess.py:106} INFO -  Trang 3 - Job 15/20 | Senior Database Administrator | 🔗 https://itviec.com/it-jobs/senior-database-administrator-ths-game-1154
+[2026-04-09T08:05:03.048+0000] {subprocess.py:106} INFO -  Trang 3 - Job 16/20 | Senior Database Administrator | 🔗 https://itviec.com/it-jobs/qa-engineer-manual-automation-weverse-naver-vietnam-4917
+[2026-04-09T08:05:05.287+0000] {subprocess.py:106} INFO -  Trang 3 - Job 17/20 | Junior QC Automation | 🔗 https://itviec.com/it-jobs/junior-qc-automation-deliveree-on-demand-logistics-2649
+[2026-04-09T08:05:05.471+0000] {subprocess.py:106} INFO -  Trang 3 - Job 18/20 | Junior QC Automation | 🔗 https://itviec.com/it-jobs/senior-product-engineer-golang-aws-distributed-sys-amb-software-services-limited-4900
+[2026-04-09T08:05:05.636+0000] {subprocess.py:106} INFO -  Trang 3 - Job 19/20 | Senior Product Engineer (Golang, AWS, Distributed Sys) | 🔗 https://itviec.com/it-jobs/head-of-technology-risk-nab-innovation-centre-vietnam-2028
+[2026-04-09T08:05:05.797+0000] {subprocess.py:106} INFO -  Trang 3 - Job 20/20 | Head of Technology Risk | 🔗 https://itviec.com/it-jobs/head-of-engineer-nab-innovation-centre-vietnam-1544
+[2026-04-09T08:05:09.266+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:05:09.267+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 4 ---
+[2026-04-09T08:05:15.413+0000] {subprocess.py:106} INFO -  Trang 4 - Job 1/20 | DevOps Engineer (Strong AWS) | 🔗 https://itviec.com/it-jobs/devops-engineer-strong-aws-code88-company-limited-3501
+[2026-04-09T08:05:17.829+0000] {subprocess.py:106} INFO -  Trang 4 - Job 2/20 | Data Scientist | 🔗 https://itviec.com/it-jobs/data-scientist-deliveree-on-demand-logistics-2518
+[2026-04-09T08:05:18.104+0000] {subprocess.py:106} INFO -  Trang 4 - Job 3/20 | Data Scientist | 🔗 https://itviec.com/it-jobs/senior-software-quality-control-qc-tester-shinhan-ds-2957
+[2026-04-09T08:05:20.394+0000] {subprocess.py:106} INFO -  Trang 4 - Job 4/20 | Applied AI Engineer/ AI Automation Engineer | 🔗 https://itviec.com/it-jobs/applied-ai-engineer-ai-automation-engineer-bbv-vietnam-0903
+[2026-04-09T08:05:20.543+0000] {subprocess.py:106} INFO -  Trang 4 - Job 5/20 | Applied AI Engineer/ AI Automation Engineer | 🔗 https://itviec.com/it-jobs/ai-core-engineer-bbv-vietnam-0132
+[2026-04-09T08:05:20.743+0000] {subprocess.py:106} INFO -  Trang 4 - Job 6/20 | AI Core Engineer | 🔗 https://itviec.com/it-jobs/manual-tester-database-api-sql-cong-ty-tnhh-cong-nghe-va-truyen-thong-thien-khoi-5730
+[2026-04-09T08:05:23.029+0000] {subprocess.py:106} INFO -  Trang 4 - Job 7/20 | Senior 2D Artist | 🔗 https://itviec.com/it-jobs/senior-2d-artist-d2m-4438
+[2026-04-09T08:05:23.224+0000] {subprocess.py:106} INFO -  Trang 4 - Job 8/20 | Senior 2D Artist | 🔗 https://itviec.com/it-jobs/senior-data-analyst-ghn-2349
+[2026-04-09T08:05:23.403+0000] {subprocess.py:106} INFO -  Trang 4 - Job 9/20 | Senior Data Analyst | 🔗 https://itviec.com/it-jobs/application-engineer-nv-trien-khai-phan-mem-sql-restaff-house-of-norway-4151
+[2026-04-09T08:05:25.699+0000] {subprocess.py:106} INFO -  Trang 4 - Job 10/20 | Product Owner Middle | 🔗 https://itviec.com/it-jobs/product-owner-middle-leansoft-2442
+[2026-04-09T08:05:25.847+0000] {subprocess.py:106} INFO -  Trang 4 - Job 11/20 | Product Owner Middle | 🔗 https://itviec.com/it-jobs/manual-tester-c-c-mk-group-4237
+[2026-04-09T08:05:26.052+0000] {subprocess.py:106} INFO -  Trang 4 - Job 12/20 | Manual Tester ( C/C++) | 🔗 https://itviec.com/it-jobs/security-operations-secops-soc-mk-group-4647
+[2026-04-09T08:05:26.239+0000] {subprocess.py:106} INFO -  Trang 4 - Job 13/20 | Manual Tester ( C/C++) | 🔗 https://itviec.com/it-jobs/mobile-developer-android-ios-mk-group-4821
+[2026-04-09T08:05:26.443+0000] {subprocess.py:106} INFO -  Trang 4 - Job 14/20 | Mobile Developer (Android/iOS) | 🔗 https://itviec.com/it-jobs/chuyen-vien-quan-ly-ha-tang-trung-tam-du-lieu-mb-bank-1307
+[2026-04-09T08:05:28.738+0000] {subprocess.py:106} INFO -  Trang 4 - Job 15/20 | Lead Data Engineer | 🔗 https://itviec.com/it-jobs/lead-data-engineer-vnggames-3901
+[2026-04-09T08:05:31.117+0000] {subprocess.py:106} INFO -  Trang 4 - Job 16/20 | Senior Back-end Python Developer (FastAPI, AWS) | 🔗 https://itviec.com/it-jobs/senior-back-end-python-developer-fastapi-aws-outpost24-5611
+[2026-04-09T08:05:31.277+0000] {subprocess.py:106} INFO -  Trang 4 - Job 17/20 | Senior Back-end Python Developer (FastAPI, AWS) | 🔗 https://itviec.com/it-jobs/senior-backend-engineer-python-java-php-ruby-itviec-recruitment-consulting-5324
+[2026-04-09T08:05:34.729+0000] {subprocess.py:106} INFO -  Trang 4 - Job 18/20 | Senior C++ Engineer | 🔗 https://itviec.com/it-jobs/senior-c-engineer-itviec-recruitment-consulting-5054
+[2026-04-09T08:05:35.016+0000] {subprocess.py:106} INFO -  Trang 4 - Job 19/20 | Senior C++ Engineer | 🔗 https://itviec.com/it-jobs/operation-engineer-itviec-recruitment-consulting-4858
+[2026-04-09T08:05:37.351+0000] {subprocess.py:106} INFO -  Trang 4 - Job 20/20 | Operation Support Engineer | 🔗 https://itviec.com/it-jobs/operation-support-engineer-itviec-recruitment-consulting-4341
+[2026-04-09T08:05:40.793+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:05:40.794+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 5 ---
+[2026-04-09T08:05:46.642+0000] {subprocess.py:106} INFO -  Trang 5 - Job 1/20 | Senior Data Engineer (Python, AI/LLM) | 🔗 https://itviec.com/it-jobs/senior-data-engineer-python-ai-llm-itviec-recruitment-consulting-4015
+[2026-04-09T08:05:47.032+0000] {subprocess.py:106} INFO -  Trang 5 - Job 2/20 | Senior Data Engineer (Python, AI/LLM) | 🔗 https://itviec.com/it-jobs/senior-fullstack-engineer-itviec-recruitment-consulting-3723
+[2026-04-09T08:05:49.455+0000] {subprocess.py:106} INFO -  Trang 5 - Job 3/20 | (HCM) Senior Backend Engineer (AI/Data Platform) | 🔗 https://itviec.com/it-jobs/hcm-senior-backend-engineer-ai-data-platform-one-mount-group-1200
+[2026-04-09T08:05:49.641+0000] {subprocess.py:106} INFO -  Trang 5 - Job 4/20 | (HCM) Senior Backend Engineer (AI/Data Platform) | 🔗 https://itviec.com/it-jobs/technical-consultant-java-c-c-net-sql-linux-murex-0652
+[2026-04-09T08:05:49.809+0000] {subprocess.py:106} INFO -  Trang 5 - Job 5/20 | (HCM) Senior Backend Engineer (AI/Data Platform) | 🔗 https://itviec.com/it-jobs/senior-qa-engineer-tpisoftware-co-ltd-0431
+[2026-04-09T08:05:52.221+0000] {subprocess.py:106} INFO -  Trang 5 - Job 6/20 | Senior QA Engineer | 🔗 https://itviec.com/it-jobs/mid-senior-ai-engineer-good-english-outcubator-5027
+[2026-04-09T08:05:54.590+0000] {subprocess.py:106} INFO -  Trang 5 - Job 7/20 | Fullstack Engineer (PHP/NodeJS) | 🔗 https://itviec.com/it-jobs/fullstack-engineer-php-nodejs-smg-swiss-marketplace-group-4443
+[2026-04-09T08:05:57.182+0000] {subprocess.py:106} INFO -  Trang 5 - Job 8/20 | ERP & AI Solution Architect / Technical Lead (Odoo) | 🔗 https://itviec.com/it-jobs/erp-ai-solution-architect-technical-lead-odoo-xboss-1444
+[2026-04-09T08:05:57.427+0000] {subprocess.py:106} INFO -  Trang 5 - Job 9/20 | ERP & AI Solution Architect / Technical Lead (Odoo) | 🔗 https://itviec.com/it-jobs/java-leader-capgemini-vietnam-0705
+[2026-04-09T08:05:59.805+0000] {subprocess.py:106} INFO -  Trang 5 - Job 10/20 | AI Engineer (Open to Senior) | 🔗 https://itviec.com/it-jobs/ai-engineer-open-to-senior-vng-corporation-0012
+[2026-04-09T08:06:00.023+0000] {subprocess.py:106} INFO -  Trang 5 - Job 11/20 | AI Engineer (Open to Senior) | 🔗 https://itviec.com/it-jobs/senior-site-reliability-engineer-database-k8s-vng-corporation-4655
+[2026-04-09T08:06:02.377+0000] {subprocess.py:106} INFO -  Trang 5 - Job 12/20 | Mid/Senior Fullstack Engineer (Python) | 🔗 https://itviec.com/it-jobs/mid-senior-fullstack-engineer-python-smg-swiss-marketplace-group-3502
+[2026-04-09T08:06:02.550+0000] {subprocess.py:106} INFO -  Trang 5 - Job 13/20 | Mid/Senior Fullstack Engineer (Python) | 🔗 https://itviec.com/it-jobs/senior-fullstack-developer-golang-reactjs-hrms-cadena-vietnam-4104
+[2026-04-09T08:06:05.876+0000] {subprocess.py:106} INFO -  Trang 5 - Job 14/20 | Site Reliability Engineer (DevOps/Azure/Linux ) | 🔗 https://itviec.com/it-jobs/site-reliability-engineer-devops-azure-linux-optimizely-3656
+[2026-04-09T08:06:08.276+0000] {subprocess.py:106} INFO -  Trang 5 - Job 15/20 | Full-stack Developer (Middle - Senior) | 🔗 https://itviec.com/it-jobs/full-stack-developer-middle-senior-maximus-solution-company-limited-2830
+[2026-04-09T08:06:08.510+0000] {subprocess.py:106} INFO -  Trang 5 - Job 16/20 | Full-stack Developer (Middle - Senior) | 🔗 https://itviec.com/it-jobs/senior-full-stack-engineer-java-reactjs-javascript-magnolia-2947
+[2026-04-09T08:06:08.701+0000] {subprocess.py:106} INFO -  Trang 5 - Job 17/20 | Senior Full-Stack Engineer (Java, ReactJS, JavaScript) | 🔗 https://itviec.com/it-jobs/senior-platform-architect-react-next-js-remote-switch-supply-pty-ltd-4803
+[2026-04-09T08:06:08.863+0000] {subprocess.py:106} INFO -  Trang 5 - Job 18/20 | Senior Platform Architect – React, Next.js | Remote | 🔗 https://itviec.com/it-jobs/cvcc-van-hanh-ung-dung-f88-5102
+[2026-04-09T08:06:09.011+0000] {subprocess.py:106} INFO -  Trang 5 - Job 19/20 | CVCC Vận hành ứng dụng | 🔗 https://itviec.com/it-jobs/cvcc-phan-tich-nghiep-vu-senior-business-analyst-f88-4451
+[2026-04-09T08:06:11.317+0000] {subprocess.py:106} INFO -  Trang 5 - Job 20/20 | Principal Data Engineer - AI/Data Pipeline | 🔗 https://itviec.com/it-jobs/principal-data-engineer-ai-data-pipeline-money-forward-vietnam-co-ltd-3943
+[2026-04-09T08:06:13.523+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:06:13.524+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 6 ---
+[2026-04-09T08:06:19.608+0000] {subprocess.py:106} INFO -  Trang 6 - Job 1/20 | Senior Full-Stack Engineer (AI-Driven) | 🔗 https://itviec.com/it-jobs/senior-full-stack-engineer-ai-driven-meta-technology-lab-inc-1114
+[2026-04-09T08:06:21.950+0000] {subprocess.py:106} INFO -  Trang 6 - Job 2/20 | Senior Tester (Tiếng Nhật N2) | 🔗 https://itviec.com/it-jobs/senior-tester-tieng-nhat-n2-extreme-viet-nam-2130
+[2026-04-09T08:06:22.151+0000] {subprocess.py:106} INFO -  Trang 6 - Job 3/20 | Senior Tester (Tiếng Nhật N2) | 🔗 https://itviec.com/it-jobs/devops-engineer-kubernetes-docker-vinsmart-future-4524
+[2026-04-09T08:06:22.332+0000] {subprocess.py:106} INFO -  Trang 6 - Job 4/20 | DevOps Engineer (Kubernetes/ Docker) | 🔗 https://itviec.com/it-jobs/ai-engineer-machine-learning-python-blue-technology-1930
+[2026-04-09T08:06:22.605+0000] {subprocess.py:106} INFO -  Trang 6 - Job 5/20 | AI Engineer (Machine Learning/ Python) | 🔗 https://itviec.com/it-jobs/data-scientist-python-sql-pandas-numpy-blue-technology-2246
+[2026-04-09T08:06:24.907+0000] {subprocess.py:106} INFO -  Trang 6 - Job 6/20 | UX Designer (Good English) | 🔗 https://itviec.com/it-jobs/ux-designer-good-english-banqup-nxt-2616
+[2026-04-09T08:06:25.068+0000] {subprocess.py:106} INFO -  Trang 6 - Job 7/20 | UX Designer (Good English) | 🔗 https://itviec.com/it-jobs/mid-sr-fullstack-software-engineer-net-react-c-mitek-vietnam-2140
+[2026-04-09T08:06:27.377+0000] {subprocess.py:106} INFO -  Trang 6 - Job 8/20 | Remote - Fullstack Engineer (Claude, NodeJS, React) | 🔗 https://itviec.com/it-jobs/remote-fullstack-engineer-claude-nodejs-react-orgscale-recruitment-4953
+[2026-04-09T08:06:27.550+0000] {subprocess.py:106} INFO -  Trang 6 - Job 9/20 | Remote - Fullstack Engineer (Claude, NodeJS, React) | 🔗 https://itviec.com/it-jobs/senior-application-engineer-backend-ruby-lifull-tech-vietnam-3450
+[2026-04-09T08:06:27.732+0000] {subprocess.py:106} INFO -  Trang 6 - Job 10/20 | Senior Application Engineer Backend Ruby | 🔗 https://itviec.com/it-jobs/remote-devops-engineer-aws-linux-nodejs-sql-orgscale-recruitment-5112
+[2026-04-09T08:06:30.019+0000] {subprocess.py:106} INFO -  Trang 6 - Job 11/20 | Remote - Backend Engineer (NodeJS, ExpressJS, Postgres) | 🔗 https://itviec.com/it-jobs/remote-backend-engineer-nodejs-expressjs-postgres-orgscale-recruitment-5501
+[2026-04-09T08:06:30.186+0000] {subprocess.py:106} INFO -  Trang 6 - Job 12/20 | Remote - Backend Engineer (NodeJS, ExpressJS, Postgres) | 🔗 https://itviec.com/it-jobs/remote-frontend-engineer-reactjs-typescript-orgscale-recruitment-5818
+[2026-04-09T08:06:30.348+0000] {subprocess.py:106} INFO -  Trang 6 - Job 13/20 | Remote - Frontend Engineer (ReactJS, Typescript) | 🔗 https://itviec.com/it-jobs/senior-lead-fullstack-developer-the-one-digi-corp-3950
+[2026-04-09T08:06:32.697+0000] {subprocess.py:106} INFO -  Trang 6 - Job 14/20 | Senior/Lead Fullstack Developer | 🔗 https://itviec.com/it-jobs/senior-fullstack-developer-react-typescript-threejs-8seneca-4050
+[2026-04-09T08:06:32.844+0000] {subprocess.py:106} INFO -  Trang 6 - Job 15/20 | Senior/Lead Fullstack Developer | 🔗 https://itviec.com/it-jobs/ky-su-quan-tri-he-thong-system-administrator-viettel-group-4644
+[2026-04-09T08:06:36.041+0000] {subprocess.py:106} INFO -  Trang 6 - Job 16/20 | Middle PHP Developer (Laravel, Unit Test, MySQL) | 🔗 https://itviec.com/it-jobs/middle-php-developer-laravel-unit-test-mysql-vnext-software-4838
+[2026-04-09T08:06:36.217+0000] {subprocess.py:106} INFO -  Trang 6 - Job 17/20 | Middle PHP Developer (Laravel, Unit Test, MySQL) | 🔗 https://itviec.com/it-jobs/fullstack-developer-javascript-typescript-reactjs-boxgate-2853
+[2026-04-09T08:06:36.436+0000] {subprocess.py:106} INFO -  Trang 6 - Job 18/20 | Fullstack Developer (JavaScript, TypeScript, ReactJS) | 🔗 https://itviec.com/it-jobs/cyber-security-engineer-rikkeisoft-1147
+[2026-04-09T08:06:36.641+0000] {subprocess.py:106} INFO -  Trang 6 - Job 19/20 | Cyber Security Engineer | 🔗 https://itviec.com/it-jobs/chuyen-vien-van-hanh-he-thong-mbamc-5107
+[2026-04-09T08:06:38.968+0000] {subprocess.py:106} INFO -  Trang 6 - Job 20/20 | Senior Java Engineer – 24Hr Campaign | 🔗 https://itviec.com/it-jobs/senior-java-engineer-24hr-campaign-elca-3334
+[2026-04-09T08:06:41.437+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:06:41.438+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 7 ---
+[2026-04-09T08:06:49.394+0000] {subprocess.py:106} INFO -  Trang 7 - Job 1/20 | Senior .NET Engineer - 24Hr Campaign | 🔗 https://itviec.com/it-jobs/senior-net-engineer-24hr-campaign-elca-3225
+[2026-04-09T08:06:51.752+0000] {subprocess.py:106} INFO -  Trang 7 - Job 2/20 | Software Project Leader - Project Manager (PMP,PMI) | 🔗 https://itviec.com/it-jobs/software-project-leader-project-manager-pmp-pmi-lg-electronics-development-vietnam-lgedv-2736
+[2026-04-09T08:06:54.146+0000] {subprocess.py:106} INFO -  Trang 7 - Job 3/20 | CV/CVCC Phân tích nghiệp vụ (Digital BA) | 🔗 https://itviec.com/it-jobs/cv-cvcc-phan-tich-nghiep-vu-digital-ba-vndirect-4208
+[2026-04-09T08:06:56.518+0000] {subprocess.py:106} INFO -  Trang 7 - Job 4/20 | [REMOTE] Delivery Manager | 🔗 https://itviec.com/it-jobs/remote-delivery-manager-nsc-software-2406
+[2026-04-09T08:06:56.717+0000] {subprocess.py:106} INFO -  Trang 7 - Job 5/20 | [REMOTE] Delivery Manager | 🔗 https://itviec.com/it-jobs/senior-staff-machine-learning-engineer-motorola-solutions-3333
+[2026-04-09T08:06:56.942+0000] {subprocess.py:106} INFO -  Trang 7 - Job 6/20 | Senior Staff Machine Learning Engineer | 🔗 https://itviec.com/it-jobs/sr-net-backend-developer-asp-net-c-sql-reactjs-grapecity-1108
+[2026-04-09T08:06:59.337+0000] {subprocess.py:106} INFO -  Trang 7 - Job 7/20 | Chuyên viên Quản trị Database | 🔗 https://itviec.com/it-jobs/chuyen-vien-quan-tri-database-mbamc-0626
+[2026-04-09T08:06:59.528+0000] {subprocess.py:106} INFO -  Trang 7 - Job 8/20 | Chuyên viên Quản trị Database | 🔗 https://itviec.com/it-jobs/senior-sre-shift-work-aws-english-gft-technologies-vietnam-4826
+[2026-04-09T08:06:59.754+0000] {subprocess.py:106} INFO -  Trang 7 - Job 9/20 | Senior SRE (Shift Work, AWS, English) | 🔗 https://itviec.com/it-jobs/ua-playable-ads-developer-unity-c-nexon-dev-vina-3231
+[2026-04-09T08:07:02.101+0000] {subprocess.py:106} INFO -  Trang 7 - Job 10/20 | Data Governance Manager (Consumer Finance) - Upto $4000 | 🔗 https://itviec.com/it-jobs/data-governance-manager-lotte-finance-vietnam-5446
+[2026-04-09T08:07:04.493+0000] {subprocess.py:106} INFO -  Trang 7 - Job 11/20 | Business Analyst (Upto $1700, Product Company, Ha Noi) | 🔗 https://itviec.com/it-jobs/business-analyst-upto-1700-product-company-ha-noi-softel-solutions-0116
+[2026-04-09T08:06:54.897+0000] {subprocess.py:106} INFO -  Trang 7 - Job 12/20 | Business Analyst (Upto $1700, Product Company, Ha Noi) | 🔗 https://itviec.com/it-jobs/technical-business-analyst-pizza-hut-digital-technology-2124
+[2026-04-09T08:07:07.217+0000] {subprocess.py:106} INFO -  Trang 7 - Job 13/20 | Middle/ Senior Mobile Developer (Flutter) | 🔗 https://itviec.com/it-jobs/middle-senior-mobile-developer-flutter-one-mount-group-5825
+[2026-04-09T08:07:07.398+0000] {subprocess.py:106} INFO -  Trang 7 - Job 14/20 | Middle/ Senior Mobile Developer (Flutter) | 🔗 https://itviec.com/it-jobs/senior-machine-learning-engineer-physics-informed-ai-koidra-tech-4926
+[2026-04-09T08:07:09.768+0000] {subprocess.py:106} INFO -  Trang 7 - Job 15/20 | Data Scientist | 🔗 https://itviec.com/it-jobs/data-scientist-parcel-perform-1541
+[2026-04-09T08:07:09.939+0000] {subprocess.py:106} INFO -  Trang 7 - Job 16/20 | Data Scientist | 🔗 https://itviec.com/it-jobs/remote-technical-project-manager-nsc-software-2435
+[2026-04-09T08:07:10.115+0000] {subprocess.py:106} INFO -  Trang 7 - Job 17/20 | [REMOTE] Technical Project Manager | 🔗 https://itviec.com/it-jobs/data-science-lead-fe-credit-2847
+[2026-04-09T08:07:10.307+0000] {subprocess.py:106} INFO -  Trang 7 - Job 18/20 | Data Science Lead | 🔗 https://itviec.com/it-jobs/senior-business-analyst-lifetex-2019
+[2026-04-09T08:07:12.653+0000] {subprocess.py:106} INFO -  Trang 7 - Job 19/20 | Software Engineer at CommandOSS | 🔗 https://itviec.com/it-jobs/software-engineer-at-commandoss-commandoss-0616
+[2026-04-09T08:07:15.088+0000] {subprocess.py:106} INFO -  Trang 7 - Job 20/20 | Senior PHP Fullstack Engineer (Typescript, English) | 🔗 https://itviec.com/it-jobs/senior-php-fullstack-engineer-typescript-english-hrs-group-4941
+[2026-04-09T08:07:17.627+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:07:17.628+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 8 ---
+[2026-04-09T08:07:25.015+0000] {subprocess.py:106} INFO -  Trang 8 - Job 1/20 | Middle/Senior Java Engineer | 🔗 https://itviec.com/it-jobs/middle-senior-java-engineer-nab-innovation-centre-vietnam-3401
+[2026-04-09T08:07:25.388+0000] {subprocess.py:106} INFO -  Trang 8 - Job 2/20 | Middle/Senior Java Engineer | 🔗 https://itviec.com/it-jobs/data-engineer-sql-python-cloud-megazone-1843
+[2026-04-09T08:07:25.589+0000] {subprocess.py:106} INFO -  Trang 8 - Job 3/20 | Data Engineer (SQL/ Python/ Cloud) | 🔗 https://itviec.com/it-jobs/cloud-solution-architect-aws-senior-junior-megazone-1544
+[2026-04-09T08:07:27.920+0000] {subprocess.py:106} INFO -  Trang 8 - Job 4/20 | Android Developer (Kotlin / MVVM) | 🔗 https://itviec.com/it-jobs/android-developer-kotlin-mvvm-megazone-2210
+[2026-04-09T08:07:30.260+0000] {subprocess.py:106} INFO -  Trang 8 - Job 5/20 | Bridge System Engineer (BSE) | 🔗 https://itviec.com/it-jobs/bridge-system-engineer-bse-ivc-isb-vietnam-1724
+[2026-04-09T08:07:30.457+0000] {subprocess.py:106} INFO -  Trang 8 - Job 6/20 | Bridge System Engineer (BSE) | 🔗 https://itviec.com/it-jobs/bridge-engineer-salesforce-japanese-n2-up-to-4000-hybrid-technologies-5233
+[2026-04-09T08:07:32.764+0000] {subprocess.py:106} INFO -  Trang 8 - Job 7/20 | Senior Front-end Engineer | 🔗 https://itviec.com/it-jobs/senior-front-end-engineer-one-mount-group-2604
+[2026-04-09T08:07:32.990+0000] {subprocess.py:106} INFO -  Trang 8 - Job 8/20 | Senior Front-end Engineer | 🔗 https://itviec.com/it-jobs/middle-senior-authorisation-engineer-nab-innovation-centre-vietnam-0305
+[2026-04-09T08:07:35.344+0000] {subprocess.py:106} INFO -  Trang 8 - Job 9/20 | Senior Frontend Developer (VueJS, ReactJS, Angular) | 🔗 https://itviec.com/it-jobs/senior-frontend-developer-vuejs-reactjs-angular-ahasoft-0705
+[2026-04-09T08:07:37.734+0000] {subprocess.py:106} INFO -  Trang 8 - Job 10/20 | Hybrid - Engineering Manager (Ruby, Python, Agile) | 🔗 https://itviec.com/it-jobs/hybrid-engineering-manager-ruby-python-agile-mealsuite-4851
+[2026-04-09T08:07:38.026+0000] {subprocess.py:106} INFO -  Trang 8 - Job 11/20 | Hybrid - Engineering Manager (Ruby, Python, Agile) | 🔗 https://itviec.com/it-jobs/outsystems-developer-front-end-one-mount-group-1546
+[2026-04-09T08:07:38.298+0000] {subprocess.py:106} INFO -  Trang 8 - Job 12/20 | OutSystems Developer (Front-end) | 🔗 https://itviec.com/it-jobs/senior-ios-engineer-nab-innovation-centre-vietnam-1445
+[2026-04-09T08:07:40.618+0000] {subprocess.py:106} INFO -  Trang 8 - Job 13/20 | Lead Java Engineer | 🔗 https://itviec.com/it-jobs/lead-java-engineer-nab-innovation-centre-vietnam-1409
+[2026-04-09T08:07:40.786+0000] {subprocess.py:106} INFO -  Trang 8 - Job 14/20 | Lead Java Engineer | 🔗 https://itviec.com/it-jobs/product-owner-nab-innovation-centre-vietnam-5830
+[2026-04-09T08:07:40.938+0000] {subprocess.py:106} INFO -  Trang 8 - Job 15/20 | Product Owner | 🔗 https://itviec.com/it-jobs/solution-designer-nab-innovation-centre-vietnam-2438
+[2026-04-09T08:07:43.245+0000] {subprocess.py:106} INFO -  Trang 8 - Job 16/20 | Middle/Senior Business Analyst | 🔗 https://itviec.com/it-jobs/middle-senior-business-analyst-nab-innovation-centre-vietnam-5725
+[2026-04-09T08:07:43.409+0000] {subprocess.py:106} INFO -  Trang 8 - Job 17/20 | Middle/Senior Business Analyst | 🔗 https://itviec.com/it-jobs/mid-level-qa-qc-engineer-jira-agile-api-sql-buymed-5011
+[2026-04-09T08:07:45.838+0000] {subprocess.py:106} INFO -  Trang 8 - Job 18/20 | 10 Mid/Senior Java Backend Developer (Spring, AI, SQL) | 🔗 https://itviec.com/it-jobs/10-mid-senior-java-backend-developer-spring-ai-sql-goline-corporation-2918
+[2026-04-09T08:07:46.059+0000] {subprocess.py:106} INFO -  Trang 8 - Job 19/20 | 10 Mid/Senior Java Backend Developer (Spring, AI, SQL) | 🔗 https://itviec.com/it-jobs/ai-product-manager-fpt-is-3821
+[2026-04-09T08:07:46.281+0000] {subprocess.py:106} INFO -  Trang 8 - Job 20/20 | AI Product Manager | 🔗 https://itviec.com/it-jobs/senior-expert-computer-vision-engineer-vinsmart-future-0311
+[2026-04-09T08:07:48.482+0000] {subprocess.py:106} INFO - 
+[2026-04-09T08:07:48.482+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 9 ---
+[2026-04-09T08:07:55.085+0000] {subprocess.py:106} INFO -  Trang 9 - Job 1/20 | Fresher & Junior - Software Developer (.NET, Java, C#) | 🔗 https://itviec.com/it-jobs/fresher-junior-software-developer-net-java-c-netcompany-0538
+[2026-04-09T08:07:55.345+0000] {subprocess.py:106} INFO -  Trang 9 - Job 2/20 | Fresher & Junior - Software Developer (.NET, Java, C#) | 🔗 https://itviec.com/it-jobs/fullstack-engineer-java-reactjs-weverse-naver-vietnam-1010
+[2026-04-09T08:07:55.602+0000] {subprocess.py:106} INFO -  Trang 9 - Job 3/20 | Fullstack Engineer (Java/ReactJS) - Weverse | 🔗 https://itviec.com/it-jobs/backend-engineer-java-kotlin-spring-smartid-clip-naver-vietnam-0859
+[2026-04-09T08:07:55.822+0000] {subprocess.py:106} INFO -  Trang 9 - Job 4/20 | Backend Engineer (Java/Kotlin/Spring) - SMARTID/CLIP | 🔗 https://itviec.com/it-jobs/senior-it-compliance-specialist-mb-bank-0411
+[2026-04-09T08:07:58.233+0000] {subprocess.py:106} INFO -  Trang 9 - Job 5/20 | Data Analyst/ Power BI Developer | 🔗 https://itviec.com/it-jobs/data-analyst-power-bi-developer-cong-ty-tnhh-socotec-viet-nam-5759
+[2026-04-09T08:08:00.586+0000] {subprocess.py:106} INFO -  Trang 9 - Job 6/20 | Senior SCCM/Intune Specialist | 🔗 https://itviec.com/it-jobs/senior-sccm-intune-specialist-renesas-design-vietnam-5004
+[2026-04-09T08:08:00.794+0000] {subprocess.py:106} INFO -  Trang 9 - Job 7/20 | Senior SCCM/Intune Specialist | 🔗 https://itviec.com/it-jobs/da-nang-scrum-master-one-tech-stop-vietnam-company-ltd-1104
+[2026-04-09T08:08:03.065+0000] {subprocess.py:106} INFO -  Trang 9 - Job 8/20 | CVCC Quản trị rủi ro và tuân thủ CNTT | 🔗 https://itviec.com/it-jobs/cvcc-quan-tri-rui-ro-va-tuan-thu-cntt-mb-life-5359
+[2026-04-09T08:08:03.350+0000] {subprocess.py:106} INFO -  Trang 9 - Job 9/20 | CVCC Quản trị rủi ro và tuân thủ CNTT | 🔗 https://itviec.com/it-jobs/technical-lead-firegroup-5954
+[2026-04-09T08:08:04.157+0000] {subprocess.py:106} INFO -  Trang 9 - Job 10/20 | Business Intelligence Assistant Manager | 🔗 https://itviec.com/it-jobs/business-intelligence-assistant-manager-neyu-ltd-2704
+[2026-04-09T08:08:06.020+0000] {subprocess.py:106} INFO -  Trang 9 - Job 11/20 | Senior Data Security - Data Division | 🔗 https://itviec.com/it-jobs/senior-data-security-data-division-mb-bank-2146
+[2026-04-09T08:08:06.556+0000] {subprocess.py:106} INFO -  Trang 9 - Job 12/20 | Senior Data Security - Data Division | 🔗 https://itviec.com/it-jobs/chuyen-vien-chuyen-vien-cao-cap-khoa-hoc-du-lieu-mb-bank-0807
+[2026-04-09T08:08:08.040+0000] {local_task_job_runner.py:127} ERROR - Received SIGTERM. Terminating subprocesses
+[2026-04-09T08:08:08.061+0000] {process_utils.py:132} INFO - Sending 15 to group 67. PIDs of all processes in the group: [69, 67]
+[2026-04-09T08:08:08.062+0000] {process_utils.py:87} INFO - Sending the signal 15 to group 67
+[2026-04-09T08:08:08.063+0000] {taskinstance.py:3094} ERROR - Received SIGTERM. Terminating subprocesses.
+[2026-04-09T08:08:08.134+0000] {taskinstance.py:3095} ERROR - Stacktrace: 
+  File "/home/***/.local/bin/***", line 8, in <module>
+    sys.exit(main())
+  File "/home/***/.local/lib/python3.8/site-packages/***/__main__.py", line 62, in main
+    args.func(args)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/providers_configuration_loader.py", line 55, in wrapped_function
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/celery_command.py", line 218, in worker
+    run_command_with_daemon_option(
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/daemon_utils.py", line 86, in run_command_with_daemon_option
+    callback()
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/celery_command.py", line 211, in run_celery_worker
+    celery_app.worker_main(options)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/base.py", line 388, in worker_main
+    self.start(argv=argv)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/base.py", line 368, in start
+    celery.main(args=argv, standalone_mode=False)
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 1078, in main
+    rv = self.invoke(ctx)
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 1688, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 1434, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 783, in invoke
+    return __callback(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/click/decorators.py", line 33, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bin/base.py", line 134, in caller
+    return f(ctx, *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bin/worker.py", line 356, in worker
+    worker.start()
+  File "/home/***/.local/lib/python3.8/site-packages/celery/worker/worker.py", line 202, in start
+    self.blueprint.start(self)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bootsteps.py", line 116, in start
+    step.start(parent)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bootsteps.py", line 365, in start
+    return self.obj.start()
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/base.py", line 130, in start
+    self.on_start()
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/prefork.py", line 109, in on_start
+    P = self._pool = Pool(processes=self.limit,
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/asynpool.py", line 464, in __init__
+    super().__init__(processes, *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 1045, in __init__
+    self._create_worker_process(i)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/asynpool.py", line 482, in _create_worker_process
+    return super()._create_worker_process(i)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 1157, in _create_worker_process
+    w.start()
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/process.py", line 120, in start
+    self._popen = self._Popen(self)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/context.py", line 331, in _Popen
+    return Popen(process_obj)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/popen_fork.py", line 22, in __init__
+    self._launch(process_obj)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/popen_fork.py", line 77, in _launch
+    code = process_obj._bootstrap()
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/process.py", line 323, in _bootstrap
+    self.run()
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/process.py", line 110, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 291, in __call__
+    sys.exit(self.workloop(pid=pid))
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 361, in workloop
+    result = (True, prepare_result(fun(*args, **kwargs)))
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/trace.py", line 675, in fast_trace_task
+    R, I, T, Rstr = tasks[task].__trace__(
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/trace.py", line 477, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/trace.py", line 760, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/providers/celery/executors/celery_executor_utils.py", line 123, in execute_command
+    _execute_in_fork(command_to_exec, celery_task_id)
+  File "/home/***/.local/lib/python3.8/site-packages/***/providers/celery/executors/celery_executor_utils.py", line 157, in _execute_in_fork
+    args.func(args)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 254, in _run_task_by_selected_method
+    return _run_task_by_local_task_job(args, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 322, in _run_task_by_local_task_job
+    ret = run_job(job=job_runner.job, execute_callable=job_runner._execute)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/jobs/job.py", line 421, in run_job
+    return execute_job(job, execute_callable=execute_callable)
+  File "/home/***/.local/lib/python3.8/site-packages/***/jobs/job.py", line 450, in execute_job
+    ret = execute_callable()
+  File "/home/***/.local/lib/python3.8/site-packages/***/jobs/local_task_job_runner.py", line 171, in _execute
+    self.task_runner.start()
+  File "/home/***/.local/lib/python3.8/site-packages/***/task/task_runner/standard_task_runner.py", line 55, in start
+    self.process = self._start_by_fork()
+  File "/home/***/.local/lib/python3.8/site-packages/***/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/operators/bash.py", line 257, in execute
+    result = self._run_inline_command(bash_path=bash_path, env=env)
+  File "/home/***/.local/lib/python3.8/site-packages/***/operators/bash.py", line 284, in _run_inline_command
+    return self.subprocess_hook.run_command(
+  File "/home/***/.local/lib/python3.8/site-packages/***/hooks/subprocess.py", line 104, in run_command
+    for raw_line in iter(self.sub_process.stdout.readline, b""):
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3095, in signal_handler
+    self.log.error("Stacktrace: \n%s", "".join(traceback.format_stack()))
+
+[2026-04-09T08:08:08.151+0000] {subprocess.py:117} INFO - Sending SIGTERM signal to process group
+[2026-04-09T08:08:08.310+0000] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 257, in execute
+    result = self._run_inline_command(bash_path=bash_path, env=env)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 284, in _run_inline_command
+    return self.subprocess_hook.run_command(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/hooks/subprocess.py", line 104, in run_command
+    for raw_line in iter(self.sub_process.stdout.readline, b""):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3097, in signal_handler
+    raise AirflowTaskTerminated("Task received SIGTERM signal")
+airflow.exceptions.AirflowTaskTerminated: Task received SIGTERM signal
+[2026-04-09T08:08:08.335+0000] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=crawl_etl_itjob, task_id=crawl_data, run_id=scheduled__2026-04-08T02:00:00+00:00, execution_date=20260408T020000, start_date=20260409T080338, end_date=20260409T080808
+[2026-04-09T08:08:08.604+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-04-09T08:08:08.678+0000] {process_utils.py:80} INFO - Process psutil.Process(pid=67, status='terminated', exitcode=2, started='08:03:37') (67) terminated with exit code 2
+[2026-04-09T08:08:08.686+0000] {process_utils.py:80} INFO - Process psutil.Process(pid=69, status='terminated', started='08:03:37') (69) terminated with exit code None
+[2026-04-09T08:08:08.689+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 143
+[2026-04-09T08:08:08.882+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-04-09T08:08:09.661+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

@@ -1,4 +1,7 @@
+version: "3.8"
+
 services:
+  # 1. Database chứa Metadata (Postgres)
   postgres-metastore:
     image: postgres:13
     container_name: postgres-metastore
@@ -11,28 +14,34 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    # --- THÊM PHẦN NÀY: Kiểm tra sức khỏe Postgres ---
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ndh -d metastore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - system_network
 
+  # 2. Hive Metastore
   hive-metastore:
-    image: dinhhoa0102/hive:2.3.2-postgresql-metastore
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: hive-metastore
-    restart: unless-stopped
+    restart: on-failure  # Chỉ restart nếu lỗi
     environment:
-      - HIVE_METASTORE_DB_HOST=postgres-metastore
-      - HIVE_METASTORE_DB_NAME=metastore
-      - HIVE_METASTORE_DB_USER=ndh
-      - HIVE_METASTORE_DB_PASS=123
-    depends_on:
-      - postgres-metastore
-    volumes:
-      - ./hive-config:/opt/hive/conf
-      - ./hive-logs:/opt/hive/logs
-      - ../hadoop-cluster/config/core-site.xml:/etc/hadoop/conf/core-site.xml:ro
-      - ../hadoop-cluster/config/hdfs-site.xml:/etc/hadoop/conf/hdfs-site.xml:ro
+      - DB_DRIVER=postgres
+      - SERVICE_NAME=metastore
+      - SERVICE_OPTS=-Xmx1G -Dhive.metastore.uris=thrift://0.0.0.0:9083
     ports:
       - "9083:9083"
-      - "10000:10000"
+    volumes:
+      - ./hive-config/hive-site.xml:/opt/hive/conf/hive-site.xml
+    # --- SỬA PHẦN NÀY: Đợi Postgres "Healthy" rồi mới chạy ---
+    depends_on:
+      postgres-metastore:
+        condition: service_healthy
     networks:
       - system_network
 

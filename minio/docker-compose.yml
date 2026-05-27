@@ -1,0 +1,45 @@
+version: "3.8"
+services:
+  minio:
+    image: minio/minio:RELEASE.2024-01-13T07-53-03Z
+    container_name: minio
+    hostname: minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # API Port (S3)
+      - "9001:9001" # Web UI Console
+    volumes:
+      - ./minio_data:/data
+    networks:
+      system_network:
+        ipv4_address: 172.30.0.2 # Giữ IP cố định để dễ config nếu cần
+        aliases:
+          - minio
+          - warehouse.minio   # Để Hive tìm được bucket warehouse
+          - datalake.minio    # Để Hive tìm được bucket datalake (nếu có)
+          - spark-logs.minio  # Để tìm bucket logs
+
+  # Service này chạy 1 lần để tự động tạo bucket 'warehouse' và 'datalake'
+  minio-init:
+    image: minio/mc
+    container_name: minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc mb --ignore-existing myminio/warehouse;
+      /usr/bin/mc mb --ignore-existing myminio/datalake;
+      /usr/bin/mc mb --ignore-existing myminio/spark-logs;
+      exit 0;
+      "
+    networks:
+      - system_network
+
+networks:
+  system_network:
+    external: true

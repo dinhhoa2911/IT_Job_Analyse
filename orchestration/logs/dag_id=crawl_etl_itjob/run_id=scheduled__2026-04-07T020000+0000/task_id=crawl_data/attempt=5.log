@@ -1,0 +1,148 @@
+[2026-04-08T14:03:40.561+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-04-08T14:03:40.595+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-07T02:00:00+00:00 [queued]>
+[2026-04-08T14:03:40.603+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-07T02:00:00+00:00 [queued]>
+[2026-04-08T14:03:40.604+0000] {taskinstance.py:2867} INFO - Starting attempt 5 of 6
+[2026-04-08T14:03:40.615+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): crawl_data> on 2026-04-07 02:00:00+00:00
+[2026-04-08T14:03:40.620+0000] {standard_task_runner.py:72} INFO - Started process 141 to run task
+[2026-04-08T14:03:40.623+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'crawl_data', 'scheduled__2026-04-07T02:00:00+00:00', '--job-id', '30', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpwxevvieb']
+[2026-04-08T14:03:40.625+0000] {standard_task_runner.py:105} INFO - Job 30: Subtask crawl_data
+[2026-04-08T14:03:40.654+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2026-04-08T14:03:40.784+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-07T02:00:00+00:00 [running]> on host 64b3786bead1
+[2026-04-08T14:03:40.785+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2026-04-08T14:03:41.016+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='hoa856856@gmail.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='crawl_data' AIRFLOW_CTX_EXECUTION_DATE='2026-04-07T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='5' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-04-07T02:00:00+00:00'
+[2026-04-08T14:03:41.018+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2026-04-08T14:03:41.037+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2026-04-08T14:03:41.040+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', 'docker exec spark-submit bash -c "xvfb-run -a python3 /opt/spark/scripts/Crawl_Data.py"']
+[2026-04-08T14:03:41.057+0000] {subprocess.py:99} INFO - Output:
+[2026-04-08T14:03:42.536+0000] {subprocess.py:106} INFO -  Bắt đầu crawl ITviec...
+[2026-04-08T14:03:50.223+0000] {subprocess.py:106} INFO - 
+[2026-04-08T14:03:50.225+0000] {subprocess.py:106} INFO -  Đang crawl trang 1...
+[2026-04-08T14:03:57.799+0000] {subprocess.py:106} INFO -  Trang 1 - Job 1/20 | Android Embedded Senior Engineer (Embedded Linux, C++)
+[2026-04-08T14:03:58.050+0000] {subprocess.py:106} INFO -  Trang 1 - Job 2/20 | Android Embedded Senior Engineer (Embedded Linux, C++)
+[2026-04-08T14:04:00.442+0000] {subprocess.py:106} INFO -  Trang 1 - Job 3/20 | Engineer Manager
+[2026-04-08T14:04:00.699+0000] {subprocess.py:106} INFO -  Trang 1 - Job 4/20 | Engineer Manager
+[2026-04-08T14:04:00.986+0000] {subprocess.py:106} INFO -  Trang 1 - Job 5/20 | Project Manager
+[2026-04-08T14:04:01.188+0000] {subprocess.py:106} INFO -  Trang 1 - Job 6/20 | Virtualization Engineer (Automotive)
+[2026-04-08T14:04:01.443+0000] {subprocess.py:106} INFO -  Trang 1 - Job 7/20 | SOME/IP Protocol Engineer
+[2026-04-08T14:04:01.749+0000] {subprocess.py:106} INFO -  Trang 1 - Job 8/20 | Senior Cloud Architect
+[2026-04-08T14:04:02.033+0000] {subprocess.py:106} INFO -  Trang 1 - Job 9/20 | Senior Mobile App Developer (React Native / Full Stack)
+[2026-04-08T14:04:02.443+0000] {subprocess.py:106} INFO -  Trang 1 - Job 10/20 | Mid-Senior Java Backend Developer (Spring, English)
+[2026-04-08T14:04:02.721+0000] {subprocess.py:106} INFO -  Trang 1 - Job 11/20 | Software Architect
+[2026-04-08T14:04:02.995+0000] {subprocess.py:106} INFO -  Trang 1 - Job 12/20 | Software Engineer (React-Native)
+[2026-04-08T14:04:03.309+0000] {subprocess.py:106} INFO -  Trang 1 - Job 13/20 | Middle/ Senior AI Engineer
+[2026-04-08T14:04:03.499+0000] {subprocess.py:106} INFO -  Trang 1 - Job 14/20 | Manual Tester (Games, QA QC, Tester)
+[2026-04-08T14:04:03.722+0000] {subprocess.py:106} INFO -  Trang 1 - Job 15/20 | Salesforce Developer (SOQL/SOSL, Apex, JavaScript)
+[2026-04-08T14:04:04.063+0000] {subprocess.py:106} INFO -  Trang 1 - Job 16/20 | SOC Cybersecurity Engineer/Manager
+[2026-04-08T14:04:04.356+0000] {subprocess.py:106} INFO -  Trang 1 - Job 17/20 | Senior Java Developer
+[2026-04-08T14:04:06.759+0000] {subprocess.py:106} INFO -  Trang 1 - Job 18/20 | Lumera - Site Manager
+[2026-04-08T14:04:07.013+0000] {subprocess.py:106} INFO -  Trang 1 - Job 19/20 | Lumera - Site Manager
+[2026-04-08T14:04:07.234+0000] {subprocess.py:106} INFO -  Trang 1 - Job 20/20 | Senior Data Engineer
+[2026-04-08T14:04:07.234+0000] {subprocess.py:106} INFO - 
+[2026-04-08T14:04:07.235+0000] {subprocess.py:106} INFO -  Đang crawl trang 2...
+[2026-04-08T14:04:13.806+0000] {subprocess.py:106} INFO -  Trang 2 - Job 1/20 | Middle Automation Tester (Agile/Scrum)
+[2026-04-08T14:04:14.133+0000] {subprocess.py:106} INFO -  Trang 2 - Job 2/20 | Middle Automation Tester (Agile/Scrum)
+[2026-04-08T14:04:14.526+0000] {subprocess.py:106} INFO -  Trang 2 - Job 3/20 | Senior QA Engineer (5yrs+, Automation Tester, Good Eng)
+[2026-04-08T14:04:14.781+0000] {subprocess.py:106} INFO -  Trang 2 - Job 4/20 | Senior DevOps Engineer (Database & K8s)
+[2026-04-08T14:04:15.041+0000] {subprocess.py:106} INFO -  Trang 2 - Job 5/20 | Senior Database Administrator
+[2026-04-08T14:04:15.286+0000] {subprocess.py:106} INFO -  Trang 2 - Job 6/20 | QA Engineer (Manual) - Weverse
+[2026-04-08T14:04:15.494+0000] {subprocess.py:106} INFO -  Trang 2 - Job 7/20 | Junior QC Automation
+[2026-04-08T14:04:15.764+0000] {subprocess.py:106} INFO -  Trang 2 - Job 8/20 | Senior Product Engineer (Golang, AWS, Distributed Sys)
+[2026-04-08T14:04:15.975+0000] {subprocess.py:106} INFO -  Trang 2 - Job 9/20 | Head of Technology Risk
+[2026-04-08T14:04:16.243+0000] {subprocess.py:106} INFO -  Trang 2 - Job 10/20 | Head of Engineer
+[2026-04-08T14:04:18.584+0000] {subprocess.py:106} INFO -  Trang 2 - Job 11/20 | Data Scientist
+[2026-04-08T14:04:18.767+0000] {subprocess.py:106} INFO -  Trang 2 - Job 12/20 | Data Scientist
+[2026-04-08T14:04:19.008+0000] {subprocess.py:106} INFO -  Trang 2 - Job 13/20 | Senior Software Quality Control (QC/ Tester)
+[2026-04-08T14:04:22.020+0000] {subprocess.py:106} INFO -  Trang 2 - Job 14/20 | Applied AI Engineer/ AI Automation Engineer
+[2026-04-08T14:04:22.276+0000] {subprocess.py:106} INFO -  Trang 2 - Job 15/20 | AI Core Engineer
+[2026-04-08T14:04:22.568+0000] {subprocess.py:106} INFO -  Trang 2 - Job 16/20 | Manual Tester (Database, API, SQL)
+[2026-04-08T14:04:22.808+0000] {subprocess.py:106} INFO -  Trang 2 - Job 17/20 | Senior Data Analyst
+[2026-04-08T14:04:23.016+0000] {subprocess.py:106} INFO -  Trang 2 - Job 18/20 | Application Engineer (NV triển khai phần mềm/SQL)
+[2026-04-08T14:04:23.378+0000] {subprocess.py:106} INFO -  Trang 2 - Job 19/20 | Product Owner Middle
+[2026-04-08T14:04:23.574+0000] {subprocess.py:106} INFO -  Trang 2 - Job 20/20 | Product Owner Middle
+[2026-04-08T14:04:23.575+0000] {subprocess.py:106} INFO - 
+[2026-04-08T14:04:23.575+0000] {subprocess.py:106} INFO -  Đang crawl trang 3...
+[2026-04-08T14:04:44.014+0000] {subprocess.py:106} INFO - Traceback (most recent call last):
+[2026-04-08T14:04:44.015+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Crawl_Data.py", line 220, in <module>
+[2026-04-08T14:04:44.015+0000] {subprocess.py:106} INFO -     new_data_df = crawl_itviec_jobs(pages=MAX_PAGES, headless=HEADLESS_MODE)
+[2026-04-08T14:04:44.016+0000] {subprocess.py:106} INFO -   File "/opt/spark/scripts/Crawl_Data.py", line 117, in crawl_itviec_jobs
+[2026-04-08T14:04:44.016+0000] {subprocess.py:106} INFO -     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.job-card")))
+[2026-04-08T14:04:44.016+0000] {subprocess.py:106} INFO -   File "/usr/local/lib/python3.8/dist-packages/selenium/webdriver/support/wait.py", line 105, in until
+[2026-04-08T14:04:44.016+0000] {subprocess.py:106} INFO -     raise TimeoutException(message, screen, stacktrace)
+[2026-04-08T14:04:44.017+0000] {subprocess.py:106} INFO - selenium.common.exceptions.TimeoutException: Message:
+[2026-04-08T14:04:44.017+0000] {subprocess.py:106} INFO - Stacktrace:
+[2026-04-08T14:04:44.018+0000] {subprocess.py:106} INFO - #0 0x63aad27ecb6a <unknown>
+[2026-04-08T14:04:44.018+0000] {subprocess.py:106} INFO - #1 0x63aad21ee265 <unknown>
+[2026-04-08T14:04:44.018+0000] {subprocess.py:106} INFO - #2 0x63aad2240f76 <unknown>
+[2026-04-08T14:04:44.019+0000] {subprocess.py:106} INFO - #3 0x63aad22411b1 <unknown>
+[2026-04-08T14:04:44.019+0000] {subprocess.py:106} INFO - #4 0x63aad228c7d4 <unknown>
+[2026-04-08T14:04:44.020+0000] {subprocess.py:106} INFO - #5 0x63aad2289969 <unknown>
+[2026-04-08T14:04:44.020+0000] {subprocess.py:106} INFO - #6 0x63aad22345cf <unknown>
+[2026-04-08T14:04:44.020+0000] {subprocess.py:106} INFO - #7 0x63aad2235391 <unknown>
+[2026-04-08T14:04:44.021+0000] {subprocess.py:106} INFO - #8 0x63aad27b204b <unknown>
+[2026-04-08T14:04:44.021+0000] {subprocess.py:106} INFO - #9 0x63aad27b500d <unknown>
+[2026-04-08T14:04:44.021+0000] {subprocess.py:106} INFO - #10 0x63aad279e808 <unknown>
+[2026-04-08T14:04:44.021+0000] {subprocess.py:106} INFO - #11 0x63aad27b5ba0 <unknown>
+[2026-04-08T14:04:44.022+0000] {subprocess.py:106} INFO - #12 0x63aad2785280 <unknown>
+[2026-04-08T14:04:44.022+0000] {subprocess.py:106} INFO - #13 0x63aad27d9db8 <unknown>
+[2026-04-08T14:04:44.023+0000] {subprocess.py:106} INFO - #14 0x63aad27d9f88 <unknown>
+[2026-04-08T14:04:44.024+0000] {subprocess.py:106} INFO - #15 0x63aad27eb5de <unknown>
+[2026-04-08T14:04:44.024+0000] {subprocess.py:106} INFO - #16 0x77253e026609 start_thread
+[2026-04-08T14:04:44.025+0000] {subprocess.py:106} INFO - 
+[2026-04-08T14:04:44.142+0000] {subprocess.py:110} INFO - Command exited with return code 1
+[2026-04-08T14:04:44.173+0000] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-04-08T14:04:44.189+0000] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=crawl_etl_itjob, task_id=crawl_data, run_id=scheduled__2026-04-07T02:00:00+00:00, execution_date=20260407T020000, start_date=20260408T140340, end_date=20260408T140444
+[2026-04-08T14:04:44.298+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-04-08T14:04:44.299+0000] {standard_task_runner.py:124} ERROR - Failed to execute job 30 for task crawl_data (Bash command failed. The command returned a non-zero exit code 1.; 141)
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-04-08T14:04:44.323+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 1
+[2026-04-08T14:04:44.360+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-04-08T14:04:44.362+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

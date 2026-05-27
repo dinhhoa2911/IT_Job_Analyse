@@ -1,0 +1,275 @@
+[2026-04-07T20:58:48.478+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-04-07T20:58:48.524+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.load_bronze manual__2026-04-07T19:03:21.445657+00:00 [queued]>
+[2026-04-07T20:58:48.538+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.load_bronze manual__2026-04-07T19:03:21.445657+00:00 [queued]>
+[2026-04-07T20:58:48.538+0000] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2026-04-07T20:58:48.554+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): load_bronze> on 2026-04-07 19:03:21.445657+00:00
+[2026-04-07T20:58:48.563+0000] {standard_task_runner.py:72} INFO - Started process 290 to run task
+[2026-04-07T20:58:48.567+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'load_bronze', 'manual__2026-04-07T19:03:21.445657+00:00', '--job-id', '20', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpfp37zfso']
+[2026-04-07T20:58:48.569+0000] {standard_task_runner.py:105} INFO - Job 20: Subtask load_bronze
+[2026-04-07T20:58:48.599+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2026-04-07T20:58:48.682+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.load_bronze manual__2026-04-07T19:03:21.445657+00:00 [running]> on host 64b3786bead1
+[2026-04-07T20:58:48.839+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='hoa856856@gmail.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='load_bronze' AIRFLOW_CTX_EXECUTION_DATE='2026-04-07T19:03:21.445657+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-04-07T19:03:21.445657+00:00'
+[2026-04-07T20:58:48.840+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2026-04-07T20:58:48.855+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2026-04-07T20:58:48.856+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', "\n        docker exec spark-submit bash -c '\n        /opt/spark/bin/spark-submit         --master spark://spark-master:7077         --deploy-mode client         --packages org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0,org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262         /opt/spark/scripts/Load_Bronze.py\n        '\n        "]
+[2026-04-07T20:58:48.869+0000] {subprocess.py:99} INFO - Output:
+[2026-04-07T20:58:51.520+0000] {subprocess.py:106} INFO - :: loading settings :: url = jar:file:/opt/spark/jars/ivy-2.5.1.jar!/org/apache/ivy/core/settings/ivysettings.xml
+[2026-04-07T20:58:51.677+0000] {subprocess.py:106} INFO - Ivy Default Cache set to: /home/spark/.ivy2/cache
+[2026-04-07T20:58:51.679+0000] {subprocess.py:106} INFO - The jars for the packages stored in: /home/spark/.ivy2/jars
+[2026-04-07T20:58:51.686+0000] {subprocess.py:106} INFO - org.apache.iceberg#iceberg-spark-runtime-3.5_2.12 added as a dependency
+[2026-04-07T20:58:51.687+0000] {subprocess.py:106} INFO - org.apache.hadoop#hadoop-aws added as a dependency
+[2026-04-07T20:58:51.688+0000] {subprocess.py:106} INFO - com.amazonaws#aws-java-sdk-bundle added as a dependency
+[2026-04-07T20:58:51.689+0000] {subprocess.py:106} INFO - :: resolving dependencies :: org.apache.spark#spark-submit-parent-cfb7a425-43ea-476a-b670-99cfd583f867;1.0
+[2026-04-07T20:58:51.690+0000] {subprocess.py:106} INFO - 	confs: [default]
+[2026-04-07T20:58:51.865+0000] {subprocess.py:106} INFO - 	found org.apache.iceberg#iceberg-spark-runtime-3.5_2.12;1.5.0 in central
+[2026-04-07T20:58:51.973+0000] {subprocess.py:106} INFO - 	found org.apache.hadoop#hadoop-aws;3.3.4 in central
+[2026-04-07T20:58:52.029+0000] {subprocess.py:106} INFO - 	found com.amazonaws#aws-java-sdk-bundle;1.12.262 in central
+[2026-04-07T20:58:52.085+0000] {subprocess.py:106} INFO - 	found org.wildfly.openssl#wildfly-openssl;1.0.7.Final in central
+[2026-04-07T20:58:52.132+0000] {subprocess.py:106} INFO - :: resolution report :: resolve 422ms :: artifacts dl 20ms
+[2026-04-07T20:58:52.133+0000] {subprocess.py:106} INFO - 	:: modules in use:
+[2026-04-07T20:58:52.134+0000] {subprocess.py:106} INFO - 	com.amazonaws#aws-java-sdk-bundle;1.12.262 from central in [default]
+[2026-04-07T20:58:52.135+0000] {subprocess.py:106} INFO - 	org.apache.hadoop#hadoop-aws;3.3.4 from central in [default]
+[2026-04-07T20:58:52.136+0000] {subprocess.py:106} INFO - 	org.apache.iceberg#iceberg-spark-runtime-3.5_2.12;1.5.0 from central in [default]
+[2026-04-07T20:58:52.137+0000] {subprocess.py:106} INFO - 	org.wildfly.openssl#wildfly-openssl;1.0.7.Final from central in [default]
+[2026-04-07T20:58:52.137+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2026-04-07T20:58:52.138+0000] {subprocess.py:106} INFO - 	|                  |            modules            ||   artifacts   |
+[2026-04-07T20:58:52.139+0000] {subprocess.py:106} INFO - 	|       conf       | number| search|dwnlded|evicted|| number|dwnlded|
+[2026-04-07T20:58:52.140+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2026-04-07T20:58:52.141+0000] {subprocess.py:106} INFO - 	|      default     |   4   |   0   |   0   |   0   ||   4   |   0   |
+[2026-04-07T20:58:52.142+0000] {subprocess.py:106} INFO - 	---------------------------------------------------------------------
+[2026-04-07T20:58:52.145+0000] {subprocess.py:106} INFO - :: retrieving :: org.apache.spark#spark-submit-parent-cfb7a425-43ea-476a-b670-99cfd583f867
+[2026-04-07T20:58:52.147+0000] {subprocess.py:106} INFO - 	confs: [default]
+[2026-04-07T20:58:52.153+0000] {subprocess.py:106} INFO - 	0 artifacts copied, 4 already retrieved (0kB/11ms)
+[2026-04-07T20:58:52.625+0000] {subprocess.py:106} INFO - 26/04/07 20:58:52 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[2026-04-07T20:58:54.162+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkContext: Running Spark version 3.5.3
+[2026-04-07T20:58:54.163+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkContext: OS info Linux, 6.6.87.2-microsoft-standard-WSL2, amd64
+[2026-04-07T20:58:54.164+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkContext: Java version 11.0.24
+[2026-04-07T20:58:54.190+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO ResourceUtils: ==============================================================
+[2026-04-07T20:58:54.193+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO ResourceUtils: No custom resources configured for spark.driver.
+[2026-04-07T20:58:54.193+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO ResourceUtils: ==============================================================
+[2026-04-07T20:58:54.194+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkContext: Submitted application: Load_Bronze_MinIO_Iceberg
+[2026-04-07T20:58:54.220+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+[2026-04-07T20:58:54.233+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO ResourceProfile: Limiting resource is cpu
+[2026-04-07T20:58:54.234+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO ResourceProfileManager: Added ResourceProfile id: 0
+[2026-04-07T20:58:54.295+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SecurityManager: Changing view acls to: spark
+[2026-04-07T20:58:54.296+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SecurityManager: Changing modify acls to: spark
+[2026-04-07T20:58:54.297+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SecurityManager: Changing view acls groups to:
+[2026-04-07T20:58:54.297+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SecurityManager: Changing modify acls groups to:
+[2026-04-07T20:58:54.298+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: spark; groups with view permissions: EMPTY; users with modify permissions: spark; groups with modify permissions: EMPTY
+[2026-04-07T20:58:54.678+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO Utils: Successfully started service 'sparkDriver' on port 40521.
+[2026-04-07T20:58:54.718+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkEnv: Registering MapOutputTracker
+[2026-04-07T20:58:54.774+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkEnv: Registering BlockManagerMaster
+[2026-04-07T20:58:54.797+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+[2026-04-07T20:58:54.798+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+[2026-04-07T20:58:54.804+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+[2026-04-07T20:58:54.838+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-6ef24e37-8d81-402e-998f-6ec5237d209d
+[2026-04-07T20:58:54.853+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO MemoryStore: MemoryStore started with capacity 434.4 MiB
+[2026-04-07T20:58:54.876+0000] {subprocess.py:106} INFO - 26/04/07 20:58:54 INFO SparkEnv: Registering OutputCommitCoordinator
+[2026-04-07T20:58:55.067+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+[2026-04-07T20:58:55.131+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+[2026-04-07T20:58:55.196+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added JAR file:///home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar at spark://c05002f484b8:40521/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.197+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added JAR file:///home/spark/.ivy2/jars/org.apache.hadoop_hadoop-aws-3.3.4.jar at spark://c05002f484b8:40521/jars/org.apache.hadoop_hadoop-aws-3.3.4.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.198+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added JAR file:///home/spark/.ivy2/jars/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar at spark://c05002f484b8:40521/jars/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.199+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added JAR file:///home/spark/.ivy2/jars/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar at spark://c05002f484b8:40521/jars/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.207+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added file file:///home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar at spark://c05002f484b8:40521/files/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.209+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO Utils: Copying /home/spark/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar to /tmp/spark-a96c0118-6b0c-4f8a-b9aa-7cd10de2634d/userFiles-93e558ea-eb78-4a11-b53e-a61a58de60df/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.5.0.jar
+[2026-04-07T20:58:55.308+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added file file:///home/spark/.ivy2/jars/org.apache.hadoop_hadoop-aws-3.3.4.jar at spark://c05002f484b8:40521/files/org.apache.hadoop_hadoop-aws-3.3.4.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.309+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO Utils: Copying /home/spark/.ivy2/jars/org.apache.hadoop_hadoop-aws-3.3.4.jar to /tmp/spark-a96c0118-6b0c-4f8a-b9aa-7cd10de2634d/userFiles-93e558ea-eb78-4a11-b53e-a61a58de60df/org.apache.hadoop_hadoop-aws-3.3.4.jar
+[2026-04-07T20:58:55.315+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added file file:///home/spark/.ivy2/jars/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar at spark://c05002f484b8:40521/files/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.316+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO Utils: Copying /home/spark/.ivy2/jars/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar to /tmp/spark-a96c0118-6b0c-4f8a-b9aa-7cd10de2634d/userFiles-93e558ea-eb78-4a11-b53e-a61a58de60df/com.amazonaws_aws-java-sdk-bundle-1.12.262.jar
+[2026-04-07T20:58:55.797+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO SparkContext: Added file file:///home/spark/.ivy2/jars/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar at spark://c05002f484b8:40521/files/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar with timestamp 1775595534148
+[2026-04-07T20:58:55.797+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO Utils: Copying /home/spark/.ivy2/jars/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar to /tmp/spark-a96c0118-6b0c-4f8a-b9aa-7cd10de2634d/userFiles-93e558ea-eb78-4a11-b53e-a61a58de60df/org.wildfly.openssl_wildfly-openssl-1.0.7.Final.jar
+[2026-04-07T20:58:55.879+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO StandaloneAppClient$ClientEndpoint: Connecting to master spark://spark-master:7077...
+[2026-04-07T20:58:55.927+0000] {subprocess.py:106} INFO - 26/04/07 20:58:55 INFO TransportClientFactory: Successfully created connection to spark-master/172.30.0.5:7077 after 30 ms (0 ms spent in bootstraps)
+[2026-04-07T20:58:56.066+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO StandaloneSchedulerBackend: Connected to Spark cluster with app ID app-20260407205856-0003
+[2026-04-07T20:58:56.068+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO StandaloneAppClient$ClientEndpoint: Executor added: app-20260407205856-0003/0 on worker-20260407203634-172.30.0.6-43929 (172.30.0.6:43929) with 1 core(s)
+[2026-04-07T20:58:56.074+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO StandaloneSchedulerBackend: Granted executor ID app-20260407205856-0003/0 on hostPort 172.30.0.6:43929 with 1 core(s), 1024.0 MiB RAM
+[2026-04-07T20:58:56.089+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 44087.
+[2026-04-07T20:58:56.113+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO NettyBlockTransferService: Server created on c05002f484b8:44087
+[2026-04-07T20:58:56.114+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+[2026-04-07T20:58:56.125+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, c05002f484b8, 44087, None)
+[2026-04-07T20:58:56.129+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO BlockManagerMasterEndpoint: Registering block manager c05002f484b8:44087 with 434.4 MiB RAM, BlockManagerId(driver, c05002f484b8, 44087, None)
+[2026-04-07T20:58:56.133+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, c05002f484b8, 44087, None)
+[2026-04-07T20:58:56.135+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, c05002f484b8, 44087, None)
+[2026-04-07T20:58:56.175+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO StandaloneAppClient$ClientEndpoint: Executor updated: app-20260407205856-0003/0 is now RUNNING
+[2026-04-07T20:58:56.629+0000] {subprocess.py:106} INFO - 26/04/07 20:58:56 INFO StandaloneSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.0
+[2026-04-07T20:58:57.298+0000] {subprocess.py:106} INFO - Reading data from: s3a://warehouse/raw/itviec_jobs_full.csv
+[2026-04-07T20:58:57.324+0000] {subprocess.py:106} INFO - 26/04/07 20:58:57 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir.
+[2026-04-07T20:58:57.328+0000] {subprocess.py:106} INFO - 26/04/07 20:58:57 INFO SharedState: Warehouse path is 'file:/opt/spark/work-dir/spark-warehouse'.
+[2026-04-07T20:58:59.469+0000] {subprocess.py:106} INFO - 26/04/07 20:58:59 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
+[2026-04-07T20:58:59.510+0000] {subprocess.py:106} INFO - 26/04/07 20:58:59 INFO MetricsSystemImpl: Scheduled Metric snapshot period at 10 second(s).
+[2026-04-07T20:58:59.511+0000] {subprocess.py:106} INFO - 26/04/07 20:58:59 INFO MetricsSystemImpl: s3a-file-system metrics system started
+[2026-04-07T20:59:01.174+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO StandaloneSchedulerBackend$StandaloneDriverEndpoint: Registered executor NettyRpcEndpointRef(spark-client://Executor) (172.30.0.6:41706) with ID 0,  ResourceProfileId 0
+[2026-04-07T20:59:01.324+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO BlockManagerMasterEndpoint: Registering block manager 172.30.0.6:41183 with 434.4 MiB RAM, BlockManagerId(0, 172.30.0.6, 41183, None)
+[2026-04-07T20:59:01.460+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO InMemoryFileIndex: It took 168 ms to list leaf files for 1 paths.
+[2026-04-07T20:59:01.695+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO MemoryStore: Block broadcast_0 stored as values in memory (estimated size 206.5 KiB, free 434.2 MiB)
+[2026-04-07T20:59:01.799+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO MemoryStore: Block broadcast_0_piece0 stored as bytes in memory (estimated size 36.1 KiB, free 434.2 MiB)
+[2026-04-07T20:59:01.805+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO BlockManagerInfo: Added broadcast_0_piece0 in memory on c05002f484b8:44087 (size: 36.1 KiB, free: 434.4 MiB)
+[2026-04-07T20:59:01.811+0000] {subprocess.py:106} INFO - 26/04/07 20:59:01 INFO SparkContext: Created broadcast 0 from csv at <unknown>:0
+[2026-04-07T20:59:02.249+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO FileInputFormat: Total input files to process : 1
+[2026-04-07T20:59:02.261+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO FileInputFormat: Total input files to process : 1
+[2026-04-07T20:59:02.401+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO SparkContext: Starting job: csv at <unknown>:0
+[2026-04-07T20:59:02.427+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO DAGScheduler: Got job 0 (csv at <unknown>:0) with 1 output partitions
+[2026-04-07T20:59:02.429+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO DAGScheduler: Final stage: ResultStage 0 (csv at <unknown>:0)
+[2026-04-07T20:59:02.430+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO DAGScheduler: Parents of final stage: List()
+[2026-04-07T20:59:02.431+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO DAGScheduler: Missing parents: List()
+[2026-04-07T20:59:02.438+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO DAGScheduler: Submitting ResultStage 0 (MapPartitionsRDD[2] at csv at <unknown>:0), which has no missing parents
+[2026-04-07T20:59:02.460+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO MemoryStore: Block broadcast_1 stored as values in memory (estimated size 7.6 KiB, free 434.2 MiB)
+[2026-04-07T20:59:02.476+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO MemoryStore: Block broadcast_1_piece0 stored as bytes in memory (estimated size 4.4 KiB, free 434.2 MiB)
+[2026-04-07T20:59:02.477+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO BlockManagerInfo: Added broadcast_1_piece0 in memory on c05002f484b8:44087 (size: 4.4 KiB, free: 434.4 MiB)
+[2026-04-07T20:59:02.488+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO SparkContext: Created broadcast 1 from broadcast at DAGScheduler.scala:1585
+[2026-04-07T20:59:02.535+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO DAGScheduler: Submitting 1 missing tasks from ResultStage 0 (MapPartitionsRDD[2] at csv at <unknown>:0) (first 15 tasks are for partitions Vector(0))
+[2026-04-07T20:59:02.536+0000] {subprocess.py:106} INFO - 26/04/07 20:59:02 INFO TaskSchedulerImpl: Adding task set 0.0 with 1 tasks resource profile 0
+[2026-04-07T20:59:05.852+0000] {local_task_job_runner.py:127} ERROR - Received SIGTERM. Terminating subprocesses
+[2026-04-07T20:59:05.900+0000] {process_utils.py:132} INFO - Sending 15 to group 290. PIDs of all processes in the group: [292, 293, 290]
+[2026-04-07T20:59:05.911+0000] {process_utils.py:87} INFO - Sending the signal 15 to group 290
+[2026-04-07T20:59:05.918+0000] {taskinstance.py:3094} ERROR - Received SIGTERM. Terminating subprocesses.
+[2026-04-07T20:59:06.080+0000] {taskinstance.py:3095} ERROR - Stacktrace: 
+  File "/home/***/.local/bin/***", line 8, in <module>
+    sys.exit(main())
+  File "/home/***/.local/lib/python3.8/site-packages/***/__main__.py", line 62, in main
+    args.func(args)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/providers_configuration_loader.py", line 55, in wrapped_function
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/celery_command.py", line 218, in worker
+    run_command_with_daemon_option(
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/daemon_utils.py", line 86, in run_command_with_daemon_option
+    callback()
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/celery_command.py", line 211, in run_celery_worker
+    celery_app.worker_main(options)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/base.py", line 388, in worker_main
+    self.start(argv=argv)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/base.py", line 368, in start
+    celery.main(args=argv, standalone_mode=False)
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 1078, in main
+    rv = self.invoke(ctx)
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 1688, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 1434, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/***/.local/lib/python3.8/site-packages/click/core.py", line 783, in invoke
+    return __callback(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/click/decorators.py", line 33, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bin/base.py", line 134, in caller
+    return f(ctx, *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bin/worker.py", line 356, in worker
+    worker.start()
+  File "/home/***/.local/lib/python3.8/site-packages/celery/worker/worker.py", line 202, in start
+    self.blueprint.start(self)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bootsteps.py", line 116, in start
+    step.start(parent)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/bootsteps.py", line 365, in start
+    return self.obj.start()
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/base.py", line 130, in start
+    self.on_start()
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/prefork.py", line 109, in on_start
+    P = self._pool = Pool(processes=self.limit,
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/asynpool.py", line 464, in __init__
+    super().__init__(processes, *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 1045, in __init__
+    self._create_worker_process(i)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/concurrency/asynpool.py", line 482, in _create_worker_process
+    return super()._create_worker_process(i)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 1157, in _create_worker_process
+    w.start()
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/process.py", line 120, in start
+    self._popen = self._Popen(self)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/context.py", line 331, in _Popen
+    return Popen(process_obj)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/popen_fork.py", line 22, in __init__
+    self._launch(process_obj)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/popen_fork.py", line 77, in _launch
+    code = process_obj._bootstrap()
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/process.py", line 323, in _bootstrap
+    self.run()
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/process.py", line 110, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 291, in __call__
+    sys.exit(self.workloop(pid=pid))
+  File "/home/***/.local/lib/python3.8/site-packages/billiard/pool.py", line 361, in workloop
+    result = (True, prepare_result(fun(*args, **kwargs)))
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/trace.py", line 675, in fast_trace_task
+    R, I, T, Rstr = tasks[task].__trace__(
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/trace.py", line 477, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/celery/app/trace.py", line 760, in __protected_call__
+    return self.run(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/providers/celery/executors/celery_executor_utils.py", line 123, in execute_command
+    _execute_in_fork(command_to_exec, celery_task_id)
+  File "/home/***/.local/lib/python3.8/site-packages/***/providers/celery/executors/celery_executor_utils.py", line 157, in _execute_in_fork
+    args.func(args)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 254, in _run_task_by_selected_method
+    return _run_task_by_local_task_job(args, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 322, in _run_task_by_local_task_job
+    ret = run_job(job=job_runner.job, execute_callable=job_runner._execute)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/jobs/job.py", line 421, in run_job
+    return execute_job(job, execute_callable=execute_callable)
+  File "/home/***/.local/lib/python3.8/site-packages/***/jobs/job.py", line 450, in execute_job
+    ret = execute_callable()
+  File "/home/***/.local/lib/python3.8/site-packages/***/jobs/local_task_job_runner.py", line 171, in _execute
+    self.task_runner.start()
+  File "/home/***/.local/lib/python3.8/site-packages/***/task/task_runner/standard_task_runner.py", line 55, in start
+    self.process = self._start_by_fork()
+  File "/home/***/.local/lib/python3.8/site-packages/***/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+  File "/home/***/.local/lib/python3.8/site-packages/***/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 763, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+  File "/home/***/.local/lib/python3.8/site-packages/***/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/***/.local/lib/python3.8/site-packages/***/operators/bash.py", line 257, in execute
+    result = self._run_inline_command(bash_path=bash_path, env=env)
+  File "/home/***/.local/lib/python3.8/site-packages/***/operators/bash.py", line 284, in _run_inline_command
+    return self.subprocess_hook.run_command(
+  File "/home/***/.local/lib/python3.8/site-packages/***/hooks/subprocess.py", line 104, in run_command
+    for raw_line in iter(self.sub_process.stdout.readline, b""):
+  File "/home/***/.local/lib/python3.8/site-packages/***/models/taskinstance.py", line 3095, in signal_handler
+    self.log.error("Stacktrace: \n%s", "".join(traceback.format_stack()))
+
+[2026-04-07T20:59:06.093+0000] {subprocess.py:117} INFO - Sending SIGTERM signal to process group
+[2026-04-07T20:59:06.446+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-04-07T20:59:06.485+0000] {process_utils.py:80} INFO - Process psutil.Process(pid=290, status='terminated', exitcode=0, started='20:58:48') (290) terminated with exit code 0
+[2026-04-07T20:59:06.488+0000] {process_utils.py:80} INFO - Process psutil.Process(pid=293, status='terminated', started='20:58:48') (293) terminated with exit code None
+[2026-04-07T20:59:06.489+0000] {process_utils.py:80} INFO - Process psutil.Process(pid=292, status='terminated', started='20:58:48') (292) terminated with exit code None
+[2026-04-07T20:59:06.491+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 143
+[2026-04-07T20:59:06.634+0000] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-04-07T20:59:08.600+0000] {standard_task_runner.py:217} INFO - Process not found (most likely exited), stop collecting metrics
+[2026-04-07T20:59:09.037+0000] {local_task_job_runner.py:245} INFO - ::endgroup::
