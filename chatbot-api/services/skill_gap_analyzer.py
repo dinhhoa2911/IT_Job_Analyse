@@ -33,40 +33,28 @@ from models.schemas import CVProfile, SkillGap, SkillGapAnalysis
 
 logger = logging.getLogger(__name__)
 
-_FALLBACK_CATEGORY = "Software Engineering"
-
-# Maps target role keywords → Gold dim_job_category.category_name
-_ROLE_CATEGORY_MAP: list[tuple[str, list[str]]] = [
-    ("Data & AI",           ["data engineer", "data scientist", "data analyst",
-                              "machine learning", "ml engineer", "ai engineer", "data"]),
-    ("DevOps & Infra",      ["devops", "sre", "cloud engineer", "platform engineer",
-                              "infrastructure", "system engineer"]),
-    ("Testing & QA",        ["qa", "qc", "tester", "automation test", "quality"]),
-    ("Frontend & Mobile",   ["frontend", "front-end", "mobile", "android", "ios",
-                              "react native", "flutter", "ui developer"]),
-    ("Backend",             ["backend", "back-end", "java developer", "python developer",
-                              "node", "php", "golang", ".net developer", "spring"]),
-    ("Software Engineering",["fullstack", "full stack", "software engineer"]),
-    ("Management",          ["engineering manager", "tech lead", "team lead", "head of"]),
-    ("Product & BA",        ["product manager", "product owner", "business analyst", "scrum"]),
-]
-
-
-def _target_roles_to_categories(preferred_roles: list[str]) -> list[str]:
-    """Map CV preferred_roles → ordered, deduplicated Gold category list (max 3)."""
-    categories: list[str] = []
-    seen: set[str] = set()
-    for role in preferred_roles:
-        role_lower = role.lower()
-        for category, keywords in _ROLE_CATEGORY_MAP:
-            if any(kw in role_lower for kw in keywords):
-                if category not in seen:
-                    categories.append(category)
-                    seen.add(category)
-                break
-    return categories[:3]
 
 # ── SQL templates ─────────────────────────────────────────────────────────────
+
+# Q-roles: match preferred_roles against actual job titles in fact_job_posting
+# → find which Gold categories those roles belong to (fully data-driven, no hard-coded map)
+_SQL_INFER_CATEGORIES_FROM_ROLES = """
+SELECT
+    djc.category_name,
+    COUNT(DISTINCT f.job_link) AS cnt
+FROM iceberg.gold.fact_job_posting f
+JOIN iceberg.gold.dim_job_category djc ON f.category_id = djc.category_id
+WHERE {role_conditions}
+GROUP BY djc.category_name
+ORDER BY cnt DESC
+LIMIT 3
+"""
+
+_SQL_HAS_IT_SKILLS = """
+SELECT COUNT(DISTINCT ds.skill_id) AS matched
+FROM iceberg.gold.dim_skill ds
+WHERE LOWER(ds.skill_name) IN ({skills})
+"""
 
 # Q0: data-driven category inference — find which job category requires the most
 # of the candidate's actual skills.  No hard-coded keyword lists needed.
@@ -106,12 +94,21 @@ LIMIT 20
 
 
 def _escape(s: str) -> str:
+    """
+    @brief Escape single quotes in a string for safe embedding in Trino SQL literals.
+
+    @param s  Raw string value.
+    @return   String with single quotes doubled (SQL standard escaping).
+    """
     return s.replace("'", "''")
 
 
 def _tokens(skill: str) -> frozenset[str]:
-    """Split a skill name into lowercase word tokens.
-    e.g. 'Spring Boot' → {'spring','boot'}, 'Node.js' → {'node','js'}, 'RESTful API' → {'restful','api'}
+    """
+    @brief Split a skill name into lowercase word tokens for fuzzy matching.
+
+    @param skill  Skill name string (e.g. "Spring Boot", "Node.js").
+    @return       Frozenset of lowercase tokens (splits on whitespace, dots, dashes, slashes, +, #).
     """
     return frozenset(t for t in re.split(r'[\s.\-/+#]+', skill.lower()) if t)
 
@@ -140,6 +137,13 @@ def _skill_in_cv(market_skill: str, cv_skills: list[str]) -> bool:
 
 
 def _run(conn: trino.dbapi.Connection, sql: str) -> list[dict]:
+    """
+    @brief Execute a SQL statement on an open Trino connection and return rows as dicts.
+
+    @param conn  Active Trino DBAPI connection.
+    @param sql   SQL query string to execute.
+    @return      List of dicts mapping column names to row values.
+    """
     cursor = conn.cursor()
     cursor.execute(sql)
     cols = [d[0] for d in cursor.description]
@@ -149,7 +153,7 @@ def _run(conn: trino.dbapi.Connection, sql: str) -> list[dict]:
 def _infer_category_from_db(
     conn: trino.dbapi.Connection,
     skills: list[str],
-) -> str:
+) -> str | None:
     """
     @brief Data-driven category inference: ask Gold layer which category
     requires the most of the candidate's actual skills.
@@ -158,15 +162,17 @@ def _infer_category_from_db(
     distinct job postings per category require those skills.  The category
     with the highest count wins — no hard-coded keyword lists.
 
-    Falls back to _FALLBACK_CATEGORY when the query returns no rows
-    (e.g. all CV skills are absent from dim_skill, or Trino has no data).
+    Returns None when the query yields no rows, meaning none of the CV's
+    skills exist in dim_skill — the caller must treat this as a non-IT CV
+    rather than silently falling back to a generic category.
 
     @param conn    Open Trino connection (reused from the caller's block).
     @param skills  CV skill list (up to 20 used; extras ignored for query size).
-    @return        Gold dim_job_category.category_name string.
+    @return        Gold dim_job_category.category_name string, or None if no
+                   CV skill matches any IT skill in the Gold layer.
     """
     if not skills:
-        return _FALLBACK_CATEGORY
+        return None
 
     # Build SQL-safe IN-list: LOWER each skill, escape quotes, wrap in single quotes
     in_list = ", ".join(
@@ -175,7 +181,7 @@ def _infer_category_from_db(
         if s.strip()
     )
     if not in_list:
-        return _FALLBACK_CATEGORY
+        return None
 
     rows = _run(conn, _SQL_INFER_CATEGORY.format(skills=in_list))
     if rows:
@@ -183,8 +189,50 @@ def _infer_category_from_db(
         logger.info("Category inferred from Gold layer: '%s'", category)
         return category
 
-    logger.info("Category inference returned no rows — using fallback '%s'.", _FALLBACK_CATEGORY)
-    return _FALLBACK_CATEGORY
+    logger.warning(
+        "Category inference: none of the CV's skills found in Gold dim_skill — "
+        "this CV may not be IT-related."
+    )
+    return None
+
+
+def _infer_categories_from_roles_db(
+    conn: trino.dbapi.Connection,
+    preferred_roles: list[str],
+) -> list[str]:
+    """
+    @brief Data-driven role-to-category inference via job title matching in fact_job_posting.
+
+    Matches each preferred_role against actual job titles stored in the Gold layer
+    and returns the categories with the most matching jobs — no hard-coded keyword
+    lists required.
+
+    Example: preferred_roles=["Data Engineer", "ML Engineer"]
+      → LOWER(f.job_title) LIKE '%data engineer%' OR LIKE '%ml engineer%'
+      → "Data & AI" wins with 312 jobs → returned first
+
+    @param conn             Open Trino connection (reused from the caller's block).
+    @param preferred_roles  Role strings from CVProfile (up to 5 used).
+    @return                 Ordered list of up to 3 Gold category_name strings.
+                            Empty list if preferred_roles is empty or no titles match.
+    """
+    if not preferred_roles:
+        return []
+
+    conditions = [
+        f"LOWER(f.job_title) LIKE '%{_escape(r.strip().lower())}%'"
+        for r in preferred_roles[:5]
+        if r.strip()
+    ]
+    if not conditions:
+        return []
+
+    rows = _run(conn, _SQL_INFER_CATEGORIES_FROM_ROLES.format(
+        role_conditions=" OR ".join(conditions)
+    ))
+    categories = [r["category_name"] for r in rows if r.get("category_name")]
+    logger.info("Role-title category inference → %s", categories)
+    return categories
 
 
 # ── Main service ──────────────────────────────────────────────────────────────
@@ -198,13 +246,63 @@ class SkillGapAnalyzerService:
     application startup (lazy, from the cv_match router).
     """
 
+    def has_it_skills(self, skills: list[str]) -> bool | None:
+        """
+        @brief Check whether any of the given skills exist in Gold dim_skill.
+
+        Used as a data-driven gate before running vector search — if the CV has
+        zero skills that appear in the IT job corpus, it is almost certainly not
+        an IT CV and should be rejected early.
+
+        @param skills  Raw skill strings from CVProfile (before language merge).
+        @return        True if ≥1 skill found, False if 0 found, None if Trino
+                       is unavailable (caller should fall back to LLM-only check).
+        """
+        if not skills:
+            return False
+
+        in_list = ", ".join(
+            f"'{_escape(s.strip().lower())}'"
+            for s in skills[:30]
+            if s.strip()
+        )
+        if not in_list:
+            return False
+
+        try:
+            conn = trino.dbapi.connect(
+                host=settings.trino_host,
+                port=settings.trino_port,
+                user=settings.trino_user,
+                catalog=settings.trino_catalog,
+                request_timeout=8,
+            )
+            rows = _run(conn, _SQL_HAS_IT_SKILLS.format(skills=in_list))
+            conn.close()
+            matched = int(rows[0]["matched"]) if rows else 0
+            logger.info(
+                "IT skill gate | checked=%d skills → %d matched in dim_skill",
+                len(skills), matched,
+            )
+            return matched > 0
+        except Exception as exc:
+            logger.warning("IT skill gate Trino unavailable: %s — skipping gate.", exc)
+            return None  # caller treats None as "unknown", falls back to LLM check
+
     def _analyze_one(
         self,
         conn: trino.dbapi.Connection,
         category: str,
         cv_skills: list[str],
     ) -> SkillGapAnalysis | None:
-        """Run skill gap analysis for a single category against an open Trino connection."""
+        """
+        @brief Run skill gap analysis for a single Gold category on an open Trino connection.
+
+        @param conn       Active Trino connection (reused from the caller's block).
+        @param category   Gold dim_job_category.category_name to analyze.
+        @param cv_skills  List of skill strings from the candidate's CVProfile.
+        @return           Populated SkillGapAnalysis, or None if the category has no data.
+        """
         total_rows = _run(conn, _SQL_TOTAL_JOBS.format(category=_escape(category)))
         total_jobs = int(total_rows[0]["total"]) if total_rows else 0
         if total_jobs == 0:
@@ -274,17 +372,26 @@ class SkillGapAnalyzerService:
                 request_timeout=15,
             )
 
-            # Step 1: categories from target roles (highest priority)
-            categories = _target_roles_to_categories(profile.preferred_roles)
+            # Step 1: match preferred_roles against job titles in Gold layer
+            categories = _infer_categories_from_roles_db(conn, profile.preferred_roles)
 
-            # Step 2: fill with data-driven category if still empty or only 1
+            # Step 2: fill remaining slots with skill-based inference
             if len(categories) < 2:
                 db_cat = _infer_category_from_db(conn, profile.skills)
-                if db_cat not in categories:
+                if db_cat and db_cat not in categories:
                     categories.append(db_cat)
 
             # Cap at 3 unique categories
             categories = list(dict.fromkeys(categories))[:3]
+
+            if not categories:
+                logger.warning(
+                    "Skill gap skipped: no IT skills from this CV found in Gold layer "
+                    "and no preferred_roles matched any known IT category. "
+                    "CV may not be IT-related."
+                )
+                conn.close()
+                return []
 
             results: list[SkillGapAnalysis] = []
             for cat in categories:
@@ -300,6 +407,11 @@ class SkillGapAnalyzerService:
             return []
 
     def analyze(self, profile: CVProfile) -> SkillGapAnalysis | None:
-        """Backward-compat wrapper — returns only the first result."""
+        """
+        @brief Backward-compatible single-result wrapper around analyze_multi().
+
+        @param profile  CVProfile to analyze.
+        @return         First SkillGapAnalysis result, or None if analysis returns no data.
+        """
         results = self.analyze_multi(profile)
         return results[0] if results else None

@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BsLayoutSidebar } from "react-icons/bs";
 import { CiHeart } from "react-icons/ci";
 import { FiChevronUp, FiEdit, FiHelpCircle, FiLogOut, FiStar, FiTrash2, FiUser } from "react-icons/fi";
@@ -14,6 +15,144 @@ import { useAuth } from "../contexts/AuthContext";
 import { LuPencilLine } from "react-icons/lu";
 import { RiApps2Line } from "react-icons/ri";
 import { BsThreeDots } from "react-icons/bs";
+
+/**
+ * @brief Groups conversations into date buckets (Today / Yesterday / Last 7 days / Older).
+ * Derives the creation date from the conv ID format `conv_<timestamp>_<suffix>`.
+ * @param {ConversationSummary[]} conversations
+ * @returns {{ label: string, items: ConversationSummary[] }[]}
+ */
+function groupByDate(conversations) {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  const week      = new Date(today); week.setDate(today.getDate() - 7);
+
+  const buckets = { Today: [], Yesterday: [], "Last 7 days": [], Older: [] };
+
+  for (const conv of conversations) {
+    const ts  = parseInt(conv.id.split("_")[1], 10);
+    const day = isNaN(ts) ? null : new Date(new Date(ts).getFullYear(), new Date(ts).getMonth(), new Date(ts).getDate());
+
+    if (!day)                    { buckets["Older"].push(conv); }
+    else if (day >= today)       { buckets["Today"].push(conv); }
+    else if (day >= yesterday)   { buckets["Yesterday"].push(conv); }
+    else if (day >= week)        { buckets["Last 7 days"].push(conv); }
+    else                         { buckets["Older"].push(conv); }
+  }
+
+  return Object.entries(buckets)
+    .filter(([, items]) => items.length > 0)
+    .map(([label, items]) => ({ label, items }));
+}
+
+/**
+ * @component
+ * @brief Full-screen modal for searching conversations by title.
+ * Groups results by date; filters live as the user types.
+ *
+ * @param {Object}                    props
+ * @param {ConversationSummary[]}     props.conversations        - All conversations to search.
+ * @param {function(): void}          props.onNewConversation    - Called when "New chat" is clicked.
+ * @param {function(string): void}    props.onSelectConversation - Called with conv ID when a result is clicked.
+ * @param {function(): void}          props.onClose              - Called to close the modal.
+ */
+function SearchModal({ conversations, onNewConversation, onSelectConversation, onClose }) {
+  const [query, setQuery]       = useState("");
+  const [popping, setPopping]   = useState(false);
+  const inputRef                = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  function handleNewChat() {
+    setPopping(true);
+    setTimeout(() => { onNewConversation(); onClose(); }, 320);
+  }
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const filtered = query.trim()
+    ? conversations.filter((c) => c.title.toLowerCase().includes(query.trim().toLowerCase()))
+    : conversations;
+
+  const groups = groupByDate(filtered);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-[2px]"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-lg bg-white dark:bg-[#2F2F2F] rounded-2xl shadow-2xl flex flex-col max-h-[60vh] text-gray-900 dark:text-white overflow-hidden">
+
+        {/* Search input row */}
+        <div className="flex items-center gap-3 px-4 py-3.5">
+          <IoSearch className="w-4 h-4 text-gray-400 dark:text-gray-400 flex-shrink-0" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search chats..."
+            className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+          />
+          <button
+            onClick={onClose}
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 dark:bg-[#4A4A4A] hover:bg-gray-300 dark:hover:bg-[#555] text-gray-500 dark:text-gray-300 transition flex-shrink-0"
+          >
+            <span className="text-xs font-bold leading-none">✕</span>
+          </button>
+        </div>
+
+        {/* Scrollable results */}
+        <div className="flex-1 overflow-y-auto pb-2">
+
+          {/* New chat row */}
+          {!query.trim() && (
+            <button
+              onClick={handleNewChat}
+              className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-[#3A3A3A] transition ${popping ? "new-chat-pop" : ""}`}
+            >
+              <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-[#3A3A3A] border border-gray-300 dark:border-[#555] flex items-center justify-center flex-shrink-0">
+                <FiEdit className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+              </div>
+              <span className="font-medium">New chat</span>
+            </button>
+          )}
+
+          {/* Grouped results */}
+          {groups.length > 0 ? (
+            groups.map(({ label, items }) => (
+              <div key={label}>
+                <p className="px-4 pt-3 pb-1 text-xs text-gray-400 dark:text-gray-500">{label}</p>
+                {items.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => { onSelectConversation(conv.id); onClose(); }}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-[#3A3A3A] transition"
+                  >
+                    <div className="w-5 h-5 rounded-full border border-gray-300 dark:border-[#555] flex-shrink-0" />
+                    {conv.starred && <FiStar className="w-3 h-3 text-yellow-400 fill-yellow-400 flex-shrink-0 -ml-2" />}
+                    <span className="truncate">{conv.title}</span>
+                  </button>
+                ))}
+              </div>
+            ))
+          ) : (
+            <p className="px-4 py-6 text-sm text-center text-gray-400 dark:text-gray-500">
+              {query.trim() ? `No chats matching "${query}"` : "No conversations yet"}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 /**
  * @component
@@ -138,28 +277,25 @@ function ConversationItem({
   onRename,
   onDelete,
 }) {
-  // {boolean} Whether the three-dot context menu is open
-  const [menuOpen, setMenuOpen] = useState(false);
-  // {boolean} Whether the inline rename input is active
-  const [renaming, setRenaming] = useState(false);
-  // {string} Current value of the rename input field
+  const [menuOpen, setMenuOpen]     = useState(false);
+  const [renaming, setRenaming]     = useState(false);
   const [renameValue, setRenameValue] = useState(conv.title);
-  const menuRef = useRef(null);
+  const [menuPos, setMenuPos]       = useState({ top: 0, left: 0 });
+  const btnRef   = useRef(null);
   const inputRef = useRef(null);
 
-  // Close menu when clicking outside
   useEffect(() => {
     if (!menuOpen) return;
     function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (btnRef.current && !btnRef.current.contains(e.target) &&
+          !document.getElementById(`conv-menu-${conv.id}`)?.contains(e.target)) {
         setMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+  }, [menuOpen, conv.id]);
 
-  // Focus input when rename starts
   useEffect(() => {
     if (renaming && inputRef.current) {
       inputRef.current.focus();
@@ -167,27 +303,22 @@ function ConversationItem({
     }
   }, [renaming]);
 
-  /**
-   * Commits the rename value and exits rename mode.
-   * @returns {void}
-   */
   function handleRenameSubmit() {
     onRename(conv.id, renameValue);
     setRenaming(false);
   }
 
-  /**
-   * Handles keyboard events in the rename input.
-   * Enter commits; Escape cancels and restores the original title.
-   * @param {React.KeyboardEvent} e
-   * @returns {void}
-   */
   function handleRenameKeyDown(e) {
     if (e.key === "Enter") handleRenameSubmit();
-    if (e.key === "Escape") {
-      setRenameValue(conv.title);
-      setRenaming(false);
-    }
+    if (e.key === "Escape") { setRenameValue(conv.title); setRenaming(false); }
+  }
+
+  function openMenu(e) {
+    e.stopPropagation();
+    if (menuOpen) { setMenuOpen(false); return; }
+    const rect = btnRef.current.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 4, left: rect.right - 176 });
+    setMenuOpen(true);
   }
 
   return (
@@ -222,14 +353,12 @@ function ConversationItem({
         )}
       </div>
 
-      {/* "..." button — visible on hover or when menu is open */}
+      {/* "..." button */}
       {!renaming && (
-        <div className="relative flex-shrink-0 pr-1" ref={menuRef}>
+        <div className="flex-shrink-0 pr-1">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen((v) => !v);
-            }}
+            ref={btnRef}
+            onClick={openMenu}
             className={`p-1.5 rounded-md transition ${
               menuOpen
                 ? "opacity-100 bg-[#D0D0D0] dark:bg-[#3A3A3A]"
@@ -239,16 +368,16 @@ function ConversationItem({
             <BsThreeDots className="w-3.5 h-3.5" />
           </button>
 
-          {/* Dropdown */}
-          {menuOpen && (
-            <div className="dropdown-enter absolute right-0 top-8 z-50 w-44 bg-white dark:bg-[#2A2A2A] border border-[#E2E2E2] dark:border-[#3F3F3F] rounded-xl shadow-lg py-1 text-sm">
+          {/* Dropdown via Portal — escapes overflow:hidden */}
+          {menuOpen && createPortal(
+            <div
+              id={`conv-menu-${conv.id}`}
+              className="dropdown-enter fixed z-[9999] w-44 bg-white dark:bg-[#2A2A2A] border border-[#E2E2E2] dark:border-[#3F3F3F] rounded-xl shadow-lg py-1 text-sm text-black dark:text-white"
+              style={{ top: menuPos.top, left: menuPos.left }}
+            >
               {/* Star */}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStar(conv.id);
-                  setMenuOpen(false);
-                }}
+                onClick={(e) => { e.stopPropagation(); onStar(conv.id); setMenuOpen(false); }}
                 className="flex items-center gap-3 w-full px-4 py-2 hover:bg-[#F3F3F3] dark:hover:bg-[#353535] transition"
               >
                 <FiStar className={`w-4 h-4 ${conv.starred ? "text-yellow-400 fill-yellow-400" : ""}`} />
@@ -283,7 +412,8 @@ function ConversationItem({
                 <FiTrash2 className="w-4 h-4" />
                 Delete
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}
@@ -322,11 +452,21 @@ function Sidebar({
 }) {
   const starred      = conversations.filter((c) => c.starred);
   const recent       = conversations.filter((c) => !c.starred);
+  const [searchOpen, setSearchOpen] = useState(false);
   // Track whether this is the initial mount so we can stagger items on first load
   const isFirstRender = useRef(true);
   useEffect(() => { isFirstRender.current = false; }, []);
 
   return (
+    <>
+    {searchOpen && (
+      <SearchModal
+        conversations={conversations}
+        onNewConversation={onNewConversation}
+        onSelectConversation={onSelectConversation}
+        onClose={() => setSearchOpen(false)}
+      />
+    )}
     <div className={`w-64 bg-[#F9F9F9] dark:bg-[#171717] border-r border-[#E2E2E2] dark:border-[#2F2F2F] flex flex-col h-screen text-black dark:text-white ${isClosing ? "sidebar-exit" : "sidebar-enter"}`}>
 
       {/* Header */}
@@ -351,7 +491,10 @@ function Sidebar({
           <FiEdit className="w-4 h-4" />
           <span className="text-sm">New chat</span>
         </button>
-        <button className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-[#E2E2E2] dark:hover:bg-[#2F2F2F] transition">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-[#E2E2E2] dark:hover:bg-[#2F2F2F] transition"
+        >
           <IoSearch className="w-4 h-4" />
           <span className="text-sm">Search chats</span>
         </button>
@@ -439,6 +582,7 @@ function Sidebar({
       {/* User widget */}
       <UserWidget />
     </div>
+    </>
   );
 }
 

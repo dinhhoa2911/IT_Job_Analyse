@@ -44,8 +44,9 @@ from openai import OpenAI
 from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import (
-    ChatResponse, JobResult, MarketInsight, QueryType,
+    ChatResponse, JobResult, LearningPathResult, MarketInsight, QueryType,
 )
+from services.learning_path import LearningPathService
 from services.market_context import MarketContextService, format_market_block
 from services.query_processor import QueryProcessor
 from services.sql_agent import SQLAgentService
@@ -108,7 +109,8 @@ TOOL_SPECS: list[dict] = [
             "description": (
                 "Provide IT career guidance, learning roadmaps, and role comparisons. "
                 "Use when user asks: what to learn, career paths, role differences, salary expectations, "
-                "skills to acquire. This tool does NOT query the database — pure LLM knowledge. "
+                "skills to acquire — WITHOUT stating specific skills they already have. "
+                "This tool does NOT query the database — pure LLM knowledge. "
                 "Examples: 'nên học gì để làm backend', 'DevOps vs SRE', 'roadmap Data Science'."
             ),
             "parameters": {
@@ -120,6 +122,37 @@ TOOL_SPECS: list[dict] = [
                     }
                 },
                 "required": ["question"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "learning_path",
+            "description": (
+                "Generate a DATA-DRIVEN skill learning roadmap from real Vietnam job market data. "
+                "Use ONLY when the user explicitly states skills they ALREADY KNOW and asks what "
+                "to learn next to reach a specific TARGET ROLE. "
+                "Triggers: 'tao biết Python + SQL muốn vào Data Engineer', "
+                "'có React + JS cần học gì để Senior Frontend?', "
+                "'Java + Spring Boot để làm Backend cần thêm gì?', "
+                "'I know X and Y, what do I need to become Z?'. "
+                "DO NOT use for generic 'nên học gì' without stated known skills — use career_advice."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target_role": {
+                        "type": "string",
+                        "description": "The job role the user wants to reach (e.g. 'Data Engineer', 'Backend Developer')",
+                    },
+                    "known_skills": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Skills the user already has, extracted from their message",
+                    },
+                },
+                "required": ["target_role"],
             },
         },
     },
@@ -137,13 +170,19 @@ RULES:
    SPECIFIC ROLE+LOCATION (e.g. "Python senior HCM lương thế nào?" needs BOTH search_jobs
    AND run_analytics — the job listings show real salaries and context).
 2. Call run_analytics → user wants aggregate STATISTICS, RANKINGS, or MARKET DATA.
-3. Call career_advice  → user wants LEARNING ROADMAP or CAREER GUIDANCE (no DB needed).
-4. Call MULTIPLE tools when a query spans multiple intents — never drop an intent.
+3. Call learning_path → user explicitly states skills they ALREADY HAVE and asks what to learn
+   next to reach a SPECIFIC TARGET ROLE. Extract target_role + known_skills[] from the message.
+   Triggers: "tao biết Python + SQL muốn vào Data Engineer", "có React muốn làm Frontend senior",
+             "Java + Spring để làm Backend cần thêm gì?", "I know X, want to become Y".
+   DO NOT use for generic "nên học gì" without stated known skills — use career_advice instead.
+4. Call career_advice  → user wants GENERIC CAREER GUIDANCE or LEARNING ROADMAPS without
+   specifying skills they already have (no DB needed).
+5. Call MULTIPLE tools when a query spans multiple intents — never drop an intent.
    Examples of multi-tool queries:
    • "Python senior HCM lương thế nào và xu hướng?" → search_jobs + run_analytics
    • "tìm job React, thị trường React như thế nào?"  → search_jobs + run_analytics
    • "Data Engineer tương lai ra sao và nên học gì?" → run_analytics + career_advice
-5. Call NO tool and reply directly for: greetings, off-topic, or completely unclear queries.
+6. Call NO tool and reply directly for: greetings, off-topic, or completely unclear queries.
 
 IMPORTANT: If a query contains a role/skill name AND a location (like "Python HCM", "Java Hà Nội"),
 ALWAYS call search_jobs — even if the query also asks for salary or trend information.\
@@ -175,6 +214,14 @@ OUTPUT STRUCTURE (follow in order, only include sections that have data):
 3. CAREER ADVICE (if career_advice was called):
    3–5 concrete sentences. Name specific technologies.
 
+4. LEARNING PATH (if learning_path was called):
+   Open with: "Dựa trên [total_jobs] job [role_category] trên thị trường:"
+   Present as a numbered roadmap (1–10). Format each skill:
+   **[N]. [Skill Name]** ([Skill Group]) — xuất hiện trong [market_freq]% job [role]
+   After the list, 2–3 sentences: WHY the top skills rank high, how they connect to the user's
+   existing skills (if bridge_score > 0, mention it bridges from their known stack).
+   NEVER fabricate percentages — use only the numbers from the LEARNING PATH data section.
+
 FINAL LINE: ONE actionable tip that ties all sections together.
 
 RULES:
@@ -204,6 +251,8 @@ class ToolResult:
     chart:            Optional[dict]            = None
     # career_advice
     advice_question:  Optional[str]             = None
+    # learning_path
+    learning_path_result: Optional[LearningPathResult] = None
 
 
 # ── Shared helpers (mirrors rag_pipeline.py utilities) ───────────────────────
@@ -284,16 +333,18 @@ class AgentService:
 
     def __init__(
         self,
-        query_processor: QueryProcessor,
-        vector_search:   HybridSearchService,
-        sql_agent:       SQLAgentService,
-        market_ctx:      MarketContextService,
+        query_processor:    QueryProcessor,
+        vector_search:      HybridSearchService,
+        sql_agent:          SQLAgentService,
+        market_ctx:         MarketContextService,
+        learning_path_svc:  LearningPathService,
     ) -> None:
-        self._llm    = OpenAI(api_key=settings.openai_api_key)
-        self._qp     = query_processor
-        self._search = vector_search
-        self._sql    = sql_agent
-        self._market = market_ctx
+        self._llm           = OpenAI(api_key=settings.openai_api_key)
+        self._qp            = query_processor
+        self._search        = vector_search
+        self._sql           = sql_agent
+        self._market        = market_ctx
+        self._learning_path = learning_path_svc
 
     # ── Planning ──────────────────────────────────────────────────────────────
 
@@ -361,12 +412,28 @@ class AgentService:
     def _exec_career_advice(self, question: str) -> ToolResult:
         return ToolResult(name="career_advice", advice_question=question)
 
+    def _exec_learning_path(self, target_role: str, known_skills: list[str]) -> ToolResult:
+        try:
+            result = self._learning_path.analyze(target_role, known_skills or [])
+            logger.info(
+                "learning_path → category=%s steps=%d",
+                result.role_category if result else "N/A",
+                len(result.steps) if result else 0,
+            )
+            return ToolResult(name="learning_path", learning_path_result=result)
+        except Exception as e:
+            logger.error("learning_path failed: %s", e, exc_info=True)
+            return ToolResult(name="learning_path", success=False, error=str(e))
+
     def _execute_parallel(self, tool_calls: list) -> list[ToolResult]:
         """Run all tool calls concurrently and collect results."""
         dispatch = {
             "search_jobs":   lambda a: self._exec_search_jobs(a["query"]),
             "run_analytics": lambda a: self._exec_analytics(a["question"]),
             "career_advice": lambda a: self._exec_career_advice(a["question"]),
+            "learning_path": lambda a: self._exec_learning_path(
+                a["target_role"], a.get("known_skills", [])
+            ),
         }
 
         def run_one(tc):
@@ -439,6 +506,25 @@ class AgentService:
                     f"Answer this career question using your knowledge: {r.advice_question}"
                 )
 
+            elif r.name == "learning_path":
+                lpr = r.learning_path_result
+                if lpr and lpr.steps:
+                    known_str = ", ".join(lpr.known_skills) if lpr.known_skills else "none stated"
+                    rows = "\n".join(
+                        f"{i}. {s.skill_name} [{s.skill_group}] "
+                        f"market={s.market_freq}% bridge={s.bridge_score}% rank={s.rank_score}"
+                        for i, s in enumerate(lpr.steps, 1)
+                    )
+                    parts.append(
+                        f"=== LEARNING PATH ===\n"
+                        f"Target role: {lpr.target_role} → category: {lpr.role_category}\n"
+                        f"Total jobs in category: {lpr.total_jobs}\n"
+                        f"User's known skills: {known_str}\n"
+                        f"Top skills to learn (ranked by 0.6×market_freq + 0.4×bridge_score):\n{rows}"
+                    )
+                else:
+                    parts.append("[LEARNING PATH] No data found for this role.")
+
         parts.append("\nSynthesize all sections above into one cohesive response.")
         return "\n".join(parts)
 
@@ -465,11 +551,12 @@ class AgentService:
         answer = resp.choices[0].message.content
 
         # Collect response fields from tool results
-        jobs: list[JobResult] | None  = None
-        market_insight: MarketInsight | None = None
-        sql_query:  str | None        = None
-        sql_result: list[dict] | None = None
-        charts: list[dict]            = []
+        jobs: list[JobResult] | None          = None
+        market_insight: MarketInsight | None  = None
+        sql_query:  str | None                = None
+        sql_result: list[dict] | None         = None
+        charts: list[dict]                    = []
+        learning_path_result: LearningPathResult | None = None
 
         for r in results:
             if r.name == "search_jobs" and r.success:
@@ -482,19 +569,22 @@ class AgentService:
                 sql_result = r.sql_result
                 if r.chart:
                     charts.append(r.chart)
+            elif r.name == "learning_path" and r.success:
+                learning_path_result = r.learning_path_result
 
         # primary chart for backward-compat (existing chart field in ChatResponse)
         primary_chart = charts[0] if charts else None
 
         return ChatResponse(
-            answer         = answer,
-            query_type     = QueryType.agent,
-            jobs           = jobs,
-            market_insight = market_insight,
-            sql_query      = sql_query,
-            sql_result     = sql_result,
-            chart          = primary_chart,
-            charts         = charts,
+            answer                = answer,
+            query_type            = QueryType.agent,
+            jobs                  = jobs,
+            market_insight        = market_insight,
+            sql_query             = sql_query,
+            sql_result            = sql_result,
+            chart                 = primary_chart,
+            charts                = charts,
+            learning_path         = learning_path_result,
         )
 
     # ── Public entry point ────────────────────────────────────────────────────

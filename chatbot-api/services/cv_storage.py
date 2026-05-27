@@ -26,6 +26,11 @@ _TABLE = "iceberg.app_db.user_cvs"
 
 
 def _minio_client() -> Minio:
+    """
+    @brief Create and return a configured MinIO client from application settings.
+
+    @return  Minio client instance (no TLS, credentials from settings).
+    """
     return Minio(
         settings.minio_endpoint,
         access_key=settings.minio_access_key,
@@ -35,6 +40,11 @@ def _minio_client() -> Minio:
 
 
 def _trino_conn() -> trino.dbapi.Connection:
+    """
+    @brief Open and return a Trino DBAPI connection for metadata operations.
+
+    @return  Open Trino connection targeting the iceberg catalog.
+    """
     return trino.dbapi.connect(
         host=settings.trino_host,
         port=settings.trino_port,
@@ -44,13 +54,25 @@ def _trino_conn() -> trino.dbapi.Connection:
 
 
 def _ensure_bucket(client: Minio) -> None:
+    """
+    @brief Create the CV bucket in MinIO if it does not already exist.
+
+    @param client  Active Minio client instance.
+    """
     if not client.bucket_exists(settings.minio_cv_bucket):
         client.make_bucket(settings.minio_cv_bucket)
         logger.info("Created MinIO bucket: %s", settings.minio_cv_bucket)
 
 
 def upload_cv(user_uid: str, filename: str, data: bytes) -> dict:
-    """Upload PDF to MinIO và lưu metadata vào Iceberg."""
+    """
+    @brief Upload a CV PDF to MinIO and persist its metadata to the Iceberg table.
+
+    @param user_uid  Unique user identifier (used as the path prefix in MinIO).
+    @param filename  Original filename of the uploaded PDF.
+    @param data      Raw PDF bytes.
+    @return          Dict with cv_id, filename, minio_path, and file_size.
+    """
     cv_id      = str(uuid.uuid4())
     minio_path = f"{user_uid}/{cv_id}/{filename}"
 
@@ -89,7 +111,12 @@ def upload_cv(user_uid: str, filename: str, data: bytes) -> dict:
 
 
 def list_cvs(user_uid: str) -> list[dict]:
-    """Trả về danh sách CV của user, sắp xếp mới nhất trước."""
+    """
+    @brief Return all CVs for a user, ordered newest first.
+
+    @param user_uid  Unique user identifier.
+    @return          List of metadata dicts (cv_id, filename, file_size, minio_path, uploaded_at).
+    """
     sql = f"""
         SELECT cv_id, filename, file_size, minio_path, uploaded_at
         FROM {_TABLE}
@@ -108,7 +135,14 @@ def list_cvs(user_uid: str) -> list[dict]:
 
 
 def get_cv_bytes(user_uid: str, cv_id: str) -> tuple[bytes, str]:
-    """Download PDF từ MinIO. Trả về (bytes, filename)."""
+    """
+    @brief Download a CV PDF from MinIO and return its raw bytes and filename.
+
+    @param user_uid  Unique user identifier.
+    @param cv_id     UUID of the CV to retrieve.
+    @return          Tuple of (pdf_bytes, filename).
+    @throws ValueError  If no matching CV is found in the metadata table.
+    """
     sql = f"""
         SELECT filename, minio_path FROM {_TABLE}
         WHERE cv_id = '{cv_id}' AND user_uid = '{user_uid}'
@@ -133,7 +167,13 @@ def get_cv_bytes(user_uid: str, cv_id: str) -> tuple[bytes, str]:
 
 
 def delete_cv(user_uid: str, cv_id: str) -> None:
-    """Xóa PDF khỏi MinIO và metadata khỏi Iceberg."""
+    """
+    @brief Delete a CV's PDF from MinIO and remove its metadata row from Iceberg.
+
+    @param user_uid  Unique user identifier.
+    @param cv_id     UUID of the CV to delete.
+    @throws ValueError  If no matching CV is found in the metadata table.
+    """
     sql = f"""
         SELECT minio_path FROM {_TABLE}
         WHERE cv_id = '{cv_id}' AND user_uid = '{user_uid}'

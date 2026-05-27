@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiBriefcase, FiCheckCircle, FiExternalLink, FiFileText,
   FiUploadCloud, FiX, FiMapPin, FiAward, FiClock,
-  FiAlertCircle, FiTrendingUp, FiBarChart2,
+  FiAlertCircle, FiTrendingUp, FiBarChart2, FiAlertTriangle,
+  FiRefreshCw, FiUpload, FiInfo,
 } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
 import { FiTrash2 } from "react-icons/fi";
@@ -15,6 +16,77 @@ const PROCESSING_STEPS = [
   { id: 3, label: "Đang tìm kiếm việc làm phù hợp…",      duration: 6000 },
   { id: 4, label: "Đang phân tích khoảng cách kỹ năng…",  duration: 9999 },
 ];
+
+const getErrorMeta = (msg = "") => {
+  const m = msg.toLowerCase();
+
+  // Non-IT CV — user needs guidance, not a retry
+  if (
+    m.includes("kỹ năng it") || m.includes("công nghệ thông tin") ||
+    m.includes("lĩnh vực it") || m.includes("kỹ năng kỹ thuật")
+  ) {
+    return {
+      type:        "non-it",
+      icon:        FiAlertTriangle,
+      iconBg:      "bg-amber-50 dark:bg-amber-950/30",
+      iconBorder:  "border-amber-100 dark:border-amber-900/40",
+      iconColor:   "text-amber-500",
+      badge:       "Hồ sơ không phù hợp",
+      badgeBg:     "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+      title:       "CV không thuộc lĩnh vực IT",
+      tips: [
+        "Thêm phần Kỹ năng kỹ thuật (Technical Skills) vào CV",
+        "Liệt kê cụ thể: ngôn ngữ lập trình, framework, công cụ",
+        "Ví dụ: Python, Java, React, Docker, SQL, AWS…",
+      ],
+      btnLabel:    "Tải lên CV khác",
+      btnStyle:    "from-amber-500 to-orange-500 shadow-amber-200 dark:shadow-amber-900/40",
+      nextStage:   "list",
+    };
+  }
+
+  // File / PDF problems
+  if (
+    m.includes("pdf") || m.includes("tệp") || m.includes("file") ||
+    m.includes("mb") || m.includes("scanned") || m.includes("image") ||
+    m.includes("empty") || m.includes("page")
+  ) {
+    return {
+      type:        "file",
+      icon:        FiFileText,
+      iconBg:      "bg-orange-50 dark:bg-orange-950/30",
+      iconBorder:  "border-orange-100 dark:border-orange-900/40",
+      iconColor:   "text-orange-500",
+      badge:       "Lỗi tệp tin",
+      badgeBg:     "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+      title:       "Không thể đọc tệp CV",
+      tips: [
+        "Đảm bảo file là PDF có thể chọn văn bản (không phải ảnh scan)",
+        "Kích thước tối đa cho phép là 5 MB",
+        "Thử xuất lại CV từ Word / Google Docs sang PDF",
+      ],
+      btnLabel:    "Chọn lại tệp",
+      btnStyle:    "from-orange-500 to-amber-500 shadow-orange-200 dark:shadow-orange-900/40",
+      nextStage:   "list",
+    };
+  }
+
+  // Technical / server error
+  return {
+    type:        "technical",
+    icon:        FiX,
+    iconBg:      "bg-red-50 dark:bg-red-950/30",
+    iconBorder:  "border-red-100 dark:border-red-900/40",
+    iconColor:   "text-red-500",
+    badge:       "Lỗi hệ thống",
+    badgeBg:     "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+    title:       "Đã xảy ra lỗi",
+    tips:        [],
+    btnLabel:    "Thử lại",
+    btnStyle:    "from-blue-600 to-indigo-600 shadow-blue-200 dark:shadow-blue-900/40",
+    nextStage:   "list",
+  };
+};
 
 const SCORE_CONFIG = (score) => {
   if (score >= 85) return { color: "#10b981", bg: "from-emerald-500 to-teal-400",   label: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" };
@@ -792,23 +864,76 @@ export default function CVUploadModal({ onClose }) {
           {stage === "processing" && <ProcessingView fileName={fileName} />}
 
           {/* Error */}
-          {stage === "error" && (
-            <div className="flex flex-col items-center gap-5 py-10 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 flex items-center justify-center">
-                <FiX className="w-7 h-7 text-red-500" />
+          {stage === "error" && (() => {
+            const meta = getErrorMeta(errMsg);
+            const Icon = meta.icon;
+            return (
+              <div className="flex flex-col items-center gap-5 py-8 px-2 text-center">
+
+                {/* Icon */}
+                <div className={`w-16 h-16 rounded-2xl ${meta.iconBg} border ${meta.iconBorder} flex items-center justify-center`}>
+                  <Icon className={`w-7 h-7 ${meta.iconColor}`} />
+                </div>
+
+                {/* Badge + Title + Message */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${meta.badgeBg}`}>
+                    {meta.badge}
+                  </span>
+                  <p className="font-semibold text-base text-gray-900 dark:text-gray-100">
+                    {meta.title}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
+                    {errMsg}
+                  </p>
+                </div>
+
+                {/* Tips box — only for non-technical errors */}
+                {meta.tips.length > 0 && (
+                  <div className="w-full rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 text-left">
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <FiInfo className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Gợi ý khắc phục
+                      </span>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {meta.tips.map((tip, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                          <span className="mt-0.5 w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                            {i + 1}
+                          </span>
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col items-center gap-2 w-full">
+                  <button
+                    onClick={() => { setErrMsg(""); setStage(meta.nextStage); }}
+                    className={`w-full max-w-xs flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r ${meta.btnStyle} text-white rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md`}
+                  >
+                    {meta.type === "technical" ? (
+                      <FiRefreshCw className="w-4 h-4" />
+                    ) : (
+                      <FiUpload className="w-4 h-4" />
+                    )}
+                    {meta.btnLabel}
+                  </button>
+                  <button
+                    onClick={() => { setErrMsg(""); setStage("list"); }}
+                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    Quay về danh sách CV
+                  </button>
+                </div>
+
               </div>
-              <div>
-                <p className="font-semibold text-base text-gray-900 dark:text-gray-100">Có lỗi xảy ra</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 max-w-sm leading-relaxed">{errMsg}</p>
-              </div>
-              <button
-                onClick={() => { setErrMsg(""); setStage("list"); }}
-                className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition shadow-md shadow-blue-200 dark:shadow-blue-900/40"
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Results */}
           {stage === "results" && result && (

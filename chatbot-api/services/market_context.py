@@ -134,7 +134,15 @@ def _build_location_clauses(city: str | None) -> tuple[str, str]:
 
 
 def _extract_from_jobs(jobs: list[JobResult]) -> str | None:
-    """Strategy 1: pick the most frequent skill from returned job text_content."""
+    """
+    @brief Pick the primary skill by frequency across returned job text_content fields.
+
+    Parses the "Skills:" section of each JobResult's text_content, tallies
+    occurrences, and returns the most common skill name.
+
+    @param jobs  Reranked JobResult list from hybrid search.
+    @return      Most frequent skill string, or None if no Skills section is found.
+    """
     skill_counter: Counter = Counter()
     for job in jobs:
         match = re.search(r"Skills:\s*([^.]+)", job.text_content, re.IGNORECASE)

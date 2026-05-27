@@ -28,7 +28,15 @@ router = APIRouter(prefix="/user", tags=["user-cvs"])
 
 @router.post("/{uid}/cvs", status_code=status.HTTP_201_CREATED)
 async def upload_cv(uid: str, file: UploadFile = File(...)):
-    """Upload CV PDF → MinIO + Iceberg metadata."""
+    """
+    @brief Upload a PDF CV to MinIO object storage and record its metadata in Iceberg.
+
+    @param uid   Unique user identifier (path parameter).
+    @param file  PDF file upload (multipart, max 5 MB).
+    @return      Dict with cv_id, filename, minio_path, and file_size.
+    @throws HTTPException  400 for non-PDF files or files exceeding 5 MB.
+    @throws HTTPException  500 on MinIO or Iceberg write failure.
+    """
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
@@ -46,7 +54,13 @@ async def upload_cv(uid: str, file: UploadFile = File(...)):
 
 @router.get("/{uid}/cvs")
 async def list_cvs(uid: str):
-    """Lấy danh sách CV đã lưu của user."""
+    """
+    @brief Return all saved CVs for a user, ordered newest first.
+
+    @param uid  Unique user identifier (path parameter).
+    @return     List of CV metadata dicts (cv_id, filename, file_size, minio_path, uploaded_at).
+    @throws HTTPException  500 on Trino query failure.
+    """
     try:
         cvs = storage.list_cvs(uid)
         return cvs
@@ -57,7 +71,14 @@ async def list_cvs(uid: str):
 
 @router.delete("/{uid}/cvs/{cv_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_cv(uid: str, cv_id: str):
-    """Xóa CV khỏi MinIO và Iceberg."""
+    """
+    @brief Delete a CV's PDF from MinIO and remove its metadata row from Iceberg.
+
+    @param uid    Unique user identifier (path parameter).
+    @param cv_id  UUID of the CV to delete (path parameter).
+    @throws HTTPException  404 if the CV does not exist.
+    @throws HTTPException  500 on storage failure.
+    """
     try:
         storage.delete_cv(uid, cv_id)
     except ValueError:
@@ -69,7 +90,16 @@ async def delete_cv(uid: str, cv_id: str):
 
 @router.post("/{uid}/cvs/{cv_id}/match")
 async def match_saved_cv(uid: str, cv_id: str, top_k: int = 10):
-    """Tải CV đã lưu từ MinIO và chạy lại job matching."""
+    """
+    @brief Download a saved CV from MinIO and re-run the full job-matching pipeline.
+
+    @param uid    Unique user identifier (path parameter).
+    @param cv_id  UUID of the saved CV to re-match (path parameter).
+    @param top_k  Number of job results to return (default 10).
+    @return       CVMatchResponse with cv_profile, matched_jobs, and summary.
+    @throws HTTPException  404 if the CV does not exist in storage.
+    @throws HTTPException  500 on pipeline or storage failure.
+    """
     try:
         data, filename = storage.get_cv_bytes(uid, cv_id)
     except ValueError:
@@ -85,7 +115,6 @@ async def match_saved_cv(uid: str, cv_id: str, top_k: int = 10):
         skill_gaps = _get_skill_gap_analyzer().analyze_multi(profile)
         elapsed = round((time.monotonic() - t0) * 1000)
 
-        # Giống hệt cv_match.py: message 2 metrics, dùng CVMatchResponse để serialize đúng
         if matched:
             top_ai    = matched[0]
             top_score = max(matched, key=lambda j: j.match_score)

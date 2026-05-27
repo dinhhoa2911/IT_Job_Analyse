@@ -13,6 +13,7 @@ Helper utilities handle language detection, query-level post-filtering, prompt
 construction, and the optional market-context block from the Gold layer.
 """
 
+import json
 import logging
 import re
 
@@ -22,6 +23,7 @@ from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
 from services.agent import AgentService
+from services.learning_path import LearningPathService
 from services.market_context import MarketContextService, format_market_block
 from services.query_classifier import QueryClassifier, is_greeting, is_short_off_topic
 from services.query_processor import QueryProcessor
@@ -40,7 +42,7 @@ def _detect_lang(text: str) -> str:
     return "Vietnamese" if any(c in _VI_CHARS for c in text.lower()) else "English"
 
 
-# Chart type keywords user có thể nói trong query
+# Chart type keywords the user may include in the query
 _CHART_PREF_RULES = [
     (re.compile(r'line chart|biểu đồ đường|đường kẻ|dạng đường', re.IGNORECASE), "line"),
     (re.compile(r'area chart|biểu đồ vùng|dạng vùng', re.IGNORECASE),            "area"),
@@ -52,7 +54,12 @@ _CHART_PREF_RULES = [
 
 
 def _extract_chart_preference(question: str) -> str | None:
-    """Trả về chart type nếu user nêu rõ loại biểu đồ, ngược lại None."""
+    """
+    @brief Detect an explicit chart-type preference in the user's query string.
+
+    @param question  Raw or resolved user query.
+    @return          Chart type string (e.g. "line", "bar", "pie") or None if not specified.
+    """
     for pattern, ctype in _CHART_PREF_RULES:
         if pattern.search(question):
             return ctype
@@ -192,6 +199,29 @@ _OUT_OF_SCOPE_EN = (
     "• Career advice and learning roadmaps\n\n"
     "Ask me about IT jobs, skills, salaries, or hiring trends!"
 )
+
+_LEARNING_PATH_SYSTEM_PROMPT = """\
+You are an IT career coach with access to real Vietnam job market data from ITviec.
+
+LANGUAGE RULE: Respond in {lang}. No exceptions.
+
+You have received data on the most in-demand skills for a specific role, ranked by:
+- market_freq: % of job postings in the category requiring this skill
+- bridge_score: % of jobs requiring BOTH the user's known skills AND this new skill (0 if no known skills)
+
+OUTPUT FORMAT:
+**Lộ trình kỹ năng dựa trên dữ liệu thực tế — [total_jobs] job [role_category]**
+
+Numbered list (1–10). For each skill:
+**[N]. [Skill Name]** ([Skill Group]) — xuất hiện trong [market_freq]% job [role]
+
+After the list, 2–3 sentences: WHY the top skills rank high, and if bridge_score > 0,
+explain how they connect to the user's existing stack.
+
+RULES:
+- Only use percentages from the data — never invent numbers.
+- Do NOT start with "Based on", "Here are", "Dưới đây là", or any filler.\
+"""
 
 
 # ── Prompt builders ───────────────────────────────────────────────────────────
@@ -394,12 +424,14 @@ class RAGPipeline:
         self._vector_search   = HybridSearchService()
         self._sql_agent       = SQLAgentService()
         self._market_ctx      = MarketContextService()
+        self._learning_path   = LearningPathService()
         # Agentic RAG — shares all services already instantiated above
         self._agent = AgentService(
-            query_processor = self._query_processor,
-            vector_search   = self._vector_search,
-            sql_agent       = self._sql_agent,
-            market_ctx      = self._market_ctx,
+            query_processor   = self._query_processor,
+            vector_search     = self._vector_search,
+            sql_agent         = self._sql_agent,
+            market_ctx        = self._market_ctx,
+            learning_path_svc = self._learning_path,
         )
 
     def _generate(
@@ -434,6 +466,27 @@ class RAGPipeline:
         )
         return response.choices[0].message.content
 
+    def _extract_learning_path_intent(self, query: str) -> tuple[str, list[str]]:
+        """Extract target_role and known_skills from a learning path query via LLM."""
+        prompt = (
+            f'Extract from this message:\n'
+            f'Message: "{query}"\n'
+            'Return JSON with exactly: {"target_role": "...", "known_skills": ["...", ...]}\n'
+            'known_skills = skills the user already has (empty array if none mentioned).\n'
+            'Return ONLY valid JSON, no explanation.'
+        )
+        try:
+            resp = self._llm.chat.completions.create(
+                model=settings.openai_model,
+                max_tokens=150,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+            )
+            data = json.loads(resp.choices[0].message.content)
+            return data.get("target_role", ""), data.get("known_skills", [])
+        except Exception:
+            return query, []
+
     def _resolve_query(self, message: str, history: list[dict]) -> str:
         """
         @brief Rewrite a vague follow-up into a self-contained query using conversation context.
@@ -449,7 +502,7 @@ class RAGPipeline:
         if not history:
             return message
 
-        # Dùng toàn bộ history (store đã giới hạn _MAX_TURNS=10 tức 20 messages)
+        # Use full history (store caps at _MAX_TURNS=10 turns / 20 messages)
         context_lines = "\n".join(
             f"{m['role'].upper()}: {m['content'][:300]}" for m in history
         )
@@ -499,7 +552,7 @@ class RAGPipeline:
         history = history or []
         lang = _detect_lang(request.message)
 
-        # Check greeting/off-topic TRƯỚC khi resolve — tránh resolver rewrite "xin chào" → job query
+        # Check greeting/off-topic BEFORE resolve so greetings are not rewritten as job queries
         raw = request.message.strip()
         if is_greeting(raw):
             lang = _detect_lang(raw)
@@ -559,6 +612,35 @@ class RAGPipeline:
             answer = self._generate(prompt, _ANALYTICS_SYSTEM_PROMPT, lang, history)
             return ChatResponse(answer=answer, query_type=query_type,
                                 sql_query=sql_query, sql_result=sql_result, chart=chart)
+
+        if query_type == QueryType.learning_path:
+            target_role, known_skills = self._extract_learning_path_intent(resolved)
+            lp_result = None
+            if target_role:
+                lp_result = self._learning_path.analyze(target_role, known_skills)
+            if lp_result and lp_result.steps:
+                known_str = ", ".join(lp_result.known_skills) if lp_result.known_skills else "không có"
+                rows = "\n".join(
+                    f"{i}. {s.skill_name} [{s.skill_group}] "
+                    f"market={s.market_freq}% bridge={s.bridge_score}%"
+                    for i, s in enumerate(lp_result.steps, 1)
+                )
+                lp_prompt = (
+                    f"[LANG={lang}] User query: {resolved}\n\n"
+                    f"=== LEARNING PATH DATA ===\n"
+                    f"Target role: {lp_result.target_role} → category: {lp_result.role_category}\n"
+                    f"Total jobs analyzed: {lp_result.total_jobs}\n"
+                    f"User's known skills: {known_str}\n"
+                    f"Top skills to learn:\n{rows}\n"
+                    f"=== END DATA ===\n\n"
+                    "Present as a numbered learning roadmap. Explain why the top skills matter."
+                )
+                answer = self._generate(lp_prompt, _LEARNING_PATH_SYSTEM_PROMPT, lang, history)
+                return ChatResponse(answer=answer, query_type=query_type, learning_path=lp_result)
+            # Trino unavailable or no data — degrade gracefully to career_advice
+            prompt = f"[LANG={lang}] {resolved}"
+            answer = self._generate(prompt, _CAREER_ADVICE_SYSTEM_PROMPT, lang, history)
+            return ChatResponse(answer=answer, query_type=QueryType.career_advice)
 
         # career_advice
         prompt = f"[LANG={lang}] {request.message}"

@@ -180,9 +180,41 @@ async def match_cv(
             detail="Failed to process CV. Ensure the PDF contains readable text.",
         ) from exc
 
-    # ── 5-7. Hybrid search + annotation ───────────────────────────────────────
+    # ── 5. IT skill gate — cross-check against Gold dim_skill ────────────────────
+    # Use technical_skills (rule-filtered, pre-language-merge) NOT profile.skills,
+    # so "Vietnamese" / "English" cannot make a non-IT CV pass the gate.
+    # Processor already guarantees technical_skills is non-empty at this point
+    # (empty → ValueError → 422 above), so this gate targets hallucinated IT terms.
+    it_check = _get_skill_gap_analyzer().has_it_skills(profile.technical_skills)
+    if it_check is False:
+        # Definitive: Trino confirmed 0 skills match any IT skill in the corpus.
+        logger.warning(
+            "CV rejected (dim_skill gate): 0 IT skills found | name=%s | skills=%s",
+            profile.name or "unknown", profile.skills,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Không tìm thấy kỹ năng IT nào trong CV của bạn so với cơ sở dữ liệu "
+                "việc làm hiện tại. Hệ thống chỉ hỗ trợ hồ sơ IT "
+                "(lập trình, data, DevOps, v.v.)."
+            ),
+        )
+    # it_check is None → Trino unavailable, proceed without gate (non-blocking)
+
+    # ── 6-8. Hybrid search + annotation ──────────────────────────────────────
     try:
         matched_jobs = _get_matcher().match(profile, top_k=top_k)
+    except ValueError as exc:
+        # search_queries empty → LLM could not find IT-relevant skills in this CV
+        logger.warning("CV rejected — not an IT profile (no search queries): %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "CV của bạn không chứa đủ thông tin kỹ năng IT để tìm kiếm việc làm phù hợp. "
+                "Vui lòng tải lên CV ngành IT (lập trình, data, DevOps, v.v.)."
+            ),
+        ) from exc
     except Exception as exc:
         logger.error("CV matching error: %s", exc, exc_info=True)
         raise HTTPException(
@@ -197,32 +229,47 @@ async def match_cv(
 
     elapsed_ms = round((time.monotonic() - t0) * 1000)
 
+    _MIN_SCORE = 15.0  # below this threshold → likely non-IT or weak CV
+
     # ── 8. Build summary message ───────────────────────────────────────────────
     if matched_jobs:
-        top_ai        = matched_jobs[0]                                    # AI hybrid ranking
-        top_score     = max(matched_jobs, key=lambda j: j.match_score)    # highest skill match
+        top_ai        = matched_jobs[0]
+        top_score     = max(matched_jobs, key=lambda j: j.match_score)
+        best           = top_score.match_score
         role_hint     = profile.preferred_roles[0] if profile.preferred_roles else "IT"
         level_hint    = profile.level or "IT"
 
-        if top_ai.job_title == top_score.job_title:
-            # Cả 2 metrics đồng thuận → gộp 1 dòng
+        if best < _MIN_SCORE:
+            message = (
+                f"Tìm thấy {len(matched_jobs)} việc làm nhưng độ phù hợp rất thấp "
+                f"(cao nhất: {best:.0f}%). CV của bạn có thể không thuộc lĩnh vực IT "
+                "hoặc thiếu kỹ năng kỹ thuật cụ thể. "
+                "Hãy bổ sung các kỹ năng IT như ngôn ngữ lập trình, framework, công cụ."
+            )
+        elif top_ai.job_title == top_score.job_title:
             message = (
                 f"Tìm thấy {len(matched_jobs)} việc làm phù hợp với hồ sơ "
                 f"{level_hint} {role_hint} của bạn. "
-                f"Phù hợp nhất: {top_ai.job_title} ({top_score.match_score:.0f}% match)."
+                f"Phù hợp nhất: {top_ai.job_title} ({best:.0f}% match)."
             )
         else:
-            # 2 metrics khác nhau → giải thích rõ cả 2
             message = (
                 f"Tìm thấy {len(matched_jobs)} việc làm phù hợp với hồ sơ "
                 f"{level_hint} {role_hint} của bạn. "
                 f"AI gợi ý hàng đầu: {top_ai.job_title} ({top_ai.match_score:.0f}% match). "
-                f"Tỉ lệ kỹ năng cao nhất: {top_score.job_title} ({top_score.match_score:.0f}% match)."
+                f"Tỉ lệ kỹ năng cao nhất: {top_score.job_title} ({best:.0f}% match)."
             )
+    elif not profile.skills:
+        message = (
+            "CV của bạn không chứa kỹ năng IT nào được nhận diện. "
+            "Hãy đảm bảo CV thuộc lĩnh vực IT và liệt kê cụ thể các kỹ năng kỹ thuật "
+            "(ngôn ngữ lập trình, framework, công cụ, v.v.)."
+        )
     else:
         message = (
             "Không tìm thấy việc làm phù hợp trong cơ sở dữ liệu hiện tại. "
-            "Hãy thử cập nhật CV với nhiều kỹ năng kỹ thuật hơn."
+            "Kỹ năng trong CV của bạn có thể chưa khớp với các vị trí IT hiện có. "
+            "Hãy thử cập nhật CV với nhiều kỹ năng kỹ thuật cụ thể hơn."
         )
 
     logger.info(

@@ -30,6 +30,80 @@ from models.schemas import CVProfile
 
 logger = logging.getLogger(__name__)
 
+# ── PaddleOCR singleton (lazy init — model download happens on first call) ─────
+
+_ocr_engine = None
+
+
+def _get_ocr():
+    """
+    @brief Lazy-initialise the PaddleOCR 3.x engine (downloads models on first call).
+
+    Singleton — models (~300 MB) are loaded once per process. PaddleOCR 3.x
+    uses PaddleX under the hood; lang='en' selects the English recognition model.
+    """
+    global _ocr_engine
+    if _ocr_engine is None:
+        from paddleocr import PaddleOCR  # noqa: PLC0415
+        logger.info("Initialising PaddleOCR engine (first use — models may download).")
+        _ocr_engine = PaddleOCR(lang="en")
+        logger.info("PaddleOCR engine ready.")
+    return _ocr_engine
+
+
+def _ocr_pdf_pages(pdf_bytes: bytes) -> str:
+    """
+    @brief Extract text from a scanned / image-only PDF using PaddleOCR 3.x.
+
+    Pipeline per page:
+      1. Render the PDF page to a bitmap via PyMuPDF at 2× resolution (~300 DPI).
+      2. Convert the bitmap to a uint8 RGB numpy array.
+      3. Run PaddleOCR predict() on the array (3.x API).
+      4. Concatenate recognised text from rec_texts field.
+
+    @param pdf_bytes  Raw PDF file contents as bytes.
+    @return           Concatenated OCR text from all pages (pages separated by blank lines).
+    """
+    import fitz          # noqa: PLC0415 — lazy import, only used for scanned PDFs
+    import numpy as np   # noqa: PLC0415
+
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    parts: list[str] = []
+
+    try:
+        ocr = _get_ocr()
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            # 2× zoom → ~300 DPI for better character recognition on dense CVs
+            mat = fitz.Matrix(2.0, 2.0)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+
+            img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(
+                pix.height, pix.width, pix.n
+            )
+            if pix.n == 4:
+                img = img[:, :, :3]
+
+            # PaddleOCR 3.x API: predict() returns list[OCRResult]
+            # OCRResult['rec_texts'] → list[str], OCRResult['rec_scores'] → list[float]
+            result = ocr.predict(img)
+
+            if result and result[0]:
+                page_res = result[0]
+                texts = page_res.get("rec_texts", [])
+                scores = page_res.get("rec_scores", [])
+                lines = [
+                    t for t, s in zip(texts, scores)
+                    if t and t.strip() and s >= 0.5
+                ]
+                if lines:
+                    parts.append("\n".join(lines))
+                    logger.debug("OCR page %d: %d lines", page_num + 1, len(lines))
+    finally:
+        doc.close()
+
+    return "\n\n".join(parts)
+
 # ── LLM prompt ────────────────────────────────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
@@ -60,9 +134,15 @@ EXTRACTION RULES:
   Examples: "English (IELTS 6.0)", "English (TOEIC 800)", "Vietnamese (Native)", "Japanese (N3)".
   If the CV lists English under Soft Skills or Certifications without a score, still extract it.
   NEVER leave this empty if the CV mentions any language or language certification.
-- experience_years: total professional years as integer. 0 for fresh graduates / students.
-- level: infer from years + job titles (0 yr → intern or fresher, <1 yr → junior,
-  1-3 → junior, 3-6 → mid, 6-10 → senior, 10+ → lead).
+- experience_years: count ONLY paid professional roles — full-time jobs, part-time jobs,
+  internships at companies. Student projects, coursework, thesis work, university
+  competitions, and personal side-projects do NOT count as experience.
+  Set 0 for anyone currently enrolled as a student with no company work history.
+- level: derive strictly from experience_years, do NOT use job title keywords to override.
+  0 yr (student, no company experience) → "fresher".
+  0 yr but CV explicitly seeks internship → "intern".
+  > 0 and < 1 yr → "fresher".
+  1–3 yr → "junior". 3–6 yr → "mid". 6–10 yr → "senior". 10+ yr → "lead".
 - preferred_roles: job title categories in English. Infer from past titles and skills. Max 5.
 - preferred_locations: only if explicitly stated in the CV; otherwise [].
 - summary_text: MUST mention top 5 skills, level, years of experience, and target role type.
@@ -70,6 +150,85 @@ EXTRACTION RULES:
   "Junior Backend Developer with 1 year of experience in Java, Spring Boot, MySQL, JavaScript, and Python.
    Looking for backend or software engineering roles in HCM."
 """
+
+# ── Rule-based skill validator ────────────────────────────────────────────────
+# Blacklist: soft skills, personality traits, and generic phrases that the LLM
+# might erroneously include when instructed to extract technical skills.
+# Kept intentionally broad; the dim_skill gate provides the final authoritative check.
+
+_SOFT_SKILL_BLACKLIST: frozenset[str] = frozenset({
+    # Personality / attitude
+    "hard working", "hardworking", "fast learner", "quick learner", "self motivated",
+    "self-motivated", "proactive", "detail oriented", "detail-oriented", "creative",
+    "passionate", "dedicated", "responsible", "reliable", "flexible", "adaptable",
+    "punctual", "honest", "discipline", "critical thinking", "analytical",
+    # Interpersonal
+    "communication", "teamwork", "team work", "team player", "collaboration",
+    "interpersonal", "presentation", "negotiation", "leadership", "mentoring",
+    "coaching", "conflict resolution", "active listening",
+    # Generic work skills
+    "problem solving", "problem-solving", "time management", "multitasking",
+    "organization", "planning", "decision making", "decision-making",
+    "project management", "risk management", "attention to detail",
+    # Vietnamese soft skills
+    "kỹ năng giao tiếp", "làm việc nhóm", "kỹ năng thuyết trình",
+    "tư duy phân tích", "giải quyết vấn đề", "quản lý thời gian",
+    "chủ động", "sáng tạo", "trách nhiệm", "cẩn thận", "tỉ mỉ",
+    # Non-skill labels
+    "microsoft office", "office", "word", "excel", "powerpoint",
+})
+
+# Minimum token length to be a plausible technical skill name
+_MIN_SKILL_LEN = 1  # "R", "C", "Go" are valid
+
+
+def _is_technical_skill(skill: str) -> bool:
+    """
+    @brief Rule-based check: is this string plausibly a technical IT skill?
+
+    Two-pass filter:
+      1. Blacklist — reject known soft-skill phrases.
+      2. Heuristic — keep anything that looks like a tool, language, or framework
+         name (has uppercase acronym, digits, dots, slashes, +, #, etc.).
+         Single-word all-lowercase entries < 3 chars are also kept (Go, R, C).
+
+    @param skill  Raw skill string from LLM.
+    @return       True if the skill should be kept in the technical list.
+    """
+    normalized = skill.strip().lower()
+    if not normalized or len(normalized) < _MIN_SKILL_LEN:
+        return False
+    if normalized in _SOFT_SKILL_BLACKLIST:
+        return False
+    # Reject pure generic long phrases (>4 words, all lowercase, no digits/special)
+    words = normalized.split()
+    if len(words) > 4:
+        return False
+    if len(words) > 2 and normalized == normalized.lower() and not any(
+        c in normalized for c in "0123456789.+#/-_@"
+    ):
+        return False
+    return True
+
+
+def _clean_extracted_skills(skills: list[str]) -> list[str]:
+    """
+    @brief Apply rule-based filter to the LLM-extracted skill list.
+
+    @param skills  Raw list from LLM (may contain soft skills or hallucinations).
+    @return        Filtered list containing only plausible technical skill names.
+    """
+    cleaned = [s for s in skills if _is_technical_skill(s)]
+    removed = len(skills) - len(cleaned)
+    if removed:
+        logger.info(
+            "Rule-based skill filter: %d removed, %d kept. "
+            "Removed: %s",
+            removed, len(cleaned),
+            [s for s in skills if not _is_technical_skill(s)],
+        )
+    return cleaned
+
 
 # ── Text helpers ───────────────────────────────────────────────────────────────
 
@@ -94,21 +253,28 @@ def _clean(raw: str) -> str:
 
 def _extract_pdf_text(pdf_bytes: bytes) -> str:
     """
-    @brief Extract plain text from a PDF using pdfplumber.
+    @brief Extract plain text from a PDF.
+
+    Tries pdfplumber first (fast, accurate for text-layer PDFs).  Falls back to
+    PaddleOCR when pdfplumber yields no text — this handles scanned / image-only
+    PDFs transparently without requiring the user to re-export their CV.
 
     @param pdf_bytes  Raw PDF file contents as bytes.
     @return           Concatenated text from all pages.
-    @throws ValueError  If the PDF has no pages, exceeds 20 pages, or contains no readable text.
+    @throws ValueError  If the PDF has no pages, exceeds 20 pages, or is unreadable
+                        even after OCR.
     """
     parts: list[str] = []
+    page_count: int = 0
 
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-            if len(pdf.pages) == 0:
+            page_count = len(pdf.pages)
+            if page_count == 0:
                 raise ValueError("PDF has no pages.")
-            if len(pdf.pages) > 20:
+            if page_count > 20:
                 raise ValueError(
-                    f"PDF has {len(pdf.pages)} pages. Please upload a CV (max 20 pages)."
+                    f"PDF has {page_count} pages. Please upload a CV (max 20 pages)."
                 )
             for i, page in enumerate(pdf.pages, 1):
                 text = page.extract_text(x_tolerance=3, y_tolerance=3)
@@ -120,15 +286,34 @@ def _extract_pdf_text(pdf_bytes: bytes) -> str:
     except Exception as exc:
         raise ValueError(f"Could not open PDF: {exc}") from exc
 
-    if not parts:
+    if parts:
+        raw = "\n\n".join(parts)
+        logger.info("PDF extracted (pdfplumber): %d chars, %d page(s).", len(raw), page_count)
+        return raw
+
+    # ── OCR fallback ───────────────────────────────────────────────────────────
+    logger.info(
+        "pdfplumber found no text on %d page(s) — falling back to PaddleOCR.", page_count
+    )
+    try:
+        ocr_text = _ocr_pdf_pages(pdf_bytes)
+    except Exception as exc:
+        logger.error("PaddleOCR failed: %s", exc, exc_info=True)
         raise ValueError(
-            "No readable text found in this PDF. "
-            "The file may be a scanned image — please use a text-based PDF."
+            "Could not extract text from this PDF. "
+            "The file appears to be a scanned image but OCR also failed. "
+            "Please try re-exporting your CV as a text-based PDF."
+        ) from exc
+
+    if not ocr_text.strip():
+        raise ValueError(
+            "No text could be recognised in this PDF after OCR. "
+            "Please ensure the scan is clear and try again, "
+            "or re-export your CV as a text-based PDF."
         )
 
-    raw = "\n\n".join(parts)
-    logger.info("PDF extracted: %d chars, %d page(s).", len(raw), len(parts))
-    return raw
+    logger.info("PDF extracted (PaddleOCR): %d chars, %d page(s).", len(ocr_text), page_count)
+    return ocr_text
 
 
 # ── Query builder ──────────────────────────────────────────────────────────────
@@ -233,14 +418,50 @@ class CVProcessor:
         # 4. LLM extraction
         profile = self._summarize(clean)
 
-        # 5. Merge languages into skills so the skill gap analyzer can compare them
+        # 5. Rule-based skill filter — strip soft skills / hallucinated phrases
+        #    before level normalization and language merge so those steps see
+        #    only plausible technical terms.
+        profile.skills = _clean_extracted_skills(profile.skills)
+
+        # 6. Hard gate: if zero technical skills survive the rule filter, reject now.
+        #    This runs before language merge so "Vietnamese" / "English" cannot
+        #    rescue a non-IT CV.  No Trino needed — purely local, instant.
+        if not profile.skills:
+            logger.warning(
+                "CV rejected (rule gate): 0 technical skills after filter. "
+                "name=%s | education=%s",
+                profile.name or "unknown", profile.education or "?",
+            )
+            raise ValueError(
+                "CV của bạn không chứa kỹ năng IT kỹ thuật nào được nhận diện "
+                "(ngôn ngữ lập trình, framework, công cụ, database, cloud, v.v.). "
+                "Hệ thống chỉ hỗ trợ hồ sơ thuộc lĩnh vực Công nghệ Thông tin."
+            )
+
+        # 7. Deterministic level override — prevents LLM from inflating level
+        #    (e.g. calling a student "junior" because they listed "Python Programmer" as title).
+        corrected = _normalize_level(profile.experience_years, profile.level)
+        if corrected != profile.level:
+            logger.info(
+                "Level corrected: LLM='%s' → rule='%s' (experience_years=%s)",
+                profile.level, corrected, profile.experience_years,
+            )
+        profile.level = corrected
+
+        # 8. Snapshot technical skills BEFORE language merge — used by the
+        #    dim_skill gate in the router so languages like "Vietnamese" (which
+        #    may exist in dim_skill as a soft requirement in job postings) cannot
+        #    make a non-IT CV pass the gate.
+        profile.technical_skills = list(profile.skills)
+
+        # 9. Merge languages into skills so the skill gap analyzer can compare them
         #    against market requirements (e.g. "English" appears in 23% of job postings).
         for lang in profile.languages:
             lang_clean = lang.split("(")[0].strip()   # "English (IELTS 6.0)" → "English"
             if lang_clean and lang_clean.lower() not in {s.lower() for s in profile.skills}:
                 profile.skills.append(lang_clean)
 
-        # 6. Build search queries
+        # 9. Build search queries
         profile.search_queries = _build_search_queries(profile)
 
         logger.info(
@@ -311,3 +532,40 @@ def _safe_int(val) -> Optional[int]:
         return int(val)
     except (TypeError, ValueError):
         return None
+
+
+_VALID_LEVELS = {"intern", "fresher", "junior", "mid", "senior", "lead"}
+
+
+def _normalize_level(experience_years: Optional[int], llm_level: Optional[str]) -> str:
+    """
+    @brief Deterministically derive the seniority level from professional experience years.
+
+    The LLM is instructed to set this correctly but may hallucinate (e.g. inferring
+    "junior" from a title keyword for a student with 0 real experience). This function
+    overrides any LLM error with a rule-based mapping so the displayed level is always
+    consistent with the reported experience.
+
+    Special case: if the LLM explicitly said "intern" AND experience_years == 0,
+    keep "intern" since that signals the candidate is actively seeking an internship.
+
+    @param experience_years  Professional years from LLM (may be None).
+    @param llm_level         Level string from LLM (may be None or invalid).
+    @return                  Normalised level string.
+    """
+    yrs = experience_years if isinstance(experience_years, int) else 0
+
+    if yrs == 0:
+        # Preserve "intern" if the LLM explicitly chose it; default to "fresher"
+        if llm_level == "intern":
+            return "intern"
+        return "fresher"
+    if yrs < 1:
+        return "fresher"
+    if yrs <= 3:
+        return "junior"
+    if yrs <= 6:
+        return "mid"
+    if yrs <= 10:
+        return "senior"
+    return "lead"

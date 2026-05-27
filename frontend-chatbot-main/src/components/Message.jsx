@@ -7,6 +7,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ChartRenderer from "./ChartRenderer";
+import LearningPathCard from "./LearningPathCard";
 import MarketInsightCard from "./MarketInsightCard";
 
 /**
@@ -112,6 +113,9 @@ function Message({ message }) {
         )}
         {isBot && message.marketInsight && (
           <MarketInsightCard insight={message.marketInsight} />
+        )}
+        {isBot && message.learningPath && (
+          <LearningPathCard learningPath={message.learningPath} />
         )}
 
         <span className="text-xs text-gray-400 mt-1 block">

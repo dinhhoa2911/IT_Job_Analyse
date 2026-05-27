@@ -82,7 +82,12 @@ _LEVEL_PENALTY: dict[int, float] = {
 
 
 def _detect_job_level(job_title: str) -> int | None:
-    """Return the seniority rank detected from a job title, or None if ambiguous."""
+    """
+    @brief Detect the seniority rank of a job posting from its title.
+
+    @param job_title  Job title string (matched case-insensitively).
+    @return           Integer rank (0=intern … 4=lead), or None if no keyword matches.
+    """
     title_lower = job_title.lower()
     for rank, keywords in _JOB_LEVEL_KW:
         if any(kw in title_lower for kw in keywords):
@@ -92,9 +97,13 @@ def _detect_job_level(job_title: str) -> int | None:
 
 def _level_penalty(candidate_level: str | None, job_title: str) -> float:
     """
-    Return a score multiplier in (0, 1] based on the gap between
-    the candidate's seniority and the job's seniority.
-    A gap of 0 or negative (over-qualified) has no penalty.
+    @brief Compute a score multiplier based on the seniority gap between candidate and job.
+
+    A zero or negative gap (candidate overqualified) returns 1.0 (no penalty).
+
+    @param candidate_level  Seniority string from CVProfile (e.g. "junior", "senior"), or None.
+    @param job_title        Job title string used to infer the job's seniority rank.
+    @return                 Multiplier in (0, 1] — 1.0 means no penalty.
     """
     if not candidate_level:
         return 1.0

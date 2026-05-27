@@ -1,6 +1,6 @@
 """
 @file query_classifier.py
-@brief LLM-based query classifier với multi-layer fast-path detection.
+@brief LLM-based query classifier with multi-layer fast-path detection.
 
 Priority order:
   1. Greeting / casual / off-topic fast-path → out_of_scope  (no LLM)
@@ -21,9 +21,8 @@ from models.schemas import QueryType
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. Greeting / casual fast-path
-#    Lời chào, filler words, cảm ơn, tạm biệt, nonsense → out_of_scope ngay.
-#    Phải check TRƯỚC resolve_query để tránh bị rewrite thành job query.
+# 1. Greeting / casual fast-path — greetings, filler, thanks, nonsense → out_of_scope.
+#    Checked before resolve_query so greetings are never rewritten as job queries.
 # ─────────────────────────────────────────────────────────────────────────────
 _GREETING_RE = re.compile(
     r"^\s*("
@@ -70,7 +69,7 @@ _GREETING_RE = re.compile(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. IT keyword set — dùng để check short message có liên quan IT không
+# 2. IT keyword set — used to decide whether a short message relates to IT
 # ─────────────────────────────────────────────────────────────────────────────
 _IT_KEYWORD_RE = re.compile(
     r"\b(job|việc|tuyển|lương|salary|wage|skill|kỹ năng|công ty|company|employer"
@@ -101,12 +100,22 @@ _CHART_RE = re.compile(
 
 
 def is_greeting(text: str) -> bool:
-    """Public helper — dùng trong rag_pipeline để check TRƯỚC resolve_query."""
+    """
+    @brief Return True if the text matches the greeting/casual fast-path pattern.
+
+    @param text  Raw user message string.
+    @return      True when the message is a greeting, filler, or off-topic casual text.
+    """
     return bool(_GREETING_RE.match(text.strip()))
 
 
 def is_short_off_topic(text: str) -> bool:
-    """Message ngắn (< 8 từ) mà không có từ khóa IT → out_of_scope."""
+    """
+    @brief Return True for short messages (< 8 words) with no IT-domain keywords.
+
+    @param text  Raw user message string.
+    @return      True when the message is short and contains no IT vocabulary.
+    """
     words = text.strip().split()
     if len(words) >= 8:
         return False
@@ -143,9 +152,20 @@ forecast
           "số lượng job Data sẽ thay đổi thế nào?",
           "trend tuyển dụng AI trong tương lai"
 
+learning_path
+  Người dùng NÊU RÕ kỹ năng họ ĐÃ CÓ và hỏi cần học thêm gì để đạt được VỊ TRÍ CỤ THỂ.
+  Từ khóa: "tao biết X muốn vào Y", "có X + Y muốn làm Z", "biết X cần học gì để Z",
+           "I know X, want to become Y", "skill gap for role Z with X experience".
+  Ví dụ: "tao biết Python + SQL, muốn vào Data Engineer",
+          "có React + JavaScript, cần học gì để Senior Frontend?",
+          "Java + Spring Boot, muốn làm Backend senior thiếu gì?",
+          "tôi biết Docker + Linux, muốn vào DevOps cần thêm gì"
+  LƯU Ý: Chỉ dùng khi người dùng NÊU RÕ kỹ năng đã có.
+          Nếu họ chỉ hỏi chung "nên học gì để làm X" → dùng career_advice.
+
 career_advice
-  Người dùng hỏi về ĐỊNH HƯỚNG NGHỀ NGHIỆP, LỘ TRÌNH HỌC, hoặc câu hỏi
-  liên quan đến ngành CNTT/tuyển dụng nhưng không cần tìm job hay thống kê.
+  Người dùng hỏi về ĐỊNH HƯỚNG NGHỀ NGHIỆP, LỘ TRÌNH HỌC CHUNG, hoặc câu hỏi
+  liên quan đến ngành CNTT/tuyển dụng nhưng KHÔNG nêu kỹ năng đã có.
   Ví dụ: "nên học gì để làm backend", "roadmap frontend 2024",
           "fresher Java cần biết những gì", "sự khác nhau giữa DevOps và SRE",
           "học Data Science mất bao lâu", "kinh nghiệm 2 năm lương bao nhiêu là ổn"
@@ -155,7 +175,7 @@ out_of_scope
   Bao gồm: lời chào, cảm ơn, tạm biệt, thời tiết, nấu ăn, thể thao, chính trị,
            câu hỏi ngắn vô nghĩa, tin nhắn thử nghiệm.
 
-Chỉ trả lời ĐÚNG MỘT từ: search_job, analytics, forecast, career_advice, out_of_scope.
+Chỉ trả lời ĐÚNG MỘT từ: search_job, analytics, forecast, learning_path, career_advice, out_of_scope.
 Không giải thích, không dấu câu."""
 
 
@@ -176,12 +196,12 @@ class QueryClassifier:
             logger.info("Fast-path [chart]: '%s' → analytics", stripped[:60])
             return QueryType.analytics
 
-        # ── Layer 4: Short message without IT keywords ─────────────────────────
+        # ── Layer 3: Short message without IT keywords ─────────────────────────
         if is_short_off_topic(stripped):
             logger.info("Fast-path [short-off-topic]: '%s' → out_of_scope", stripped[:50])
             return QueryType.out_of_scope
 
-        # ── Layer 5: LLM classifier ────────────────────────────────────────────
+        # ── Layer 4: LLM classifier ────────────────────────────────────────────
         try:
             response = self._client.chat.completions.create(
                 model=settings.openai_model,

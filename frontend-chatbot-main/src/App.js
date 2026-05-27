@@ -180,8 +180,12 @@ function App() {
   const [theme, setTheme]               = useState(localStorage.getItem("theme") || "system");
   const [isLoading, setIsLoading]       = useState(false);
   const [isSpeaking, setIsSpeaking]     = useState(false);
-  // {boolean} Whether the "new chat" confirm popup is visible (for guests)
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  // Pending new conversation — exists in UI but NOT yet in sidebar/localStorage.
+  // Committed to conversations[] only when the user sends the first message.
+  const [pendingConv, setPendingConv] = useState(null);
+  const pendingConvRef = useRef(null);
+  useEffect(() => { pendingConvRef.current = pendingConv; }, [pendingConv]);
 
   // Load the right conversation history whenever auth state changes
   const [conversations, setConversations] = useState(() => loadConversations(key));
@@ -258,7 +262,8 @@ function App() {
     }
   }, [theme]);
 
-  const activeConv = conversations.find((c) => c.active) || conversations[0];
+  // pendingConv takes priority — it's the "empty new chat" before first message
+  const activeConv = pendingConv || conversations.find((c) => c.active) || conversations[0];
   const messages = activeConv?.messages || [];
 
   // Ref so handleSendMessage always sees the latest activeConv without re-subscribing
@@ -287,22 +292,24 @@ function App() {
         timestamp: new Date().toISOString(),
       };
 
-      // Auto-title the conversation from the first user message
       const isFirstMessage = conv.messages.length === 0;
       const newTitle = isFirstMessage
         ? text.slice(0, 40) + (text.length > 40 ? "…" : "")
         : null;
 
-      setConversations((prev) =>
-        prev.map((c) => {
-          if (!c.active) return c;
-          return {
-            ...c,
-            title: newTitle || c.title,
-            messages: [...c.messages, userMessage],
-          };
-        })
-      );
+      if (pendingConvRef.current) {
+        // First message on a pending conv → commit it to sidebar now
+        const committed = { ...conv, active: true, title: newTitle || conv.title, messages: [userMessage] };
+        setPendingConv(null);
+        setConversations((prev) => [committed, ...prev.map((c) => ({ ...c, active: false }))]);
+      } else {
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (!c.active) return c;
+            return { ...c, title: newTitle || c.title, messages: [...c.messages, userMessage] };
+          })
+        );
+      }
       setIsLoading(true);
 
       try {
@@ -332,6 +339,7 @@ function App() {
           charts: data.charts?.length > 0 ? data.charts : (data.chart ? [data.chart] : []),
           chart: data.chart || null,
           marketInsight: data.market_insight || null,
+          learningPath: data.learning_path || null,
         };
 
         setConversations((prev) =>
@@ -385,12 +393,15 @@ function App() {
    */
   /** Actually creates a new blank conversation (shared by the direct path and the modal confirm). */
   const createNewConversation = useCallback(() => {
-    setConversations((prev) => {
-      const current = prev.find((c) => c.active);
-      if (current && current.messages.length === 0) return prev;
-      return [makeNewConversation(), ...prev.map((c) => ({ ...c, active: false }))];
-    });
-  }, []);
+    // Already on a blank pending chat — no-op
+    if (pendingConvRef.current) return;
+    const current = conversations.find((c) => c.active);
+    // Already on an empty saved conversation — no-op
+    if (current && current.messages.length === 0) return;
+    // Deactivate all, set pending — sidebar unchanged until first message
+    setConversations((prev) => prev.map((c) => ({ ...c, active: false })));
+    setPendingConv(makeNewConversation());
+  }, [conversations]);
 
   const handleNewConversation = useCallback(() => {
     const current = conversations.find((c) => c.active);
@@ -411,6 +422,7 @@ function App() {
    * @returns {void}
    */
   const handleSelectConversation = useCallback((id) => {
+    setPendingConv(null);
     setConversations((prev) =>
       prev.map((c) => ({ ...c, active: c.id === id }))
     );

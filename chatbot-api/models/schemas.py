@@ -20,12 +20,12 @@ class QueryType(str, Enum):
 
     Each value maps to a distinct retrieval strategy inside RAGPipeline.run().
     """
-    search_job    = "search_job"
-    analytics     = "analytics"
-
-    agent         = "agent"         # Agentic RAG — LLM selected multiple tools
-    career_advice = "career_advice"
-    out_of_scope  = "out_of_scope"
+    search_job     = "search_job"
+    analytics      = "analytics"
+    agent          = "agent"          # Agentic RAG — LLM selected multiple tools
+    career_advice  = "career_advice"
+    learning_path  = "learning_path"  # Data-driven skill learning roadmap (Gold layer)
+    out_of_scope   = "out_of_scope"
 
 
 class ChatRequest(BaseModel):
@@ -82,14 +82,55 @@ class ChatResponse(BaseModel):
       - agent         → any combination; charts[] may contain multiple Chart.js specs.
       - career_advice / out_of_scope → only ``answer`` and ``query_type`` are set.
     """
-    answer:         str
-    query_type:     QueryType
-    jobs:           Optional[list[JobResult]]  = None
-    sql_query:      Optional[str]              = None
-    sql_result:     Optional[list[dict]]       = None
-    chart:          Optional[dict]             = None
-    charts:         list[dict]                 = Field(default_factory=list)
-    market_insight: Optional[MarketInsight]    = None
+    answer:              str
+    query_type:          QueryType
+    jobs:                Optional[list[JobResult]]       = None
+    sql_query:           Optional[str]                   = None
+    sql_result:          Optional[list[dict]]            = None
+    chart:               Optional[dict]                  = None
+    charts:              list[dict]                      = Field(default_factory=list)
+    market_insight:      Optional[MarketInsight]         = None
+    learning_path:       Optional["LearningPathResult"]  = None
+
+
+# ── Learning Path schemas ─────────────────────────────────────────────────────
+
+class LearningPathStep(BaseModel):
+    """
+    @class LearningPathStep
+    @brief A single skill recommended in the learning roadmap.
+
+    ``market_freq``  = % of target-category jobs requiring this skill.
+    ``bridge_score`` = % of target-category jobs that require BOTH the user's
+                       known skills AND this skill — measures how well the skill
+                       connects to what the user already knows.
+    ``rank_score``   = 0.6 × market_freq + 0.4 × bridge_score (composite ranking).
+    """
+    skill_name:   str
+    skill_group:  str
+    market_freq:  float  = Field(..., description="% of target-category jobs requiring this skill")
+    bridge_score: float  = Field(..., description="% of target-category jobs needing known_skills + this skill")
+    rank_score:   float  = Field(..., description="Composite score: 0.6×market_freq + 0.4×bridge_score")
+    market_count: int    = Field(..., description="Raw count of distinct job postings requiring this skill")
+
+
+class LearningPathResult(BaseModel):
+    """
+    @class LearningPathResult
+    @brief Data-driven skill learning roadmap from the Gold lakehouse.
+
+    ``steps`` are ordered by rank_score descending — learn step[0] first.
+    When ``known_skills`` is empty, bridge_score is 0 for all steps and
+    ranking falls back to market_freq only.
+    """
+    target_role:   str            = Field(..., description="Target role as stated by the user")
+    role_category: str            = Field(..., description="Gold dim_job_category name inferred from target_role")
+    total_jobs:    int            = Field(..., description="Total distinct jobs in the role category")
+    known_skills:  list[str]      = Field(default_factory=list, description="Skills the user already has")
+    steps:         list[LearningPathStep] = Field(
+        default_factory=list,
+        description="Top-10 skills to learn next, sorted by rank_score descending"
+    )
 
 
 # ── Skill Gap schemas ─────────────────────────────────────────────────────────
@@ -118,16 +159,18 @@ class SkillGapAnalysis(BaseModel):
 
     ``cv_coverage_score`` = (# of top-15 market skills found in CV) / 15 × 100
     ``present_skills``    = CV skills that appear in market's top-15
-    ``missing_skills``    = top-10 market skills absent from the CV (sorted by frequency)
-    ``all_market_skills`` = top-15 market skills for the inferred role category
+    ``missing_skills``    = top-10 most in-demand skills absent from the CV, sorted by
+                            market_frequency descending — these are the skills the candidate
+                            should prioritise learning to improve their market fit.
+    ``all_market_skills`` = top-15 market skills for the inferred role category (for chart)
     """
-    role_category:        str               # Gold dim_job_category name
-    total_jobs_analyzed:  int               # total distinct jobs for this category
-    cv_coverage_score:    float             # 0–100 coverage percentage
-    cv_skill_count:       int               # total skills in the CV
-    present_skills:       list[str]         # CV skills matching market top-15
-    missing_skills:       list[SkillGap]    # top-10 market skills not in CV
-    all_market_skills:    list[SkillGap]    # top-15 market skills (for chart)
+    role_category:        str   = Field(..., description="Job category inferred from your CV (from Gold dim_job_category — reflects actual market data, not hard-coded names)")
+    total_jobs_analyzed:  int   = Field(..., description="Total distinct job postings analysed for this category")
+    cv_coverage_score:    float = Field(..., description="Percentage of top-15 market skills already present in your CV (0–100)")
+    cv_skill_count:       int   = Field(..., description="Total number of skills extracted from your CV")
+    present_skills:       list[str]      = Field(default_factory=list, description="Your CV skills that already appear in the market's top-15 — strengths to highlight")
+    missing_skills:       list[SkillGap] = Field(default_factory=list, description="Top 10 most in-demand skills NOT found in your CV, sorted by market demand (highest first) — these are the skills you should learn/enhance to maximise job opportunities")
+    all_market_skills:    list[SkillGap] = Field(default_factory=list, description="Top-15 market skills for this category (used for radar/bar charts)")
 
 
 # ── CV Matching schemas ────────────────────────────────────────────────────────
@@ -152,6 +195,9 @@ class CVProfile(BaseModel):
     education:           Optional[str]       = None
     summary_text:        str                 = ""     # LLM-generated search anchor
     search_queries:      list[str]           = Field(default_factory=list)
+    # Snapshot of rule-filtered technical skills BEFORE language merge.
+    # Used by the dim_skill gate so languages ("Vietnamese") cannot mask a non-IT CV.
+    technical_skills:    list[str]           = Field(default_factory=list)
 
 
 class MatchedJob(BaseModel):

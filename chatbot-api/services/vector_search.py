@@ -59,7 +59,7 @@ def _tokenize(text: str) -> list[str]:
     """
     text = text.lower()
 
-    # Tách tại ranh giới Việt / ASCII
+    # Split at Vietnamese / ASCII boundaries
     segments = re.split(r'([a-z0-9][a-z0-9\s\.\+\#]*[a-z0-9]|[a-z0-9]+)', text)
 
     tokens = []
@@ -69,11 +69,11 @@ def _tokenize(text: str) -> list[str]:
             continue
 
         if _HAS_VIET.search(seg) and _HAS_UNDERTHESEA:
-            # Tiếng Việt → underthesea ghép từ ghép đúng
+            # Vietnamese segment — use underthesea for correct compound-word segmentation
             segmented = _viet_tokenize(seg, format="text")
             tokens.extend(_TOKENS.findall(segmented))
         else:
-            # ASCII → regex thẳng, không rủi ro
+            # ASCII segment — direct regex tokenization
             tokens.extend(_TOKENS.findall(seg))
 
     return [t for t in tokens if len(t) > 1]
@@ -374,9 +374,10 @@ class HybridSearchService:
 
     def warmup(self) -> None:
         """
-        Pre-load all models and build the BM25 index at startup.
-        Call this from the FastAPI lifespan to avoid cold-start latency
-        on the first user request.
+        @brief Pre-load all models and build the BM25 index during application startup.
+
+        Call from the FastAPI lifespan context manager to eliminate cold-start
+        latency on the first user request (~5-10 s otherwise).
         """
         logger.info("Warming up HybridSearchService...")
         self._get_encoder()
