@@ -1,0 +1,992 @@
+[2026-05-21T06:48:47.057+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-05-21T06:48:47.095+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-05-20T02:00:00+00:00 [queued]>
+[2026-05-21T06:48:47.106+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-05-20T02:00:00+00:00 [queued]>
+[2026-05-21T06:48:47.106+0000] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2026-05-21T06:48:47.120+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): crawl_data> on 2026-05-20 02:00:00+00:00
+[2026-05-21T06:48:47.125+0000] {standard_task_runner.py:72} INFO - Started process 99 to run task
+[2026-05-21T06:48:47.129+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'crawl_data', 'scheduled__2026-05-20T02:00:00+00:00', '--job-id', '216', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpwsbqfmlx']
+[2026-05-21T06:48:47.130+0000] {standard_task_runner.py:105} INFO - Job 216: Subtask crawl_data
+[2026-05-21T06:48:47.156+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2026-05-21T06:48:47.273+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-05-20T02:00:00+00:00 [running]> on host 64b3786bead1
+[2026-05-21T06:48:47.274+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2026-05-21T06:48:47.443+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='hoa856856@gmail.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='crawl_data' AIRFLOW_CTX_EXECUTION_DATE='2026-05-20T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-05-20T02:00:00+00:00'
+[2026-05-21T06:48:47.445+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2026-05-21T06:48:47.472+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2026-05-21T06:48:47.473+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', 'docker exec spark-submit bash -c "xvfb-run -a python3 /opt/spark/scripts/Crawl_Data.py"']
+[2026-05-21T06:48:47.486+0000] {subprocess.py:99} INFO - Output:
+[2026-05-21T06:48:48.924+0000] {subprocess.py:106} INFO -  Bắt đầu crawl ITviec...
+[2026-05-21T06:49:39.652+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:49:39.653+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 1 ---
+[2026-05-21T06:49:47.123+0000] {subprocess.py:106} INFO -  Trang 1 - Job 1/20 | Engineering Director (B2B SaaS)
+[2026-05-21T06:49:47.332+0000] {subprocess.py:106} INFO -  Trang 1 - Job 2/20 | Senior Cloud Engineer
+[2026-05-21T06:49:47.469+0000] {subprocess.py:106} INFO -  Trang 1 - Job 3/20 | Manual Tester (Fresher/Junior)
+[2026-05-21T06:49:47.578+0000] {subprocess.py:106} INFO -  Trang 1 - Job 4/20 | Monitoring Team Lead
+[2026-05-21T06:49:47.783+0000] {subprocess.py:106} INFO -  Trang 1 - Job 5/20 | Lead QC Engineer (Automation & Gen AI)
+[2026-05-21T06:49:47.903+0000] {subprocess.py:106} INFO -  Trang 1 - Job 6/20 | Viettel - Chuyên gia phát triển phần mềm
+[2026-05-21T06:49:48.060+0000] {subprocess.py:106} INFO -  Trang 1 - Job 7/20 | Viettel - Nhân viên phát triển phần mềm
+[2026-05-21T06:49:48.189+0000] {subprocess.py:106} INFO -  Trang 1 - Job 8/20 | Project Manager (Tech)
+[2026-05-21T06:49:48.318+0000] {subprocess.py:106} INFO -  Trang 1 - Job 9/20 | Middle/ Senior AI Engineer
+[2026-05-21T06:49:48.460+0000] {subprocess.py:106} INFO -  Trang 1 - Job 10/20 | Website Developer Manager (PHP Technical Lead
+[2026-05-21T06:49:48.611+0000] {subprocess.py:106} INFO -  Trang 1 - Job 11/20 | Business Analyst (Tiếng Trung)-Khối Công nghệ
+[2026-05-21T06:49:48.777+0000] {subprocess.py:106} INFO -  Trang 1 - Job 12/20 | Remote AI Engineer (Deep Learning Algorithm/
+[2026-05-21T06:49:48.922+0000] {subprocess.py:106} INFO -  Trang 1 - Job 13/20 | Senior Site Reliability Engineer
+[2026-05-21T06:49:49.089+0000] {subprocess.py:106} INFO -  Trang 1 - Job 14/20 | [Hybrid] Senior Game Developer
+[2026-05-21T06:49:49.480+0000] {subprocess.py:106} INFO -  Trang 1 - Job 15/20 | Java API Engineer (Java, AWS)
+[2026-05-21T06:49:49.675+0000] {subprocess.py:106} INFO -  Trang 1 - Job 16/20 | Mobile Developer - Flutter
+[2026-05-21T06:49:49.849+0000] {subprocess.py:106} INFO -  Trang 1 - Job 17/20 | Automation QA Engineer (QA QC/Tester/Automati
+[2026-05-21T06:49:50.010+0000] {subprocess.py:106} INFO -  Trang 1 - Job 18/20 | Frontend Developer (UV chuẩn bị ra trường)
+[2026-05-21T06:49:50.157+0000] {subprocess.py:106} INFO -  Trang 1 - Job 19/20 | Kỹ Sư Vận Hành (Devops Engineer)
+[2026-05-21T06:49:50.326+0000] {subprocess.py:106} INFO -  Trang 1 - Job 20/20 | AI-Augmented Software Engineer (.NET & AI Age
+[2026-05-21T06:49:51.923+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:49:51.923+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 2 ---
+[2026-05-21T06:49:56.002+0000] {subprocess.py:106} INFO -  Trang 2 - Job 1/20 | Bridge Software Engineer (onsite Ho Chi Minh
+[2026-05-21T06:49:56.174+0000] {subprocess.py:106} INFO -  Trang 2 - Job 2/20 | Senior Java Software Engineer (Spring & Azure
+[2026-05-21T06:49:56.386+0000] {subprocess.py:106} INFO -  Trang 2 - Job 3/20 | Senior/Principal .NET Software Engineer
+[2026-05-21T06:49:56.622+0000] {subprocess.py:106} INFO -  Trang 2 - Job 4/20 | Remote Fullstack Developer (Python/VueJS, Typ
+[2026-05-21T06:49:56.755+0000] {subprocess.py:106} INFO -  Trang 2 - Job 5/20 | Tech Architecture & Solutions
+[2026-05-21T06:49:56.858+0000] {subprocess.py:106} INFO -  Trang 2 - Job 6/20 | Jr/Sr Full-stack (.NET & ReactJS/Angular) Eng
+[2026-05-21T06:49:56.962+0000] {subprocess.py:106} INFO -  Trang 2 - Job 7/20 | Frontend Developer (Vuex, HTML, Pinia)
+[2026-05-21T06:49:57.074+0000] {subprocess.py:106} INFO -  Trang 2 - Job 8/20 | Frontend Engineer (Vue.js & Design Focus)
+[2026-05-21T06:49:57.199+0000] {subprocess.py:106} INFO -  Trang 2 - Job 9/20 | Senior Platform Engineer
+[2026-05-21T06:49:57.320+0000] {subprocess.py:106} INFO -  Trang 2 - Job 10/20 | Product Manager (Civil/Mechanical background,
+[2026-05-21T06:49:57.452+0000] {subprocess.py:106} INFO -  Trang 2 - Job 11/20 | HO - Quản Lý Rủi Ro Công Nghệ Thông Tin (Risk
+[2026-05-21T06:49:57.634+0000] {subprocess.py:106} INFO -  Trang 2 - Job 12/20 | DevOps Lead/ Manager (Strong AWS)
+[2026-05-21T06:49:57.836+0000] {subprocess.py:106} INFO -  Trang 2 - Job 13/20 | Site Reliability Engineer (Docker/ Kubernetes
+[2026-05-21T06:49:58.009+0000] {subprocess.py:106} INFO -  Trang 2 - Job 14/20 | Senior Manager/ Senior Delivery Manager (Japa
+[2026-05-21T06:49:58.182+0000] {subprocess.py:106} INFO -  Trang 2 - Job 15/20 | TMO - Giám Đốc Giải Pháp Kiến Trúc (Solution
+[2026-05-21T06:49:58.390+0000] {subprocess.py:106} INFO -  Trang 2 - Job 16/20 | Enterprise Integration Architect Manager (IA
+[2026-05-21T06:49:58.588+0000] {subprocess.py:106} INFO -  Trang 2 - Job 17/20 | Remote - Senior/Lead QA Engineer (API, DB, Pl
+[2026-05-21T06:49:58.838+0000] {subprocess.py:106} INFO -  Trang 2 - Job 18/20 | Senior .Net Developer
+[2026-05-21T06:49:59.097+0000] {subprocess.py:106} INFO -  Trang 2 - Job 19/20 | Middle Manual QC Engineer
+[2026-05-21T06:49:59.322+0000] {subprocess.py:106} INFO -  Trang 2 - Job 20/20 | Staff Engineer
+[2026-05-21T06:50:00.639+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:50:00.641+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 3 ---
+[2026-05-21T06:50:07.052+0000] {subprocess.py:106} INFO -  Trang 3 - Job 1/20 | Senior AI Engineer (Computer Vision/NLP/LLM)
+[2026-05-21T06:50:07.204+0000] {subprocess.py:106} INFO -  Trang 3 - Job 2/20 | Senior AI Expert (Machine Learning, Deep Lear
+[2026-05-21T06:50:07.371+0000] {subprocess.py:106} INFO -  Trang 3 - Job 3/20 | AI Expert (Computer Vision/NLP/LLM)
+[2026-05-21T06:50:07.541+0000] {subprocess.py:106} INFO -  Trang 3 - Job 4/20 | AI Engineer (Fresher, Ứng viên chuẩn bị tốt n
+[2026-05-21T06:50:07.732+0000] {subprocess.py:106} INFO -  Trang 3 - Job 5/20 | AI Software Engineer (Python/Go/C/C++ & AI Ag
+[2026-05-21T06:50:07.901+0000] {subprocess.py:106} INFO -  Trang 3 - Job 6/20 | Agentic Engineer (Python/Go/C/C++ Backend & A
+[2026-05-21T06:50:08.219+0000] {subprocess.py:106} INFO -  Trang 3 - Job 7/20 | AI Engineer (Computer Vision/NLP/LLM)
+[2026-05-21T06:50:08.450+0000] {subprocess.py:106} INFO -  Trang 3 - Job 8/20 | [Junior, Senior] BackEnd Engineer (Java, Go)-
+[2026-05-21T06:50:08.634+0000] {subprocess.py:106} INFO -  Trang 3 - Job 9/20 | Principal QC Engineer
+[2026-05-21T06:50:08.813+0000] {subprocess.py:106} INFO -  Trang 3 - Job 10/20 | Java Backend Developer (Oracle, MySQL)
+[2026-05-21T06:50:09.043+0000] {subprocess.py:106} INFO -  Trang 3 - Job 11/20 | Senior AI Engineer (Agentic AI, MLOps)
+[2026-05-21T06:50:09.321+0000] {subprocess.py:106} INFO -  Trang 3 - Job 12/20 | Senior QC (Automation Tester, QA QC)
+[2026-05-21T06:50:09.532+0000] {subprocess.py:106} INFO -  Trang 3 - Job 13/20 | (Senior) DataOps Engineer
+[2026-05-21T06:50:09.661+0000] {subprocess.py:106} INFO -  Trang 3 - Job 14/20 | IT Business Development Executive (English)
+[2026-05-21T06:50:09.816+0000] {subprocess.py:106} INFO -  Trang 3 - Job 15/20 | (Middle/Senior) Full-stack Engineer (Backend
+[2026-05-21T06:50:10.040+0000] {subprocess.py:106} INFO -  Trang 3 - Job 16/20 | Senior React Native Developer (Fluent English
+[2026-05-21T06:50:10.354+0000] {subprocess.py:106} INFO -  Trang 3 - Job 17/20 | Senior/ Leader QA Tester (ERP, API, SQL, NoSQ
+[2026-05-21T06:50:10.530+0000] {subprocess.py:106} INFO -  Trang 3 - Job 18/20 | AI Engineer (NLP, Python, PyTorch)_All level
+[2026-05-21T06:50:10.641+0000] {subprocess.py:106} INFO -  Trang 3 - Job 19/20 | Mid/Senior Fullstack Engineer (Python)
+[2026-05-21T06:50:10.747+0000] {subprocess.py:106} INFO -  Trang 3 - Job 20/20 | Manual Tester / QC Engineer (QA QC)
+[2026-05-21T06:50:12.565+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:50:12.566+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 4 ---
+[2026-05-21T06:50:17.299+0000] {subprocess.py:106} INFO -  Trang 4 - Job 1/20 | Fullstack Engineer (Prompt Engineer) - Java,
+[2026-05-21T06:50:17.446+0000] {subprocess.py:106} INFO -  Trang 4 - Job 2/20 | PMO Manager / Project Management Office Manag
+[2026-05-21T06:50:17.641+0000] {subprocess.py:106} INFO -  Trang 4 - Job 3/20 | IT Governance
+[2026-05-21T06:50:17.761+0000] {subprocess.py:106} INFO -  Trang 4 - Job 4/20 | Senior IT System Administrator (MS 365 / Azur
+[2026-05-21T06:50:17.949+0000] {subprocess.py:106} INFO -  Trang 4 - Job 5/20 | Senior Data Architect ( Big Data, Data Wareho
+[2026-05-21T06:50:18.078+0000] {subprocess.py:106} INFO -  Trang 4 - Job 6/20 | QA Engineer (Manual/ Automation) - Upto $3000
+[2026-05-21T06:50:18.202+0000] {subprocess.py:106} INFO -  Trang 4 - Job 7/20 | DevOps Engineer (AWS Cloud, Linux/Unix)
+[2026-05-21T06:50:18.380+0000] {subprocess.py:106} INFO -  Trang 4 - Job 8/20 | CV Quản trị hệ thống (Unix/Linux)
+[2026-05-21T06:50:18.542+0000] {subprocess.py:106} INFO -  Trang 4 - Job 9/20 | Senior Mobile Apps Engineer (Cross-Platform)
+[2026-05-21T06:50:18.714+0000] {subprocess.py:106} INFO -  Trang 4 - Job 10/20 | Middle/Junior Software Developer (Java/Golang
+[2026-05-21T06:50:18.890+0000] {subprocess.py:106} INFO -  Trang 4 - Job 11/20 | DevOps Engineer (Java, Golang, JavaScript lan
+[2026-05-21T06:50:19.089+0000] {subprocess.py:106} INFO -  Trang 4 - Job 12/20 | Senior Java Software Engineer (AWS, Acting Le
+[2026-05-21T06:50:19.267+0000] {subprocess.py:106} INFO -  Trang 4 - Job 13/20 | Backend Dev (Java Spring Boot) – Open for rel
+[2026-05-21T06:50:19.414+0000] {subprocess.py:106} INFO -  Trang 4 - Job 14/20 | [Da Nang] Agile Delivery Manager
+[2026-05-21T06:50:19.559+0000] {subprocess.py:106} INFO -  Trang 4 - Job 15/20 | Senior Data Engineer
+[2026-05-21T06:50:19.683+0000] {subprocess.py:106} INFO -  Trang 4 - Job 16/20 | Operation Engineer (Devops, Linux, AWS)
+[2026-05-21T06:50:19.834+0000] {subprocess.py:106} INFO -  Trang 4 - Job 17/20 | Expert QA Engineer (Playwright) (Relocate to
+[2026-05-21T06:50:19.987+0000] {subprocess.py:106} INFO -  Trang 4 - Job 18/20 | Trưởng nhóm Computer Vision/AI Engineer (PyTo
+[2026-05-21T06:50:20.131+0000] {subprocess.py:106} INFO -  Trang 4 - Job 19/20 | AI Engineer (.NET / ASP.NET / LLM - Trainable
+[2026-05-21T06:50:20.261+0000] {subprocess.py:106} INFO -  Trang 4 - Job 20/20 | Business Analyst (Agile/Scrum)
+[2026-05-21T06:50:21.682+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:50:21.683+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 5 ---
+[2026-05-21T06:50:24.750+0000] {subprocess.py:106} INFO -  Trang 5 - Job 1/20 | Data Architect - Data Division
+[2026-05-21T06:50:24.881+0000] {subprocess.py:106} INFO -  Trang 5 - Job 2/20 | QA Manager (Leadership, Tester, English)
+[2026-05-21T06:50:24.998+0000] {subprocess.py:106} INFO -  Trang 5 - Job 3/20 | Appication Ops/Vận hành ứng dụng (T24, Paymen
+[2026-05-21T06:50:25.142+0000] {subprocess.py:106} INFO -  Trang 5 - Job 4/20 | Senior Full-Stack Engineer (Java, ReactJS, Ja
+[2026-05-21T06:50:25.299+0000] {subprocess.py:106} INFO -  Trang 5 - Job 5/20 | DevOps/Developer Experience Engineer (English
+[2026-05-21T06:50:25.500+0000] {subprocess.py:106} INFO -  Trang 5 - Job 6/20 | Lead AI Engineer
+[2026-05-21T06:50:25.670+0000] {subprocess.py:106} INFO -  Trang 5 - Job 7/20 | C# Developer (AI-First)
+[2026-05-21T06:50:25.846+0000] {subprocess.py:106} INFO -  Trang 5 - Job 8/20 | Middle Software Engineer (C++, Azure, SQL)
+[2026-05-21T06:50:25.980+0000] {subprocess.py:106} INFO -  Trang 5 - Job 9/20 | Senior Data Security - Data Division
+[2026-05-21T06:50:26.132+0000] {subprocess.py:106} INFO -  Trang 5 - Job 10/20 | Data Quality Management Specialist - Data Div
+[2026-05-21T06:50:26.288+0000] {subprocess.py:106} INFO -  Trang 5 - Job 11/20 | Middle/Senior QC Engineer (QA QC, Tester)
+[2026-05-21T06:50:26.512+0000] {subprocess.py:106} INFO -  Trang 5 - Job 12/20 | Backend Developer (Java, Golang, NodeJS)
+[2026-05-21T06:50:26.700+0000] {subprocess.py:106} INFO -  Trang 5 - Job 13/20 | Digital Application Developer (NodeJS/.NET co
+[2026-05-21T06:50:26.905+0000] {subprocess.py:106} INFO -  Trang 5 - Job 14/20 | Senior/Principal Golang Engineer
+[2026-05-21T06:50:27.031+0000] {subprocess.py:106} INFO -  Trang 5 - Job 15/20 | [Đà Nẵng] Senior/Leader AI Engineer (Machine
+[2026-05-21T06:50:27.141+0000] {subprocess.py:106} INFO -  Trang 5 - Job 16/20 | Senior Database Administrator (Oracle/Postgre
+[2026-05-21T06:50:27.770+0000] {subprocess.py:106} INFO -  Trang 5 - Job 17/20 | Principal Architect (AI)
+[2026-05-21T06:50:28.242+0000] {subprocess.py:106} INFO -  Trang 5 - Job 18/20 | Tech Lead (MDM, Golang, Java, IOS)
+[2026-05-21T06:50:28.243+0000] {subprocess.py:106} INFO -  Trang 5 - Job 19/20 | Development Support Engineer (IT Support, Pyt
+[2026-05-21T06:50:28.244+0000] {subprocess.py:106} INFO -  Trang 5 - Job 20/20 | Data Engineer (Python,MySQL)
+[2026-05-21T06:50:29.196+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:50:29.197+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 6 ---
+[2026-05-21T06:50:32.336+0000] {subprocess.py:106} INFO -  Trang 6 - Job 1/20 | Data Engineer (Python,MySQL)
+[2026-05-21T06:50:32.474+0000] {subprocess.py:106} INFO -  Trang 6 - Job 2/20 | Senior Embedded Software C++ Developer
+[2026-05-21T06:50:32.635+0000] {subprocess.py:106} INFO -  Trang 6 - Job 3/20 | Product Owner
+[2026-05-21T06:50:32.868+0000] {subprocess.py:106} INFO -  Trang 6 - Job 4/20 | Senior Product Owner (Business Analyst)
+[2026-05-21T06:50:33.099+0000] {subprocess.py:106} INFO -  Trang 6 - Job 5/20 | Project Manager (AI, Kanban, Scrum, Agile, En
+[2026-05-21T06:50:33.223+0000] {subprocess.py:106} INFO -  Trang 6 - Job 6/20 | Senior Consultant, Engineer - BEB
+[2026-05-21T06:50:33.386+0000] {subprocess.py:106} INFO -  Trang 6 - Job 7/20 | Fullstack Developer
+[2026-05-21T06:50:33.547+0000] {subprocess.py:106} INFO -  Trang 6 - Job 8/20 | Senior/Lead Fullstack Engineer (Reactjs base)
+[2026-05-21T06:50:33.708+0000] {subprocess.py:106} INFO -  Trang 6 - Job 9/20 | Senior Data Scientist (SQL, Python, Spark)
+[2026-05-21T06:50:33.893+0000] {subprocess.py:106} INFO -  Trang 6 - Job 10/20 | Senior Fullstack Engineer (Java base)
+[2026-05-21T06:50:34.051+0000] {subprocess.py:106} INFO -  Trang 6 - Job 11/20 | 20 Java Deverloper (Spring Boot, Angular, HTM
+[2026-05-21T06:50:34.199+0000] {subprocess.py:106} INFO -  Trang 6 - Job 12/20 | Nhân viên Kế hoạch dự án
+[2026-05-21T06:50:34.386+0000] {subprocess.py:106} INFO -  Trang 6 - Job 13/20 | Fullstack Developer (Python/ Golang/ C++)
+[2026-05-21T06:50:34.774+0000] {subprocess.py:106} INFO -  Trang 6 - Job 14/20 | URGENT - Senior Shopify Dev: Integrations & P
+[2026-05-21T06:50:34.969+0000] {subprocess.py:106} INFO -  Trang 6 - Job 15/20 | Senior Data Integration
+[2026-05-21T06:50:35.201+0000] {subprocess.py:106} INFO -  Trang 6 - Job 16/20 | Senior Performance Test Engineer
+[2026-05-21T06:50:35.365+0000] {subprocess.py:106} INFO -  Trang 6 - Job 17/20 | Backend Engineer (Golang) từ 4 năm kinh nghiệ
+[2026-05-21T06:50:35.598+0000] {subprocess.py:106} INFO -  Trang 6 - Job 18/20 | Project Manager (Product/Outsource)
+[2026-05-21T06:50:35.967+0000] {subprocess.py:106} INFO -  Trang 6 - Job 19/20 | 3 C# / .NET Sr Developers - up to $3000
+[2026-05-21T06:50:36.162+0000] {subprocess.py:106} INFO -  Trang 6 - Job 20/20 | Software Engineer (React-Native)
+[2026-05-21T06:50:40.603+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:50:40.631+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 7 ---
+[2026-05-21T06:50:48.022+0000] {subprocess.py:106} INFO -  Trang 7 - Job 1/20 | DevOps Engineer (AWS, Cloud)
+[2026-05-21T06:50:48.192+0000] {subprocess.py:106} INFO -  Trang 7 - Job 2/20 | 2 C# / .NET Technial Team Lead - up to $3000
+[2026-05-21T06:50:48.334+0000] {subprocess.py:106} INFO -  Trang 7 - Job 3/20 | IT Business Analyst Presales (BA Presales)
+[2026-05-21T06:50:48.528+0000] {subprocess.py:106} INFO -  Trang 7 - Job 4/20 | Senior Japanese Speaking Test Engineer (N2/N1
+[2026-05-21T06:50:48.699+0000] {subprocess.py:106} INFO -  Trang 7 - Job 5/20 | Quality Control Engineer (Senior/Lead)
+[2026-05-21T06:50:48.884+0000] {subprocess.py:106} INFO -  Trang 7 - Job 6/20 | Senior Technical Project Management
+[2026-05-21T06:50:49.193+0000] {subprocess.py:106} INFO -  Trang 7 - Job 7/20 | Mid/Sr Software Developer (C, SQL, JavaScript
+[2026-05-21T06:50:49.394+0000] {subprocess.py:106} INFO -  Trang 7 - Job 8/20 | Software & System Support Engineer
+[2026-05-21T06:50:49.594+0000] {subprocess.py:106} INFO -  Trang 7 - Job 9/20 | Junior Business Analyst-Chuyên viên Phân tích
+[2026-05-21T06:50:49.783+0000] {subprocess.py:106} INFO -  Trang 7 - Job 10/20 | Expert/ Senior Officer, AI Engineer
+[2026-05-21T06:50:49.954+0000] {subprocess.py:106} INFO -  Trang 7 - Job 11/20 | Java Developer (Java 17+, Spring Boot)
+[2026-05-21T06:50:50.108+0000] {subprocess.py:106} INFO -  Trang 7 - Job 12/20 | QC Engineer (Tester/QA QC) for Web - Up to 15
+[2026-05-21T06:50:50.279+0000] {subprocess.py:106} INFO -  Trang 7 - Job 13/20 | Software Engineer (AI Coding Agent/.Net/Java)
+[2026-05-21T06:50:50.607+0000] {subprocess.py:106} INFO -  Trang 7 - Job 14/20 | Senior PHP Software Engineer (SaaS product)
+[2026-05-21T06:50:50.833+0000] {subprocess.py:106} INFO -  Trang 7 - Job 15/20 | Senior Data Analyst (SQL, Cloud Data, Data mo
+[2026-05-21T06:50:51.016+0000] {subprocess.py:106} INFO -  Trang 7 - Job 16/20 | Solution Architect (Microservices, Java, SQL)
+[2026-05-21T06:50:51.209+0000] {subprocess.py:106} INFO -  Trang 7 - Job 17/20 | Senior Backend Engineer (Golang)
+[2026-05-21T06:50:51.382+0000] {subprocess.py:106} INFO -  Trang 7 - Job 18/20 | IT Security & Network Engineer
+[2026-05-21T06:50:51.550+0000] {subprocess.py:106} INFO -  Trang 7 - Job 19/20 | Senior IT Infrastructure Engineer
+[2026-05-21T06:50:51.757+0000] {subprocess.py:106} INFO -  Trang 7 - Job 20/20 | IT Internal Auditor
+[2026-05-21T06:50:53.355+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:50:53.355+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 8 ---
+[2026-05-21T06:51:00.399+0000] {subprocess.py:106} INFO -  Trang 8 - Job 1/20 | Database Administrator (SQL, PostgreSQL, Mari
+[2026-05-21T06:51:00.598+0000] {subprocess.py:106} INFO -  Trang 8 - Job 2/20 | Data Analyst - onsite tại thủ đô Vientiane, L
+[2026-05-21T06:51:00.754+0000] {subprocess.py:106} INFO -  Trang 8 - Job 3/20 | Project Leader – Japanese Communication
+[2026-05-21T06:51:00.989+0000] {subprocess.py:106} INFO -  Trang 8 - Job 4/20 | Mainframe Technical Lead (COBOL/JCL/DB2) – Up
+[2026-05-21T06:51:01.187+0000] {subprocess.py:106} INFO -  Trang 8 - Job 5/20 | C# Developer (Rhino / Grasshopper / Revit Plu
+[2026-05-21T06:51:01.366+0000] {subprocess.py:106} INFO -  Trang 8 - Job 6/20 | Chuyên Gia Quản Trị Cơ Sở Dữ Liệu (DBA)
+[2026-05-21T06:51:01.571+0000] {subprocess.py:106} INFO -  Trang 8 - Job 7/20 | AI-Native Associate Product Manager (Japanese
+[2026-05-21T06:51:01.774+0000] {subprocess.py:106} INFO -  Trang 8 - Job 8/20 | Security Operations (SecOps/SOC)
+[2026-05-21T06:51:01.941+0000] {subprocess.py:106} INFO -  Trang 8 - Job 9/20 | Product Designer (UI/UX/AI)
+[2026-05-21T06:51:02.125+0000] {subprocess.py:106} INFO -  Trang 8 - Job 10/20 | Senior Manager (Japanese Speaking)
+[2026-05-21T06:51:02.467+0000] {subprocess.py:106} INFO -  Trang 8 - Job 11/20 | Project Manager
+[2026-05-21T06:51:02.468+0000] {subprocess.py:106} INFO -  Trang 8 - Job 12/20 | Senior Backend Engineer (Java/ Spring Boot)
+[2026-05-21T06:51:02.596+0000] {subprocess.py:106} INFO -  Trang 8 - Job 13/20 | Solution Designer
+[2026-05-21T06:51:03.745+0000] {subprocess.py:106} INFO -  Trang 8 - Job 14/20 | Nhân Viên Kỹ Thuật (Systems Engineer)
+[2026-05-21T06:51:03.920+0000] {subprocess.py:106} INFO -  Trang 8 - Job 15/20 | Senior System Engineer (Linux, Windows Server
+[2026-05-21T06:51:04.044+0000] {subprocess.py:106} INFO -  Trang 8 - Job 16/20 | Senior Backend Engineer (Java/Kotlin/Spring)
+[2026-05-21T06:51:04.179+0000] {subprocess.py:106} INFO -  Trang 8 - Job 17/20 | Mid/Senior Microsoft AI / Power Platform Deve
+[2026-05-21T06:51:04.321+0000] {subprocess.py:106} INFO -  Trang 8 - Job 18/20 | Lead Java Engineer
+[2026-05-21T06:51:04.492+0000] {subprocess.py:106} INFO -  Trang 8 - Job 19/20 | Middle/Senior Java Engineer
+[2026-05-21T06:51:04.605+0000] {subprocess.py:106} INFO -  Trang 8 - Job 20/20 | Automation Test Engineer (Python, Embedded)
+[2026-05-21T06:51:06.495+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:51:06.496+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 9 ---
+[2026-05-21T06:51:12.621+0000] {subprocess.py:106} INFO -  Trang 9 - Job 1/20 | Delivery Lead (Technical Project Manager)
+[2026-05-21T06:51:12.999+0000] {subprocess.py:106} INFO -  Trang 9 - Job 2/20 | Senior Security Engineer
+[2026-05-21T06:51:13.210+0000] {subprocess.py:106} INFO -  Trang 9 - Job 3/20 | Lead Solution Architect
+[2026-05-21T06:51:13.343+0000] {subprocess.py:106} INFO -  Trang 9 - Job 4/20 | Senior AIOps/MLOps Engineer - Nexus
+[2026-05-21T06:51:13.537+0000] {subprocess.py:106} INFO -  Trang 9 - Job 5/20 | Fullstack Developer | PHP | Python | JavaScri
+[2026-05-21T06:51:13.723+0000] {subprocess.py:106} INFO -  Trang 9 - Job 6/20 | Windows Application Developer (Qt, C++, OOP)~
+[2026-05-21T06:51:13.955+0000] {subprocess.py:106} INFO -  Trang 9 - Job 7/20 | Fullstack Software Engineer (TypeScript, GenA
+[2026-05-21T06:51:14.136+0000] {subprocess.py:106} INFO -  Trang 9 - Job 8/20 | Senior/Lead Fullstack Developer
+[2026-05-21T06:51:14.275+0000] {subprocess.py:106} INFO -  Trang 9 - Job 9/20 | Senior Backend Engineer
+[2026-05-21T06:51:14.453+0000] {subprocess.py:106} INFO -  Trang 9 - Job 10/20 | DevOps Engineer (Kubernetes, AWS, CI/CD)
+[2026-05-21T06:51:14.616+0000] {subprocess.py:106} INFO -  Trang 9 - Job 11/20 | Senior AI Engineer
+[2026-05-21T06:51:14.794+0000] {subprocess.py:106} INFO -  Trang 9 - Job 12/20 | Agentic AI Developer (Python, Prompt Engineer
+[2026-05-21T06:51:14.955+0000] {subprocess.py:106} INFO -  Trang 9 - Job 13/20 | Analytics Engineer (Advanced SQL, Python, Dat
+[2026-05-21T06:51:15.081+0000] {subprocess.py:106} INFO -  Trang 9 - Job 14/20 | Scrum Master
+[2026-05-21T06:51:15.208+0000] {subprocess.py:106} INFO -  Trang 9 - Job 15/20 | Quality Assurance Engineer
+[2026-05-21T06:51:15.351+0000] {subprocess.py:106} INFO -  Trang 9 - Job 16/20 | Business Analyst
+[2026-05-21T06:51:15.535+0000] {subprocess.py:106} INFO -  Trang 9 - Job 17/20 | (HCM) (Senior) Data Engineer
+[2026-05-21T06:51:15.705+0000] {subprocess.py:106} INFO -  Trang 9 - Job 18/20 | Solution Architect (AWS, Azure, GCP, ERP, TOG
+[2026-05-21T06:51:15.920+0000] {subprocess.py:106} INFO -  Trang 9 - Job 19/20 | Senior .NET Engineer - 24Hr Campaign
+[2026-05-21T06:51:16.057+0000] {subprocess.py:106} INFO -  Trang 9 - Job 20/20 | Android Developer (Kotlin / MVVM)
+[2026-05-21T06:51:17.885+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:51:17.888+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 10 ---
+[2026-05-21T06:51:23.176+0000] {subprocess.py:106} INFO -  Trang 10 - Job 1/20 | Senior/Principal QA Hybrid (manual, automatio
+[2026-05-21T06:51:23.323+0000] {subprocess.py:106} INFO -  Trang 10 - Job 2/20 | Senior Project Manager/Program Manager (RTE)
+[2026-05-21T06:51:23.530+0000] {subprocess.py:106} INFO -  Trang 10 - Job 3/20 | Automation Tester (QA Engineer)
+[2026-05-21T06:51:23.733+0000] {subprocess.py:106} INFO -  Trang 10 - Job 4/20 | Android Developer (Middle - Senior) - Up to $
+[2026-05-21T06:51:23.909+0000] {subprocess.py:106} INFO -  Trang 10 - Job 5/20 | Solution Architect/ Technical Lead (Java/Gola
+[2026-05-21T06:51:24.093+0000] {subprocess.py:106} INFO -  Trang 10 - Job 6/20 | [Ho Chi Minh] QA Engineer
+[2026-05-21T06:51:24.265+0000] {subprocess.py:106} INFO -  Trang 10 - Job 7/20 | IT Core Banking Developer
+[2026-05-21T06:51:24.412+0000] {subprocess.py:106} INFO -  Trang 10 - Job 8/20 | IT Digital Banking Developer (Java/API)
+[2026-05-21T06:51:24.541+0000] {subprocess.py:106} INFO -  Trang 10 - Job 9/20 | Enterprise Architecture (Quản Trị Kiến Trúc)
+[2026-05-21T06:51:24.686+0000] {subprocess.py:106} INFO -  Trang 10 - Job 10/20 | Giám đốc thiết kế & quản lý trải nghiệm số -
+[2026-05-21T06:51:24.826+0000] {subprocess.py:106} INFO -  Trang 10 - Job 11/20 | IT Business Analyst (T24, banking, finance)
+[2026-05-21T06:51:24.981+0000] {subprocess.py:106} INFO -  Trang 10 - Job 12/20 | Software Engineer (C++, Embedded)
+[2026-05-21T06:51:25.162+0000] {subprocess.py:106} INFO -  Trang 10 - Job 13/20 | Devops Manager (Cloud, Scurity)
+[2026-05-21T06:51:25.316+0000] {subprocess.py:106} INFO -  Trang 10 - Job 14/20 | IT Business Analysis Partner Expert
+[2026-05-21T06:51:25.491+0000] {subprocess.py:106} INFO -  Trang 10 - Job 15/20 | Solution Architect (Java, Backbase)
+[2026-05-21T06:51:25.617+0000] {subprocess.py:106} INFO -  Trang 10 - Job 16/20 | Automation Tester (QA QC)
+[2026-05-21T06:51:25.793+0000] {subprocess.py:106} INFO -  Trang 10 - Job 17/20 | DevSecOps (Jenkins, gitlab)
+[2026-05-21T06:51:25.967+0000] {subprocess.py:106} INFO -  Trang 10 - Job 18/20 | Chuyên Viên Vận Hành Ứng Dụng (Appops/ Window
+[2026-05-21T06:51:26.197+0000] {subprocess.py:106} INFO -  Trang 10 - Job 19/20 | Data Platform Operations (Database, Oracle)
+[2026-05-21T06:51:27.332+0000] {subprocess.py:106} INFO -  Trang 10 - Job 20/20 | AI Engineer (Python, Microservices, Docker)
+[2026-05-21T06:51:28.203+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:51:28.204+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 11 ---
+[2026-05-21T06:51:31.279+0000] {subprocess.py:106} INFO -  Trang 11 - Job 1/20 | Senior/Lead QA Engineer (QE, QC, Automation)
+[2026-05-21T06:51:31.470+0000] {subprocess.py:106} INFO -  Trang 11 - Job 2/20 | Storage System Engineer (Cloud, Redhat)
+[2026-05-21T06:51:31.599+0000] {subprocess.py:106} INFO -  Trang 11 - Job 3/20 | Network Security Engineer
+[2026-05-21T06:51:31.721+0000] {subprocess.py:106} INFO -  Trang 11 - Job 4/20 | Server Infrastructure Engineer (Windows Serve
+[2026-05-21T06:51:31.855+0000] {subprocess.py:106} INFO -  Trang 11 - Job 5/20 | Infrastructure Security Engineer II - Cloud &
+[2026-05-21T06:51:32.015+0000] {subprocess.py:106} INFO -  Trang 11 - Job 6/20 | Senior UX Engineer
+[2026-05-21T06:51:32.469+0000] {subprocess.py:106} INFO -  Trang 11 - Job 7/20 | System Engineer (Windows, Linux, VMware)
+[2026-05-21T06:51:32.736+0000] {subprocess.py:106} INFO -  Trang 11 - Job 8/20 | Data Backup & Recovery Engineer (VMware & Win
+[2026-05-21T06:51:32.912+0000] {subprocess.py:106} INFO -  Trang 11 - Job 9/20 | System Administrator (Azure, IT Support, Netw
+[2026-05-21T06:51:33.066+0000] {subprocess.py:106} INFO -  Trang 11 - Job 10/20 | Cloud Engineer (AWS, Terraform, DevOps, Ansib
+[2026-05-21T06:51:33.213+0000] {subprocess.py:106} INFO -  Trang 11 - Job 11/20 | Senior Microsoft D365 F&O Developer - 24Hr Ca
+[2026-05-21T06:51:33.494+0000] {subprocess.py:106} INFO -  Trang 11 - Job 12/20 | Senior Application Operations (Vận hành ứng d
+[2026-05-21T06:51:33.674+0000] {subprocess.py:106} INFO -  Trang 11 - Job 13/20 | Data Annotation
+[2026-05-21T06:51:33.840+0000] {subprocess.py:106} INFO -  Trang 11 - Job 14/20 | Senior Mobile Application Engineer (Android/i
+[2026-05-21T06:51:34.021+0000] {subprocess.py:106} INFO -  Trang 11 - Job 15/20 | Senior Fullstack Developer (Java, Angular)
+[2026-05-21T06:51:34.188+0000] {subprocess.py:106} INFO -  Trang 11 - Job 16/20 | Security Solution Architect (Networking, ZTNA
+[2026-05-21T06:51:34.359+0000] {subprocess.py:106} INFO -  Trang 11 - Job 17/20 | Information Security Engineer (Patching , Eng
+[2026-05-21T06:51:34.538+0000] {subprocess.py:106} INFO -  Trang 11 - Job 18/20 | IT Support Analyst – Level 1 to Level 3
+[2026-05-21T06:51:34.727+0000] {subprocess.py:106} INFO -  Trang 11 - Job 19/20 | Senior/Middle Backend Engineer (Java, Docker,
+[2026-05-21T06:51:34.987+0000] {subprocess.py:106} INFO -  Trang 11 - Job 20/20 | AI Engineer (Middle/Senior/Leader)
+[2026-05-21T06:51:36.454+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:51:36.455+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 12 ---
+[2026-05-21T06:51:39.850+0000] {subprocess.py:106} INFO -  Trang 12 - Job 1/20 | AI Engineer (Middle/Senior/Leader)
+[2026-05-21T06:51:40.024+0000] {subprocess.py:106} INFO -  Trang 12 - Job 2/20 | Senior Front-end Developer (NextJS/ReactJS)
+[2026-05-21T06:51:40.181+0000] {subprocess.py:106} INFO -  Trang 12 - Job 3/20 | Senior Backend Developer (PHP, Laravel, MySQL
+[2026-05-21T06:51:40.369+0000] {subprocess.py:106} INFO -  Trang 12 - Job 4/20 | Solution Architect - Salary Up to $5000
+[2026-05-21T06:51:40.535+0000] {subprocess.py:106} INFO -  Trang 12 - Job 5/20 | Backend .NET Developer (Microservices/API)
+[2026-05-21T06:51:40.647+0000] {subprocess.py:106} INFO -  Trang 12 - Job 6/20 | (HN) Expert/Manager Software Engineering
+[2026-05-21T06:51:40.775+0000] {subprocess.py:106} INFO -  Trang 12 - Job 7/20 | IT - Project Manager
+[2026-05-21T06:51:40.955+0000] {subprocess.py:106} INFO -  Trang 12 - Job 8/20 | IT - Mobile Developer (React Native)
+[2026-05-21T06:51:41.105+0000] {subprocess.py:106} INFO -  Trang 12 - Job 9/20 | Senior Software Development Manager
+[2026-05-21T06:51:41.240+0000] {subprocess.py:106} INFO -  Trang 12 - Job 10/20 | Business Analyst (Public Finance)
+[2026-05-21T06:51:41.377+0000] {subprocess.py:106} INFO -  Trang 12 - Job 11/20 | Medior Enterprise Security Architect
+[2026-05-21T06:51:41.472+0000] {subprocess.py:106} INFO -  Trang 12 - Job 12/20 | Manual Tester - Khối Công nghệ thông tin
+[2026-05-21T06:51:41.861+0000] {subprocess.py:106} INFO -  Trang 12 - Job 13/20 | Data Engineer (Big Data, Kafka, Java, ETL, SQ
+[2026-05-21T06:51:41.964+0000] {subprocess.py:106} INFO -  Trang 12 - Job 14/20 | Knowledge System Lead (IC role)
+[2026-05-21T06:51:42.101+0000] {subprocess.py:106} INFO -  Trang 12 - Job 15/20 | Senior Backend Software Engineer (Java, Go, A
+[2026-05-21T06:51:44.402+0000] {subprocess.py:106} INFO -  Trang 12 - Job 16/20 | (Intermediate/Senior) Product Owner
+[2026-05-21T06:51:44.538+0000] {subprocess.py:106} INFO -  Trang 12 - Job 17/20 | Senior QA Automation Engineer
+[2026-05-21T06:51:44.656+0000] {subprocess.py:106} INFO -  Trang 12 - Job 18/20 | Software Engineer - Integration Build (C, C++
+[2026-05-21T06:51:44.801+0000] {subprocess.py:106} INFO -  Trang 12 - Job 19/20 | Senior Software Engineer (Android, Kotlin, Ge
+[2026-05-21T06:51:44.938+0000] {subprocess.py:106} INFO -  Trang 12 - Job 20/20 | Senior Data Scientist (Machine Learning)
+[2026-05-21T06:51:46.912+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:51:46.913+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 13 ---
+[2026-05-21T06:51:53.306+0000] {subprocess.py:106} INFO -  Trang 13 - Job 1/20 | Technical Lead (Kotlin/Java)
+[2026-05-21T06:51:53.497+0000] {subprocess.py:106} INFO -  Trang 13 - Job 2/20 | Agentic Coding Specialist
+[2026-05-21T06:51:53.628+0000] {subprocess.py:106} INFO -  Trang 13 - Job 3/20 | Backend Developer (Golang/ Python/Java)
+[2026-05-21T06:51:53.762+0000] {subprocess.py:106} INFO -  Trang 13 - Job 4/20 | Security Engineer - Application Security
+[2026-05-21T06:51:53.903+0000] {subprocess.py:106} INFO -  Trang 13 - Job 5/20 | Middle Product Owner (Agile/ Scrum/ Jira)
+[2026-05-21T06:51:54.070+0000] {subprocess.py:106} INFO -  Trang 13 - Job 6/20 | 03 Java/Kotlin Developers (All level, English
+[2026-05-21T06:51:54.163+0000] {subprocess.py:106} INFO -  Trang 13 - Job 7/20 | AI Engineer (NLP)
+[2026-05-21T06:51:54.281+0000] {subprocess.py:106} INFO -  Trang 13 - Job 8/20 | Product Tester (QA QC, Jira, Trello)
+[2026-05-21T06:51:54.394+0000] {subprocess.py:106} INFO -  Trang 13 - Job 9/20 | Business Analyst (Product & Growth) for Edtec
+[2026-05-21T06:51:54.511+0000] {subprocess.py:106} INFO -  Trang 13 - Job 10/20 | Senior AI Engineer (LLM/AI Agent)
+[2026-05-21T06:51:54.612+0000] {subprocess.py:106} INFO -  Trang 13 - Job 11/20 | Product Manager (AgriTech)
+[2026-05-21T06:51:54.734+0000] {subprocess.py:106} INFO -  Trang 13 - Job 12/20 | QC Lead (Manual Tester & Automation- Web, Mob
+[2026-05-21T06:51:54.856+0000] {subprocess.py:106} INFO -  Trang 13 - Job 13/20 | Fullstack Developer (NodeJS, ReactJS, AI Nati
+[2026-05-21T06:51:54.996+0000] {subprocess.py:106} INFO -  Trang 13 - Job 14/20 | AI Engineer (Machine Learning, Python)
+[2026-05-21T06:51:55.127+0000] {subprocess.py:106} INFO -  Trang 13 - Job 15/20 | Senior Business Analyst (BA)
+[2026-05-21T06:51:55.232+0000] {subprocess.py:106} INFO -  Trang 13 - Job 16/20 | PHP Developer (Yii2, Laravel)
+[2026-05-21T06:51:55.340+0000] {subprocess.py:106} INFO -  Trang 13 - Job 17/20 | Automotive Embedded Engineer (AUTOSAR, C++, L
+[2026-05-21T06:51:55.437+0000] {subprocess.py:106} INFO -  Trang 13 - Job 18/20 | Senior Software Development Manager
+[2026-05-21T06:51:55.539+0000] {subprocess.py:106} INFO -  Trang 13 - Job 19/20 | Software Project Manager
+[2026-05-21T06:51:55.689+0000] {subprocess.py:106} INFO -  Trang 13 - Job 20/20 | JavaScript Engineer (Remote cho công ty Nhật
+[2026-05-21T06:51:57.609+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:51:57.614+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 14 ---
+[2026-05-21T06:52:02.497+0000] {subprocess.py:106} INFO -  Trang 14 - Job 1/20 | Senior Automation Test Engineer (Playwright,
+[2026-05-21T06:52:02.670+0000] {subprocess.py:106} INFO -  Trang 14 - Job 2/20 | Enterprise Architect
+[2026-05-21T06:52:02.842+0000] {subprocess.py:106} INFO -  Trang 14 - Job 3/20 | Middle/Senior Software Engineer - C#/.Net, Az
+[2026-05-21T06:52:02.990+0000] {subprocess.py:106} INFO -  Trang 14 - Job 4/20 | Cloud/DevOps/Infrastructure Engineer - Up to
+[2026-05-21T06:52:03.150+0000] {subprocess.py:106} INFO -  Trang 14 - Job 5/20 | Fullstack Mobile Developer (Flutter + IOS/And
+[2026-05-21T06:52:03.278+0000] {subprocess.py:106} INFO -  Trang 14 - Job 6/20 | Senior PHP Developer (Laravel) - Up to $2000
+[2026-05-21T06:52:03.388+0000] {subprocess.py:106} INFO -  Trang 14 - Job 7/20 | Senior Data Scientist (MLE, Python, SQL, AI)
+[2026-05-21T06:52:03.518+0000] {subprocess.py:106} INFO -  Trang 14 - Job 8/20 | Business Analyst (CRM)
+[2026-05-21T06:52:03.643+0000] {subprocess.py:106} INFO -  Trang 14 - Job 9/20 | Senior Full-stack Python Developer
+[2026-05-21T06:52:03.755+0000] {subprocess.py:106} INFO -  Trang 14 - Job 10/20 | Project / Program Manager (Automotive)
+[2026-05-21T06:52:03.873+0000] {subprocess.py:106} INFO -  Trang 14 - Job 11/20 | Backend Developer (Golang/ MySQL/ PostgreSQL/
+[2026-05-21T06:52:04.023+0000] {subprocess.py:106} INFO -  Trang 14 - Job 12/20 | Data Architect
+[2026-05-21T06:52:04.238+0000] {subprocess.py:106} INFO -  Trang 14 - Job 13/20 | Senior Data Scientist (AI, GenAI, Machine Lea
+[2026-05-21T06:52:04.397+0000] {subprocess.py:106} INFO -  Trang 14 - Job 14/20 | AI Engineer (Computer Vision, C/C++, Python)
+[2026-05-21T06:52:04.574+0000] {subprocess.py:106} INFO -  Trang 14 - Job 15/20 | Java Spring Boot (~50 Mil)
+[2026-05-21T06:52:04.734+0000] {subprocess.py:106} INFO -  Trang 14 - Job 16/20 | Senior QA Automation Engineer
+[2026-05-21T06:52:04.912+0000] {subprocess.py:106} INFO -  Trang 14 - Job 17/20 | Senior DevOps Engineer (Cloud, AWS)
+[2026-05-21T06:52:05.080+0000] {subprocess.py:106} INFO -  Trang 14 - Job 18/20 | API Integration Engineer (OAuth2 / WS02 / AWS
+[2026-05-21T06:52:05.296+0000] {subprocess.py:106} INFO -  Trang 14 - Job 19/20 | Mid/Senior Automation QC (Playwright)
+[2026-05-21T06:52:05.510+0000] {subprocess.py:106} INFO -  Trang 14 - Job 20/20 | IT - Senior Backend Engineer (Digital Banking
+[2026-05-21T06:52:06.893+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:52:06.894+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 15 ---
+[2026-05-21T06:52:10.699+0000] {subprocess.py:106} INFO -  Trang 15 - Job 1/20 | Senior Business Application Analyst (Digital
+[2026-05-21T06:52:10.938+0000] {subprocess.py:106} INFO -  Trang 15 - Job 2/20 | Frontend Developer (Svelte, ReactJS, NextJS)
+[2026-05-21T06:52:11.081+0000] {subprocess.py:106} INFO -  Trang 15 - Job 3/20 | Associate Software Architect (AWS)
+[2026-05-21T06:52:11.261+0000] {subprocess.py:106} INFO -  Trang 15 - Job 4/20 | Fullstack Engineer (Azure, AI, DevOps, NextJS
+[2026-05-21T06:52:11.419+0000] {subprocess.py:106} INFO -  Trang 15 - Job 5/20 | Python Developer
+[2026-05-21T06:52:11.880+0000] {subprocess.py:106} INFO -  Trang 15 - Job 6/20 | Backend Dev (Golang, AI) - Lương cạnh tranh
+[2026-05-21T06:52:11.881+0000] {subprocess.py:106} INFO -  Trang 15 - Job 7/20 | Senior/Leader Javascript Developer (VueJS, No
+[2026-05-21T06:52:11.930+0000] {subprocess.py:106} INFO -  Trang 15 - Job 8/20 | Backend Developer (PHP/ Python/ SQL)
+[2026-05-21T06:52:12.052+0000] {subprocess.py:106} INFO -  Trang 15 - Job 9/20 | Manual Tester (QA QC/English)
+[2026-05-21T06:52:12.173+0000] {subprocess.py:106} INFO -  Trang 15 - Job 10/20 | Senior Backend Engineer (Go/Java) - Product D
+[2026-05-21T06:52:12.303+0000] {subprocess.py:106} INFO -  Trang 15 - Job 11/20 | Senior Fullstack Developer (.NET/ Blazor/C#)
+[2026-05-21T06:52:12.423+0000] {subprocess.py:106} INFO -  Trang 15 - Job 12/20 | Java Developer
+[2026-05-21T06:52:12.534+0000] {subprocess.py:106} INFO -  Trang 15 - Job 13/20 | Senior AI Engineer (AI Xây Dựng Hệ Thống, Pyt
+[2026-05-21T06:52:12.638+0000] {subprocess.py:106} INFO -  Trang 15 - Job 14/20 | Senior ReactJS Developer - Fluent English
+[2026-05-21T06:52:12.743+0000] {subprocess.py:106} INFO -  Trang 15 - Job 15/20 | Senior Machine Learning Engineer (AI)
+[2026-05-21T06:52:12.870+0000] {subprocess.py:106} INFO -  Trang 15 - Job 16/20 | Android Engineer (Kotlin)
+[2026-05-21T06:52:13.040+0000] {subprocess.py:106} INFO -  Trang 15 - Job 17/20 | QA Automation Engineer (Python, Embedded)
+[2026-05-21T06:52:13.179+0000] {subprocess.py:106} INFO -  Trang 15 - Job 18/20 | Senior Java Backend Developer(K8S,OS,Kafka,Sp
+[2026-05-21T06:52:13.298+0000] {subprocess.py:106} INFO -  Trang 15 - Job 19/20 | Business Analyst (Bank, Finance)
+[2026-05-21T06:52:13.422+0000] {subprocess.py:106} INFO -  Trang 15 - Job 20/20 | 30 Tester (Agile/ Scrum/ SQL)
+[2026-05-21T06:52:17.601+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:52:17.603+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 16 ---
+[2026-05-21T06:52:21.528+0000] {subprocess.py:106} INFO -  Trang 16 - Job 1/20 | 10 Senior Frontend Engineer (ReactJs/Flutter,
+[2026-05-21T06:52:21.803+0000] {subprocess.py:106} INFO -  Trang 16 - Job 2/20 | Senior Python Developer
+[2026-05-21T06:52:22.025+0000] {subprocess.py:106} INFO -  Trang 16 - Job 3/20 | Technical Lead (Golang) ~ Upto 3500$
+[2026-05-21T06:52:22.218+0000] {subprocess.py:106} INFO -  Trang 16 - Job 4/20 | Senior Backend Engineer (Java, Spring Boot, B
+[2026-05-21T06:52:22.385+0000] {subprocess.py:106} INFO -  Trang 16 - Job 5/20 | [HYBRID] Senior Java Developer
+[2026-05-21T06:52:22.540+0000] {subprocess.py:106} INFO -  Trang 16 - Job 6/20 | DevOps Manager
+[2026-05-21T06:52:22.705+0000] {subprocess.py:106} INFO -  Trang 16 - Job 7/20 | Mid/Senior Business Analyst (English required
+[2026-05-21T06:52:22.840+0000] {subprocess.py:106} INFO -  Trang 16 - Job 8/20 | Senior Product Delivery Executive
+[2026-05-21T06:52:23.011+0000] {subprocess.py:106} INFO -  Trang 16 - Job 9/20 | 02 Mobile App Developer (Flutter)
+[2026-05-21T06:52:23.161+0000] {subprocess.py:106} INFO -  Trang 16 - Job 10/20 | CV/ CVCC Data Analyst (SQL, Power BI, Python)
+[2026-05-21T06:52:23.339+0000] {subprocess.py:106} INFO -  Trang 16 - Job 11/20 | DevOps Engineer
+[2026-05-21T06:52:23.519+0000] {subprocess.py:106} INFO -  Trang 16 - Job 12/20 | DevOps Engineer
+[2026-05-21T06:52:23.664+0000] {subprocess.py:106} INFO -  Trang 16 - Job 13/20 | Senior DevOps Engineer (SRE/Platform Engineer
+[2026-05-21T06:52:23.869+0000] {subprocess.py:106} INFO -  Trang 16 - Job 14/20 | Mid to Senior Backend Developer (Golang/NodeJ
+[2026-05-21T06:52:24.001+0000] {subprocess.py:106} INFO -  Trang 16 - Job 15/20 | Mid/Senior Frontend Dev (ReactJS, SaaS, US Pr
+[2026-05-21T06:52:24.256+0000] {subprocess.py:106} INFO -  Trang 16 - Job 16/20 | Java Developer (Expert/Senior Officer)
+[2026-05-21T06:52:24.418+0000] {subprocess.py:106} INFO -  Trang 16 - Job 17/20 | Junior QA Engineer
+[2026-05-21T06:52:24.774+0000] {subprocess.py:106} INFO -  Trang 16 - Job 18/20 | Fullstack Developer (Ruby on Rails/ PHP/ AWS/
+[2026-05-21T06:52:24.775+0000] {subprocess.py:106} INFO -  Trang 16 - Job 19/20 | Cloud DevOps Engineer (English, Kubernetes, A
+[2026-05-21T06:52:24.907+0000] {subprocess.py:106} INFO -  Trang 16 - Job 20/20 | Front-End Developer (Wix & Shopify)
+[2026-05-21T06:52:26.714+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:52:26.715+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 17 ---
+[2026-05-21T06:52:30.597+0000] {subprocess.py:106} INFO -  Trang 17 - Job 1/20 | Java (Spring) Backend Engineer (Middle/Senior
+[2026-05-21T06:52:30.779+0000] {subprocess.py:106} INFO -  Trang 17 - Job 2/20 | Senior Mobile Apps Android Engineer (Java, Ko
+[2026-05-21T06:52:31.118+0000] {subprocess.py:106} INFO -  Trang 17 - Job 3/20 | QA Engineer (Automation/Manual Testing)~Up to
+[2026-05-21T06:52:31.525+0000] {subprocess.py:106} INFO -  Trang 17 - Job 4/20 | Business Analyst/Product Planner (~$1500)
+[2026-05-21T06:52:31.711+0000] {subprocess.py:106} INFO -  Trang 17 - Job 5/20 | Junior/Middle Business Analyst
+[2026-05-21T06:52:31.889+0000] {subprocess.py:106} INFO -  Trang 17 - Job 6/20 | Middle/Senior NodeJS Developer (NestJS, React
+[2026-05-21T06:52:32.082+0000] {subprocess.py:106} INFO -  Trang 17 - Job 7/20 | Sr Fullstack Engineer - DevX (TypeScript, Vue
+[2026-05-21T06:52:32.270+0000] {subprocess.py:106} INFO -  Trang 17 - Job 8/20 | Business Analyst
+[2026-05-21T06:52:32.500+0000] {subprocess.py:106} INFO -  Trang 17 - Job 9/20 | Senior Front End Developer > 9Y Exp - 14th-mo
+[2026-05-21T06:52:32.657+0000] {subprocess.py:106} INFO -  Trang 17 - Job 10/20 | Core Banking Developer (C/C++)
+[2026-05-21T06:52:32.938+0000] {subprocess.py:106} INFO -  Trang 17 - Job 11/20 | Senior Game Unity Developer
+[2026-05-21T06:52:33.132+0000] {subprocess.py:106} INFO -  Trang 17 - Job 12/20 | PHP Developer (Magento / ReactJS / JavaScript
+[2026-05-21T06:52:33.266+0000] {subprocess.py:106} INFO -  Trang 17 - Job 13/20 | DevOps Engineer (Agile, Azure)
+[2026-05-21T06:52:33.431+0000] {subprocess.py:106} INFO -  Trang 17 - Job 14/20 | Cybersecurity Engineer (Security/API/Networki
+[2026-05-21T06:52:33.721+0000] {subprocess.py:106} INFO -  Trang 17 - Job 15/20 | Software QA Project Manager (Tester, Agile, S
+[2026-05-21T06:52:34.000+0000] {subprocess.py:106} INFO -  Trang 17 - Job 16/20 | Senior Data Mart Specialist
+[2026-05-21T06:52:34.378+0000] {subprocess.py:106} INFO -  Trang 17 - Job 17/20 | Product Analyst ( Business Analyst, Product O
+[2026-05-21T06:52:34.622+0000] {subprocess.py:106} INFO -  Trang 17 - Job 18/20 | Frontend Developer (ReactJS, TypeScript, CSS)
+[2026-05-21T06:52:34.896+0000] {subprocess.py:106} INFO -  Trang 17 - Job 19/20 | Mobile Developer (Flutter/ React Native)
+[2026-05-21T06:52:35.131+0000] {subprocess.py:106} INFO -  Trang 17 - Job 20/20 | Middle/Senior Java Backend Developer (Spring)
+[2026-05-21T06:52:36.558+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:52:36.559+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 18 ---
+[2026-05-21T06:52:40.500+0000] {subprocess.py:106} INFO -  Trang 18 - Job 1/20 | Senior Software Engineer - CRMHub (Java, Kotl
+[2026-05-21T06:52:40.706+0000] {subprocess.py:106} INFO -  Trang 18 - Job 2/20 | Fullstack Developer (PHP/Ruby on Rails)
+[2026-05-21T06:52:40.971+0000] {subprocess.py:106} INFO -  Trang 18 - Job 3/20 | [Remote] Mid-Level AI/ML Engineer
+[2026-05-21T06:52:41.165+0000] {subprocess.py:106} INFO -  Trang 18 - Job 4/20 | Automotive AUTOSAR Base SW Developer (1 year
+[2026-05-21T06:52:41.415+0000] {subprocess.py:106} INFO -  Trang 18 - Job 5/20 | PHP Backend Developer (Internal Tools, Yii2,
+[2026-05-21T06:52:41.609+0000] {subprocess.py:106} INFO -  Trang 18 - Job 6/20 | (District 7) Software Engineer - Java Develop
+[2026-05-21T06:52:41.773+0000] {subprocess.py:106} INFO -  Trang 18 - Job 7/20 | Nhân viên Scrum Master (Agile)
+[2026-05-21T06:52:41.925+0000] {subprocess.py:106} INFO -  Trang 18 - Job 8/20 | Middle+ Backend Engineer (Python/ Django/ Fas
+[2026-05-21T06:52:42.060+0000] {subprocess.py:106} INFO -  Trang 18 - Job 9/20 | IOS Mobile App Developer (Remote)
+[2026-05-21T06:52:42.197+0000] {subprocess.py:106} INFO -  Trang 18 - Job 10/20 | Microsoft 365 AI Solutions Architect
+[2026-05-21T06:52:42.383+0000] {subprocess.py:106} INFO -  Trang 18 - Job 11/20 | Software Developer (ASP.NET, C#, English)
+[2026-05-21T06:52:42.536+0000] {subprocess.py:106} INFO -  Trang 18 - Job 12/20 | Kỹ Sư Triển Khai Hệ Thống/Giám Sát Dự Án (Aut
+[2026-05-21T06:52:42.696+0000] {subprocess.py:106} INFO -  Trang 18 - Job 13/20 | IT Application Executive (E-commerce/ POS/ CR
+[2026-05-21T06:52:42.858+0000] {subprocess.py:106} INFO -  Trang 18 - Job 14/20 | DevOps Engineer/ System Admin (eCommerce)
+[2026-05-21T06:52:43.021+0000] {subprocess.py:106} INFO -  Trang 18 - Job 15/20 | (Middle) Cloud Solutions Architect
+[2026-05-21T06:52:43.242+0000] {subprocess.py:106} INFO -  Trang 18 - Job 16/20 | SOC Manager (Cloud Security, SIEM, Networking
+[2026-05-21T06:52:43.432+0000] {subprocess.py:106} INFO -  Trang 18 - Job 17/20 | Trưởng Phòng Giải Pháp Công Nghệ (CRM, ERP, A
+[2026-05-21T06:52:43.584+0000] {subprocess.py:106} INFO -  Trang 18 - Job 18/20 | Fullstack Developer
+[2026-05-21T06:52:43.768+0000] {subprocess.py:106} INFO -  Trang 18 - Job 19/20 | Tester (QA QC, Jira, Selenium, API)
+[2026-05-21T06:52:44.117+0000] {subprocess.py:106} INFO -  Trang 18 - Job 20/20 | Junior Data Modeler (SQL)
+[2026-05-21T06:52:45.949+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:52:45.950+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 19 ---
+[2026-05-21T06:52:51.817+0000] {subprocess.py:106} INFO -  Trang 19 - Job 1/20 | Android Developer (Java, Kotlin)
+[2026-05-21T06:52:52.040+0000] {subprocess.py:106} INFO -  Trang 19 - Job 2/20 | Unity Developer (C#)
+[2026-05-21T06:52:52.220+0000] {subprocess.py:106} INFO -  Trang 19 - Job 3/20 | Fullstack Developer (NextJS, ReactJS, NodeJS,
+[2026-05-21T06:52:52.413+0000] {subprocess.py:106} INFO -  Trang 19 - Job 4/20 | Product Designer (AI, Figma)
+[2026-05-21T06:52:52.619+0000] {subprocess.py:106} INFO -  Trang 19 - Job 5/20 | Fullstack Developer (AI, ReactJS, NextJS, LLM
+[2026-05-21T06:52:52.814+0000] {subprocess.py:106} INFO -  Trang 19 - Job 6/20 | IT Data Analyst (Automation, SQL, Python)
+[2026-05-21T06:52:52.988+0000] {subprocess.py:106} INFO -  Trang 19 - Job 7/20 | Quality Assurance (QA/QC Mobile Games)
+[2026-05-21T06:52:53.141+0000] {subprocess.py:106} INFO -  Trang 19 - Job 8/20 | Senior Quality Engineer (Kitchen & Living Pro
+[2026-05-21T06:52:53.299+0000] {subprocess.py:106} INFO -  Trang 19 - Job 9/20 | Senior QA/QC Automation Tester (Playwright/Py
+[2026-05-21T06:52:53.445+0000] {subprocess.py:106} INFO -  Trang 19 - Job 10/20 | Java Backend Developer (Spring Boot, RESTful
+[2026-05-21T06:52:53.569+0000] {subprocess.py:106} INFO -  Trang 19 - Job 11/20 | CV/CVC/CVCC Quản trị rủi ro CNTT (IT Risk Man
+[2026-05-21T06:52:53.842+0000] {subprocess.py:106} INFO -  Trang 19 - Job 12/20 | Senior IT Risks Management Specialist
+[2026-05-21T06:52:54.011+0000] {subprocess.py:106} INFO -  Trang 19 - Job 13/20 | Senior Data Engineer (Banking, Data Warehouse
+[2026-05-21T06:52:54.190+0000] {subprocess.py:106} INFO -  Trang 19 - Job 14/20 | Senior Salesforce Developer
+[2026-05-21T06:52:54.339+0000] {subprocess.py:106} INFO -  Trang 19 - Job 15/20 | Scrum Master
+[2026-05-21T06:52:54.475+0000] {subprocess.py:106} INFO -  Trang 19 - Job 16/20 | Chuyên gia an ninh mạng (Cybersecurity, Netwo
+[2026-05-21T06:52:54.640+0000] {subprocess.py:106} INFO -  Trang 19 - Job 17/20 | Technical Leader (Angular, NestJS)
+[2026-05-21T06:52:54.926+0000] {subprocess.py:106} INFO -  Trang 19 - Job 18/20 | Technical Product Marketing Manager
+[2026-05-21T06:52:55.095+0000] {subprocess.py:106} INFO -  Trang 19 - Job 19/20 | Fresher Embedded Software Engineer (C focused
+[2026-05-21T06:52:55.260+0000] {subprocess.py:106} INFO -  Trang 19 - Job 20/20 | Sr Technical Expert - Automotive HPC Embedded
+[2026-05-21T06:52:56.677+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:52:56.679+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 20 ---
+[2026-05-21T06:53:03.640+0000] {subprocess.py:106} INFO -  Trang 20 - Job 1/20 | Senior Embedded Software (C/C++, AUTOSAR, fir
+[2026-05-21T06:53:03.781+0000] {subprocess.py:106} INFO -  Trang 20 - Job 2/20 | Embedded Engineer (Classic AUTOSAR / Java Dev
+[2026-05-21T06:53:03.986+0000] {subprocess.py:106} INFO -  Trang 20 - Job 3/20 | Hardware Engineer (All levels)
+[2026-05-21T06:53:04.146+0000] {subprocess.py:106} INFO -  Trang 20 - Job 4/20 | Senior AI Engineer
+[2026-05-21T06:53:04.274+0000] {subprocess.py:106} INFO -  Trang 20 - Job 5/20 | Middle/Senior Business Analyst (Banking)
+[2026-05-21T06:53:04.439+0000] {subprocess.py:106} INFO -  Trang 20 - Job 6/20 | Technical Lead (Nodejs/Microservices/AWS)
+[2026-05-21T06:53:04.616+0000] {subprocess.py:106} INFO -  Trang 20 - Job 7/20 | Jr/Sr DevOps Engineer (Semiconductor Platform
+[2026-05-21T06:53:04.797+0000] {subprocess.py:106} INFO -  Trang 20 - Job 8/20 | IT Project Manager (BFSI Domain)
+[2026-05-21T06:53:05.014+0000] {subprocess.py:106} INFO -  Trang 20 - Job 9/20 | Senior Integration Engineer (Authorisation Po
+[2026-05-21T06:53:05.195+0000] {subprocess.py:106} INFO -  Trang 20 - Job 10/20 | DevOps Engineer (Python, AWS, Linux)
+[2026-05-21T06:53:05.357+0000] {subprocess.py:106} INFO -  Trang 20 - Job 11/20 | Senior Quality Engineer
+[2026-05-21T06:53:05.513+0000] {subprocess.py:106} INFO -  Trang 20 - Job 12/20 | Senior Embedded C++ Developer
+[2026-05-21T06:53:05.659+0000] {subprocess.py:106} INFO -  Trang 20 - Job 13/20 | Senior/Junior AI Engineer (Python, GenAI)
+[2026-05-21T06:53:05.848+0000] {subprocess.py:106} INFO -  Trang 20 - Job 14/20 | Junior/Senior Software Developer (OOP, Databa
+[2026-05-21T06:53:05.973+0000] {subprocess.py:106} INFO -  Trang 20 - Job 15/20 | Business Analyst (ERP, CRM)
+[2026-05-21T06:53:06.188+0000] {subprocess.py:106} INFO -  Trang 20 - Job 16/20 | Data Scientist - Data Division
+[2026-05-21T06:53:06.363+0000] {subprocess.py:106} INFO -  Trang 20 - Job 17/20 | Data Analyst - Data Division
+[2026-05-21T06:53:06.553+0000] {subprocess.py:106} INFO -  Trang 20 - Job 18/20 | Process Quality Assurance (PQA, QA QC)
+[2026-05-21T06:53:06.767+0000] {subprocess.py:106} INFO -  Trang 20 - Job 19/20 | Senior AI Engineer (Machine Learning, Python)
+[2026-05-21T06:53:06.906+0000] {subprocess.py:106} INFO -  Trang 20 - Job 20/20 | Test Lead (Manual & Automation)
+[2026-05-21T06:53:08.362+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:53:08.363+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 21 ---
+[2026-05-21T06:53:12.390+0000] {subprocess.py:106} INFO -  Trang 21 - Job 1/20 | Database Administrator (Oracle/ PostgreSQL/ L
+[2026-05-21T06:53:12.537+0000] {subprocess.py:106} INFO -  Trang 21 - Job 2/20 | Automotive Software Engineer (C++, OOP, Middl
+[2026-05-21T06:53:12.654+0000] {subprocess.py:106} INFO -  Trang 21 - Job 3/20 | Automation Tester ( QA QC)
+[2026-05-21T06:53:12.771+0000] {subprocess.py:106} INFO -  Trang 21 - Job 4/20 | DevSecOps/DevOps Engineer (Mid - Senior)
+[2026-05-21T06:53:12.913+0000] {subprocess.py:106} INFO -  Trang 21 - Job 5/20 | Off-Shore IT COMTOR (Delivery Manager/ Korean
+[2026-05-21T06:53:13.159+0000] {subprocess.py:106} INFO -  Trang 21 - Job 6/20 | Data Analyst
+[2026-05-21T06:53:13.469+0000] {subprocess.py:106} INFO -  Trang 21 - Job 7/20 | Flutter Mobile Apps Developer (Android, iOS)
+[2026-05-21T06:53:13.747+0000] {subprocess.py:106} INFO -  Trang 21 - Job 8/20 | LM1001 - Fullstack Developer (ReactJS, NodeJS
+[2026-05-21T06:53:13.945+0000] {subprocess.py:106} INFO -  Trang 21 - Job 9/20 | MNF1201: Fullstack Developer (JavaScript,Reac
+[2026-05-21T06:53:14.111+0000] {subprocess.py:106} INFO -  Trang 21 - Job 10/20 | Automotive Embedded Developer (Flash Bootload
+[2026-05-21T06:53:14.258+0000] {subprocess.py:106} INFO -  Trang 21 - Job 11/20 | Senior DevOps Engineer (Strong AWS)
+[2026-05-21T06:53:14.396+0000] {subprocess.py:106} INFO -  Trang 21 - Job 12/20 | Chuyên viên cao cấp Quản trị cơ sở dữ liệu (P
+[2026-05-21T06:53:14.520+0000] {subprocess.py:106} INFO -  Trang 21 - Job 13/20 | Infrastructure Engineer (English, Azure, Cisc
+[2026-05-21T06:53:14.678+0000] {subprocess.py:106} INFO -  Trang 21 - Job 14/20 | BA tích hợp - Phòng phân tích nghiệp vụ và ki
+[2026-05-21T06:53:14.827+0000] {subprocess.py:106} INFO -  Trang 21 - Job 15/20 | Chuyên viên BA – CoreBanking T24
+[2026-05-21T06:53:14.994+0000] {subprocess.py:106} INFO -  Trang 21 - Job 16/20 | Chuyên viên Phát triển ứng dụng Corebanking
+[2026-05-21T06:53:15.174+0000] {subprocess.py:106} INFO -  Trang 21 - Job 17/20 | Senior Golang Developer (Backend, AWS, MySQL)
+[2026-05-21T06:53:15.342+0000] {subprocess.py:106} INFO -  Trang 21 - Job 18/20 | Senior QA Engineer (Tester, Japanese N2+)
+[2026-05-21T06:53:15.547+0000] {subprocess.py:106} INFO -  Trang 21 - Job 19/20 | Senior/Principal Ruby on Rails Developer (AWS
+[2026-05-21T06:53:15.776+0000] {subprocess.py:106} INFO -  Trang 21 - Job 20/20 | Principal Frontend Engineer (ReactJS/VueJS)
+[2026-05-21T06:53:17.385+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:53:17.386+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 22 ---
+[2026-05-21T06:53:25.397+0000] {subprocess.py:106} INFO -  Trang 22 - Job 1/20 | Senior QC Engineer
+[2026-05-21T06:53:25.546+0000] {subprocess.py:106} INFO -  Trang 22 - Job 2/20 | Embedded Engineer (C focused) - All levels
+[2026-05-21T06:53:25.703+0000] {subprocess.py:106} INFO -  Trang 22 - Job 3/20 | Expert/Sr. IT Business Analyst
+[2026-05-21T06:53:25.841+0000] {subprocess.py:106} INFO -  Trang 22 - Job 4/20 | Engineering Manager
+[2026-05-21T06:53:25.981+0000] {subprocess.py:106} INFO -  Trang 22 - Job 5/20 | Middle/Senior PHP Developer (Laravel / ReactJ
+[2026-05-21T06:53:26.128+0000] {subprocess.py:106} INFO -  Trang 22 - Job 6/20 | Senior Systems Administrator
+[2026-05-21T06:53:26.258+0000] {subprocess.py:106} INFO -  Trang 22 - Job 7/20 | Kỹ sư Cầu nối BrSE (Tiếng Nhật)
+[2026-05-21T06:53:26.388+0000] {subprocess.py:106} INFO -  Trang 22 - Job 8/20 | Android HMI SDK Development for Automotive De
+[2026-05-21T06:53:26.541+0000] {subprocess.py:106} INFO -  Trang 22 - Job 9/20 | VIETTEL SOLUTIONS - Tech lead
+[2026-05-21T06:53:26.670+0000] {subprocess.py:106} INFO -  Trang 22 - Job 10/20 | VIETTEL SOLUTIONS - Solutions Architect
+[2026-05-21T06:53:26.831+0000] {subprocess.py:106} INFO -  Trang 22 - Job 11/20 | VIETTEL SOLUTIONS - Project Manager
+[2026-05-21T06:53:26.936+0000] {subprocess.py:106} INFO -  Trang 22 - Job 12/20 | [Junior] Java Developers
+[2026-05-21T06:53:27.094+0000] {subprocess.py:106} INFO -  Trang 22 - Job 13/20 | VIETTEL SOLUTIONS - Business analyst
+[2026-05-21T06:53:27.423+0000] {subprocess.py:106} INFO -  Trang 22 - Job 14/20 | Senior DevOps Engineer
+[2026-05-21T06:53:27.441+0000] {subprocess.py:106} INFO -  Trang 22 - Job 15/20 | [Da Nang] Scrum Master
+[2026-05-21T06:53:27.675+0000] {subprocess.py:106} INFO -  Trang 22 - Job 16/20 | Business Analyst Officer
+[2026-05-21T06:53:27.900+0000] {subprocess.py:106} INFO -  Trang 22 - Job 17/20 | Specialist, Senior Specialist Risk Modeling
+[2026-05-21T06:53:28.039+0000] {subprocess.py:106} INFO -  Trang 22 - Job 18/20 | Specialist, Senior Specialist Credit Risk Mon
+[2026-05-21T06:53:28.166+0000] {subprocess.py:106} INFO -  Trang 22 - Job 19/20 | Game Tester
+[2026-05-21T06:53:28.339+0000] {subprocess.py:106} INFO -  Trang 22 - Job 20/20 | Senior Embedded SW Engineer (Automotive SiL/
+[2026-05-21T06:53:30.115+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:53:30.116+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 23 ---
+[2026-05-21T06:53:33.503+0000] {subprocess.py:106} INFO -  Trang 23 - Job 1/20 | AI Solutions Architect (Transformation Lead)
+[2026-05-21T06:53:33.664+0000] {subprocess.py:106} INFO -  Trang 23 - Job 2/20 | Enterprise Architect (TOGAF 9.x, AWS/Azure/GC
+[2026-05-21T06:53:33.827+0000] {subprocess.py:106} INFO -  Trang 23 - Job 3/20 | Senior Cloud Solutions Architect (AWS, GCP, A
+[2026-05-21T06:53:33.998+0000] {subprocess.py:106} INFO -  Trang 23 - Job 4/20 | Senior IT & Security Engineer (strong scripti
+[2026-05-21T06:53:34.171+0000] {subprocess.py:106} INFO -  Trang 23 - Job 5/20 | Product Owner Expert (Mobile Banking, eKYC)
+[2026-05-21T06:53:34.371+0000] {subprocess.py:106} INFO -  Trang 23 - Job 6/20 | Kỹ sư Triển khai Hệ thống (System Engineer/K8
+[2026-05-21T06:53:34.643+0000] {subprocess.py:106} INFO -  Trang 23 - Job 7/20 | Lead Data Analyst
+[2026-05-21T06:53:34.904+0000] {subprocess.py:106} INFO -  Trang 23 - Job 8/20 | Jr Tester - AI Chatbot Systems (Python)
+[2026-05-21T06:53:35.088+0000] {subprocess.py:106} INFO -  Trang 23 - Job 9/20 | Jr/Mid Automation Engineer (.NET)
+[2026-05-21T06:53:35.392+0000] {subprocess.py:106} INFO -  Trang 23 - Job 10/20 | IT Associate (System Engineer, Oracle, MsSQL,
+[2026-05-21T06:53:35.559+0000] {subprocess.py:106} INFO -  Trang 23 - Job 11/20 | Platform Software Engineer (Embedded)
+[2026-05-21T06:53:35.703+0000] {subprocess.py:106} INFO -  Trang 23 - Job 12/20 | Software Engineer (RAG –Retrieval-Augmented G
+[2026-05-21T06:53:35.905+0000] {subprocess.py:106} INFO -  Trang 23 - Job 13/20 | Chuyên viên ERP (SAP MM)
+[2026-05-21T06:53:36.105+0000] {subprocess.py:106} INFO -  Trang 23 - Job 14/20 | Assistant To Head Of IT Department (Agile, En
+[2026-05-21T06:53:36.291+0000] {subprocess.py:106} INFO -  Trang 23 - Job 15/20 | Business Analyst
+[2026-05-21T06:53:36.438+0000] {subprocess.py:106} INFO -  Trang 23 - Job 16/20 | IT Project Manager (ERP, SAP, Oracle)
+[2026-05-21T06:53:36.656+0000] {subprocess.py:106} INFO -  Trang 23 - Job 17/20 | Senior IT Product & Service Manager (Agile/Sc
+[2026-05-21T06:53:36.870+0000] {subprocess.py:106} INFO -  Trang 23 - Job 18/20 | Senior OutSystems Developer/ Expert
+[2026-05-21T06:53:37.173+0000] {subprocess.py:106} INFO -  Trang 23 - Job 19/20 | Lead QA/QC Tester (Python/Playwright)
+[2026-05-21T06:53:37.343+0000] {subprocess.py:106} INFO -  Trang 23 - Job 20/20 | AI Application Developer (Machine Learning, L
+[2026-05-21T06:53:39.152+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:53:39.153+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 24 ---
+[2026-05-21T06:53:43.015+0000] {subprocess.py:106} INFO -  Trang 24 - Job 1/20 | Data Analyst (SQL, BigQuery, GCP)
+[2026-05-21T06:53:43.244+0000] {subprocess.py:106} INFO -  Trang 24 - Job 2/20 | Java Developer (OOP, Spring Boot, MySQL)
+[2026-05-21T06:53:43.393+0000] {subprocess.py:106} INFO -  Trang 24 - Job 3/20 | AI System Integration Engineer (C++, Python,
+[2026-05-21T06:53:43.617+0000] {subprocess.py:106} INFO -  Trang 24 - Job 4/20 | Fullstack Developer (Web API, PostgreSQL, SQL
+[2026-05-21T06:53:43.886+0000] {subprocess.py:106} INFO -  Trang 24 - Job 5/20 | Wordpress Developer (PHP, HTML, CSS)
+[2026-05-21T06:53:44.159+0000] {subprocess.py:106} INFO -  Trang 24 - Job 6/20 | Head of IT & Digital Transformation (AI, Clou
+[2026-05-21T06:53:44.419+0000] {subprocess.py:106} INFO -  Trang 24 - Job 7/20 | AI Engineer (C++, PyTorch, LLM)
+[2026-05-21T06:53:44.638+0000] {subprocess.py:106} INFO -  Trang 24 - Job 8/20 | Game Producer (Project Manager)
+[2026-05-21T06:53:44.807+0000] {subprocess.py:106} INFO -  Trang 24 - Job 9/20 | Senior AI Engineer (Computer Vision/NLP/LLM)
+[2026-05-21T06:53:44.994+0000] {subprocess.py:106} INFO -  Trang 24 - Job 10/20 | Chuyên viên Báo cáo tuân thủ - Khối Dữ liệu
+[2026-05-21T06:53:45.146+0000] {subprocess.py:106} INFO -  Trang 24 - Job 11/20 | Trưởng phòng Công nghệ Thị giác Máy tính
+[2026-05-21T06:53:45.305+0000] {subprocess.py:106} INFO -  Trang 24 - Job 12/20 | Business Analyst (Mockups, ERP, SQL)
+[2026-05-21T06:53:45.525+0000] {subprocess.py:106} INFO -  Trang 24 - Job 13/20 | iOS Developer (Swift/ Objective-C)
+[2026-05-21T06:53:45.710+0000] {subprocess.py:106} INFO -  Trang 24 - Job 14/20 | MCU Software Engineer (Embedded Systems)
+[2026-05-21T06:53:45.894+0000] {subprocess.py:106} INFO -  Trang 24 - Job 15/20 | IT Comtor (Japanese N1) & Business Admin
+[2026-05-21T06:53:46.198+0000] {subprocess.py:106} INFO -  Trang 24 - Job 16/20 | AI/ML Developer (Python, LLM, Redis, LLM)
+[2026-05-21T06:53:46.414+0000] {subprocess.py:106} INFO -  Trang 24 - Job 17/20 | Babylon.js Developer (Web 3D Developer)
+[2026-05-21T06:53:46.526+0000] {subprocess.py:106} INFO -  Trang 24 - Job 18/20 | Senior Infrastructure Engineer (Network, OS)
+[2026-05-21T06:53:46.719+0000] {subprocess.py:106} INFO -  Trang 24 - Job 19/20 | Sr/ Technical Leader ODOO Developer - Tuyển g
+[2026-05-21T06:53:46.944+0000] {subprocess.py:106} INFO -  Trang 24 - Job 20/20 | Senior UI/UX Designer (Product mindset)
+[2026-05-21T06:53:48.786+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:53:48.787+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 25 ---
+[2026-05-21T06:53:55.088+0000] {subprocess.py:106} INFO -  Trang 25 - Job 1/20 | Data Engineer - Data Division
+[2026-05-21T06:53:55.245+0000] {subprocess.py:106} INFO -  Trang 25 - Job 2/20 | Senior AI Engineer (AI ML / English)
+[2026-05-21T06:53:55.393+0000] {subprocess.py:106} INFO -  Trang 25 - Job 3/20 | [Hanoi] Senior Manager (Japanese N2+)
+[2026-05-21T06:53:55.586+0000] {subprocess.py:106} INFO -  Trang 25 - Job 4/20 | JN301- AI, IoT-Robotics Integrated Mobile App
+[2026-05-21T06:53:55.889+0000] {subprocess.py:106} INFO -  Trang 25 - Job 5/20 | NX501 - Fullstack Developer (ReactJS, Python,
+[2026-05-21T06:53:56.147+0000] {subprocess.py:106} INFO -  Trang 25 - Job 6/20 | FPT401- Embedded Software Developer (Java, C+
+[2026-05-21T06:53:56.356+0000] {subprocess.py:106} INFO -  Trang 25 - Job 7/20 | [Danang] Project Leader/ BrSE (Japanese N2+)
+[2026-05-21T06:53:56.510+0000] {subprocess.py:106} INFO -  Trang 25 - Job 8/20 | Software Engineer (Embedded C, MCU, RTOS)
+[2026-05-21T06:53:56.655+0000] {subprocess.py:106} INFO -  Trang 25 - Job 9/20 | Intermediate React-Native Engineer (ENG)
+[2026-05-21T06:53:56.822+0000] {subprocess.py:106} INFO -  Trang 25 - Job 10/20 | Fullstack Software Engineer
+[2026-05-21T06:53:56.979+0000] {subprocess.py:106} INFO -  Trang 25 - Job 11/20 | Mid to Senior Fullstack Developer (NodeJS/Jav
+[2026-05-21T06:53:57.132+0000] {subprocess.py:106} INFO -  Trang 25 - Job 12/20 | Middle/Senior Fullstack Dev (ReactJS/Wordpres
+[2026-05-21T06:53:57.250+0000] {subprocess.py:106} INFO -  Trang 25 - Job 13/20 | Application Support Level 2 (.Net, Angular)
+[2026-05-21T06:53:57.368+0000] {subprocess.py:106} INFO -  Trang 25 - Job 14/20 | Chuyên viên An toàn Thông tin- Up to 35M (net
+[2026-05-21T06:53:57.483+0000] {subprocess.py:106} INFO -  Trang 25 - Job 15/20 | Unity Game Developer (C#)
+[2026-05-21T06:53:57.632+0000] {subprocess.py:106} INFO -  Trang 25 - Job 16/20 | Security Network Engineer
+[2026-05-21T06:53:57.776+0000] {subprocess.py:106} INFO -  Trang 25 - Job 17/20 | ReactJS Frontend Developer (JavaScript)
+[2026-05-21T06:53:58.021+0000] {subprocess.py:106} INFO -  Trang 25 - Job 18/20 | Product Backend Engineer (Java, NodeJS, NestJ
+[2026-05-21T06:53:58.355+0000] {subprocess.py:106} INFO -  Trang 25 - Job 19/20 | 10 Mid/Senior Java Backend Developer (Spring,
+[2026-05-21T06:53:58.489+0000] {subprocess.py:106} INFO -  Trang 25 - Job 20/20 | Microsoft D365 BC Technical Expert - 24Hr Cam
+[2026-05-21T06:53:59.884+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:53:59.885+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 26 ---
+[2026-05-21T06:54:07.181+0000] {subprocess.py:106} INFO -  Trang 26 - Job 1/20 | Project Leader/ BrSE (Japanese N2+)
+[2026-05-21T06:54:07.652+0000] {subprocess.py:106} INFO -  Trang 26 - Job 2/20 | Technical Lead – Data Engineering
+[2026-05-21T06:54:07.989+0000] {subprocess.py:106} INFO -  Trang 26 - Job 3/20 | Business Analyst Leader
+[2026-05-21T06:54:08.256+0000] {subprocess.py:106} INFO -  Trang 26 - Job 4/20 | [Hybrid] UI/UX Designer (Mid/ Senior)
+[2026-05-21T06:54:08.449+0000] {subprocess.py:106} INFO -  Trang 26 - Job 5/20 | Senior Software Engineer (Java/English)
+[2026-05-21T06:54:08.619+0000] {subprocess.py:106} INFO -  Trang 26 - Job 6/20 | Chuyên viên Quản trị mạng (Networking)
+[2026-05-21T06:54:08.959+0000] {subprocess.py:106} INFO -  Trang 26 - Job 7/20 | Full-stack AI Engineer
+[2026-05-21T06:54:09.163+0000] {subprocess.py:106} INFO -  Trang 26 - Job 8/20 | Lead Software Developer (Java)
+[2026-05-21T06:54:09.377+0000] {subprocess.py:106} INFO -  Trang 26 - Job 9/20 | Java Developer (Spring, OOP) Up to $2000
+[2026-05-21T06:54:09.634+0000] {subprocess.py:106} INFO -  Trang 26 - Job 10/20 | Project Manager (Scrum Master, Java, Database
+[2026-05-21T06:54:09.900+0000] {subprocess.py:106} INFO -  Trang 26 - Job 11/20 | Senior Java Developer (Spring Boot, MySQL, Do
+[2026-05-21T06:54:10.151+0000] {subprocess.py:106} INFO -  Trang 26 - Job 12/20 | Senior Front-end Developer (Angular, ReactJS,
+[2026-05-21T06:54:10.300+0000] {subprocess.py:106} INFO -  Trang 26 - Job 13/20 | Technical Lead (ERP & Inhouse Platform)
+[2026-05-21T06:54:10.583+0000] {subprocess.py:106} INFO -  Trang 26 - Job 14/20 | AI Engineer (Backend Experience)
+[2026-05-21T06:54:10.934+0000] {subprocess.py:106} INFO -  Trang 26 - Job 15/20 | Network - Hardware Engineer (Firewall, Window
+[2026-05-21T06:54:11.142+0000] {subprocess.py:106} INFO -  Trang 26 - Job 16/20 | Senior/Leader IOS Developer (Swift) - Upto 60
+[2026-05-21T06:54:11.364+0000] {subprocess.py:106} INFO -  Trang 26 - Job 17/20 | Manual Tester (Japanese Speaking)
+[2026-05-21T06:54:11.525+0000] {subprocess.py:106} INFO -  Trang 26 - Job 18/20 | Senior Accelerator (IT Comtor, BrPM, BrSE bac
+[2026-05-21T06:54:11.698+0000] {subprocess.py:106} INFO -  Trang 26 - Job 19/20 | Product Owner
+[2026-05-21T06:54:11.853+0000] {subprocess.py:106} INFO -  Trang 26 - Job 20/20 | Senior Project Manager (English)
+[2026-05-21T06:54:13.265+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:54:13.267+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 27 ---
+[2026-05-21T06:54:17.067+0000] {subprocess.py:106} INFO -  Trang 27 - Job 1/20 | Senior Product Designer
+[2026-05-21T06:54:17.282+0000] {subprocess.py:106} INFO -  Trang 27 - Job 2/20 | Technical Leader (Lending Platform, Java, Spr
+[2026-05-21T06:54:17.458+0000] {subprocess.py:106} INFO -  Trang 27 - Job 3/20 | All level-Java Dev (Spring Boot/SQL/Clean Arc
+[2026-05-21T06:54:17.626+0000] {subprocess.py:106} INFO -  Trang 27 - Job 4/20 | Middle DevOps Engineer (Azure Cloud)
+[2026-05-21T06:54:17.834+0000] {subprocess.py:106} INFO -  Trang 27 - Job 5/20 | Remote -Sr. React Native Engineer (ReactJS, J
+[2026-05-21T06:54:18.151+0000] {subprocess.py:106} INFO -  Trang 27 - Job 6/20 | Software Engineer/Java Backend (Bank, Payment
+[2026-05-21T06:54:18.298+0000] {subprocess.py:106} INFO -  Trang 27 - Job 7/20 | Bridge Engineer - BrSE / ERP Consultant (Japa
+[2026-05-21T06:54:18.411+0000] {subprocess.py:106} INFO -  Trang 27 - Job 8/20 | (HN/HCM) Senior Product Owner (Data Platform)
+[2026-05-21T06:54:18.581+0000] {subprocess.py:106} INFO -  Trang 27 - Job 9/20 | Fullstack Developer (.Net, NodeJs, Angular)
+[2026-05-21T06:54:18.737+0000] {subprocess.py:106} INFO -  Trang 27 - Job 10/20 | Tester (QA QC)
+[2026-05-21T06:54:18.875+0000] {subprocess.py:106} INFO -  Trang 27 - Job 11/20 | Senior Automation Tester
+[2026-05-21T06:54:19.053+0000] {subprocess.py:106} INFO -  Trang 27 - Job 12/20 | Database Administrator ( PostgreSQL / MySQL )
+[2026-05-21T06:54:19.211+0000] {subprocess.py:106} INFO -  Trang 27 - Job 13/20 | Demo Operations Specialist (Enterprise Softwa
+[2026-05-21T06:54:19.364+0000] {subprocess.py:106} INFO -  Trang 27 - Job 14/20 | Fullstack Engineer
+[2026-05-21T06:54:19.520+0000] {subprocess.py:106} INFO -  Trang 27 - Job 15/20 | Middle Angular Developer
+[2026-05-21T06:54:19.663+0000] {subprocess.py:106} INFO -  Trang 27 - Job 16/20 | IT Support Specialist (Helpdesk / Evening shi
+[2026-05-21T06:54:19.787+0000] {subprocess.py:106} INFO -  Trang 27 - Job 17/20 | Chuyên viên Ứng dụng và Tổng hợp (Software)
+[2026-05-21T06:54:19.989+0000] {subprocess.py:106} INFO -  Trang 27 - Job 18/20 | Chuyên viên Vận hành và Kiểm thử phần mềm ( T
+[2026-05-21T06:54:20.169+0000] {subprocess.py:106} INFO -  Trang 27 - Job 19/20 | Chuyên viên Cơ sở Hạ tầng (Network Infrastruc
+[2026-05-21T06:54:20.315+0000] {subprocess.py:106} INFO -  Trang 27 - Job 20/20 | Kỹ Sư Tư Vấn Giải Pháp CNTT (Presales, Networ
+[2026-05-21T06:54:21.453+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:54:21.454+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 28 ---
+[2026-05-21T06:54:27.128+0000] {subprocess.py:106} INFO -  Trang 28 - Job 1/20 | Senior Game Designer
+[2026-05-21T06:54:27.289+0000] {subprocess.py:106} INFO -  Trang 28 - Job 2/20 | Product Owner - 13T Lương - Upto 3000$
+[2026-05-21T06:54:27.418+0000] {subprocess.py:106} INFO -  Trang 28 - Job 3/20 | UI/UX DESIGNER (Blockchain/web3)
+[2026-05-21T06:54:27.610+0000] {subprocess.py:106} INFO -  Trang 28 - Job 4/20 | IT Project Manager - Quản lý dự án CNTT
+[2026-05-21T06:54:27.835+0000] {subprocess.py:106} INFO -  Trang 28 - Job 5/20 | Expert, Information Security (Networking, AWS
+[2026-05-21T06:54:28.027+0000] {subprocess.py:106} INFO -  Trang 28 - Job 6/20 | Chuyên viên Quản lý dự án - Project Manager (
+[2026-05-21T06:54:28.244+0000] {subprocess.py:106} INFO -  Trang 28 - Job 7/20 | Senior Microsoft Intune Engineer
+[2026-05-21T06:54:28.371+0000] {subprocess.py:106} INFO -  Trang 28 - Job 8/20 | Senior Back-End Developer (.NET)
+[2026-05-21T06:54:28.503+0000] {subprocess.py:106} INFO -  Trang 28 - Job 9/20 | Senior Software Engineer (Java, Spring boot,
+[2026-05-21T06:54:28.612+0000] {subprocess.py:106} INFO -  Trang 28 - Job 10/20 | Senior Data Scientist (Python, Tableau, Power
+[2026-05-21T06:54:28.752+0000] {subprocess.py:106} INFO -  Trang 28 - Job 11/20 | Senior/ Expert Data Tester
+[2026-05-21T06:54:28.932+0000] {subprocess.py:106} INFO -  Trang 28 - Job 12/20 | Senior Data Engineer
+[2026-05-21T06:54:29.209+0000] {subprocess.py:106} INFO -  Trang 28 - Job 13/20 | CVCC/Chuyên gia Vận hành Ứng dụng
+[2026-05-21T06:54:29.353+0000] {subprocess.py:106} INFO -  Trang 28 - Job 14/20 | Expert/ Senior Business and Data Analyst
+[2026-05-21T06:54:29.520+0000] {subprocess.py:106} INFO -  Trang 28 - Job 15/20 | Technical Leader (Java Spring)
+[2026-05-21T06:54:29.691+0000] {subprocess.py:106} INFO -  Trang 28 - Job 16/20 | Frontend Developer (Angular 2+, HTML5, CSS, T
+[2026-05-21T06:54:29.840+0000] {subprocess.py:106} INFO -  Trang 28 - Job 17/20 | Data Engineer (AWS, SQL, Python)
+[2026-05-21T06:54:30.004+0000] {subprocess.py:106} INFO -  Trang 28 - Job 18/20 | AI Developer
+[2026-05-21T06:54:30.179+0000] {subprocess.py:106} INFO -  Trang 28 - Job 19/20 | Software Test Engineer (All Levels)
+[2026-05-21T06:54:30.363+0000] {subprocess.py:106} INFO -  Trang 28 - Job 20/20 | AI Engineer
+[2026-05-21T06:54:32.123+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:54:32.124+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 29 ---
+[2026-05-21T06:54:36.800+0000] {subprocess.py:106} INFO -  Trang 29 - Job 1/20 | Fullstack Dev (Laravel/CakePHP/ ReactJS)
+[2026-05-21T06:54:36.962+0000] {subprocess.py:106} INFO -  Trang 29 - Job 2/20 | FullStack Developer (NodeJS, ReactJS, AI)
+[2026-05-21T06:54:37.104+0000] {subprocess.py:106} INFO -  Trang 29 - Job 3/20 | Project Manager (Banking/Securities Domain)
+[2026-05-21T06:54:37.278+0000] {subprocess.py:106} INFO -  Trang 29 - Job 4/20 | Data Manager (Data Engineer, SQL, Python)
+[2026-05-21T06:54:37.566+0000] {subprocess.py:106} INFO -  Trang 29 - Job 5/20 | Middle/ Senior Software Engineer (C#, .NET, S
+[2026-05-21T06:54:37.690+0000] {subprocess.py:106} INFO -  Trang 29 - Job 6/20 | QA Automation Tester (Java, Javascript)
+[2026-05-21T06:54:37.833+0000] {subprocess.py:106} INFO -  Trang 29 - Job 7/20 | Senior AI Developer (Generative AI, Python, F
+[2026-05-21T06:54:37.973+0000] {subprocess.py:106} INFO -  Trang 29 - Job 8/20 | Backend Technical Lead – PRO Trading (Go, Rus
+[2026-05-21T06:54:38.131+0000] {subprocess.py:106} INFO -  Trang 29 - Job 9/20 | Chuyên viên System Engineer (Linux, Cloud)
+[2026-05-21T06:54:38.284+0000] {subprocess.py:106} INFO -  Trang 29 - Job 10/20 | Senior Engineer - Security Platform (SOC/Blue
+[2026-05-21T06:54:38.550+0000] {subprocess.py:106} INFO -  Trang 29 - Job 11/20 | Mobile Tech Lead
+[2026-05-21T06:54:38.662+0000] {subprocess.py:106} INFO -  Trang 29 - Job 12/20 | Chuyên Viên/ CVCC Phân Tích Dữ Liệu (Data Ana
+[2026-05-21T06:54:38.801+0000] {subprocess.py:106} INFO -  Trang 29 - Job 13/20 | [Da Nang] Full-Stack Developer (ReactJS/ Node
+[2026-05-21T06:54:38.954+0000] {subprocess.py:106} INFO -  Trang 29 - Job 14/20 | [Ho Chi Minh] Full-Stack Developer (ReactJS/
+[2026-05-21T06:54:39.097+0000] {subprocess.py:106} INFO -  Trang 29 - Job 15/20 | [Da Nang & Ho Chi Minh] Technical Architect
+[2026-05-21T06:54:39.215+0000] {subprocess.py:106} INFO -  Trang 29 - Job 16/20 | [Da Nang / Ho Chi Minh] UI/UX Designer
+[2026-05-21T06:54:39.405+0000] {subprocess.py:106} INFO -  Trang 29 - Job 17/20 | AI Expert (Machine Learning, Deep Learning, L
+[2026-05-21T06:54:39.570+0000] {subprocess.py:106} INFO -  Trang 29 - Job 18/20 | Senior AI Expert (Machine Learning, Deep Lear
+[2026-05-21T06:54:39.717+0000] {subprocess.py:106} INFO -  Trang 29 - Job 19/20 | Database Administrator (PostgreSQL, AWS)
+[2026-05-21T06:54:39.866+0000] {subprocess.py:106} INFO -  Trang 29 - Job 20/20 | Cloud Engineer (Azure)
+[2026-05-21T06:54:41.140+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:54:41.142+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 30 ---
+[2026-05-21T06:54:44.378+0000] {subprocess.py:106} INFO -  Trang 30 - Job 1/20 | Fullstack Developer (React, NextJS, and TypeS
+[2026-05-21T06:54:44.635+0000] {subprocess.py:106} INFO -  Trang 30 - Job 2/20 | AI Automation Developer
+[2026-05-21T06:54:44.929+0000] {subprocess.py:106} INFO -  Trang 30 - Job 3/20 | DevOps Engineer (Azure,Terraform,Kubernetes,C
+[2026-05-21T06:54:45.130+0000] {subprocess.py:106} INFO -  Trang 30 - Job 4/20 | Ruby on Rails Developer (Middle/Senior)
+[2026-05-21T06:54:45.303+0000] {subprocess.py:106} INFO -  Trang 30 - Job 5/20 | Product Manager
+[2026-05-21T06:54:45.498+0000] {subprocess.py:106} INFO -  Trang 30 - Job 6/20 | Project Manager (Super App Project) - DTO
+[2026-05-21T06:54:45.787+0000] {subprocess.py:106} INFO -  Trang 30 - Job 7/20 | CVCC/ Chuyên gia Phát triển Ứng dụng (Java, S
+[2026-05-21T06:54:46.040+0000] {subprocess.py:106} INFO -  Trang 30 - Job 8/20 | Java Developer (Spring Boot, Japanese N4+)
+[2026-05-21T06:54:47.224+0000] {subprocess.py:106} INFO -  Trang 30 - Job 9/20 | Middle/Senior Software Engineer (.NET/C#)
+[2026-05-21T06:54:47.365+0000] {subprocess.py:106} INFO -  Trang 30 - Job 10/20 | Data Engineer (AWS/GCP) - Up to $2700
+[2026-05-21T06:54:47.847+0000] {subprocess.py:106} INFO -  Trang 30 - Job 11/20 | Team Lead/Technical Lead – Java Fullstack (Sp
+[2026-05-21T06:54:47.850+0000] {subprocess.py:106} INFO -  Trang 30 - Job 12/20 | IP Portfolio Manager (AI Program) - Up to $40
+[2026-05-21T06:54:47.854+0000] {subprocess.py:106} INFO -  Trang 30 - Job 13/20 | Middle/Senior Automation QA (Good English)
+[2026-05-21T06:54:47.979+0000] {subprocess.py:106} INFO -  Trang 30 - Job 14/20 | Enterprise IT Services (Microsoft 365, Jira)
+[2026-05-21T06:54:48.201+0000] {subprocess.py:106} INFO -  Trang 30 - Job 15/20 | Senior Autosar Engineer - 6-Month Contract (H
+[2026-05-21T06:54:48.383+0000] {subprocess.py:106} INFO -  Trang 30 - Job 16/20 | Mid-Level Python Developer (2 – 3 years)
+[2026-05-21T06:54:48.559+0000] {subprocess.py:106} INFO -  Trang 30 - Job 17/20 | Chuyên gia phát triển sản phẩm/giải pháp CNTT
+[2026-05-21T06:54:48.715+0000] {subprocess.py:106} INFO -  Trang 30 - Job 18/20 | Kiến trúc sư giải pháp CNTT (Solution Archite
+[2026-05-21T06:54:48.870+0000] {subprocess.py:106} INFO -  Trang 30 - Job 19/20 | Chuyên viên quản lý dự án phần mềm (Project M
+[2026-05-21T06:54:49.071+0000] {subprocess.py:106} INFO -  Trang 30 - Job 20/20 | Chuyên viên AI Engineer (Machine Learning, Py
+[2026-05-21T06:54:50.614+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:54:50.615+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 31 ---
+[2026-05-21T06:54:53.797+0000] {subprocess.py:106} INFO -  Trang 31 - Job 1/20 | Chuyên viên Lập trình (Java, Spring, ReactJS)
+[2026-05-21T06:54:54.015+0000] {subprocess.py:106} INFO -  Trang 31 - Job 2/20 | Chuyên viên Phân tích nghiệp vụ (Business Ana
+[2026-05-21T06:54:54.344+0000] {subprocess.py:106} INFO -  Trang 31 - Job 3/20 | Middle/Senior Software Engineer (Golang, Pyth
+[2026-05-21T06:54:54.580+0000] {subprocess.py:106} INFO -  Trang 31 - Job 4/20 | iOS Developer (Swift)
+[2026-05-21T06:54:54.776+0000] {subprocess.py:106} INFO -  Trang 31 - Job 5/20 | P. Khoa học dữ liệu - CVCC/Chuyên gia Khoa họ
+[2026-05-21T06:54:54.987+0000] {subprocess.py:106} INFO -  Trang 31 - Job 6/20 | Chief Technology Officer (CTO)
+[2026-05-21T06:54:55.244+0000] {subprocess.py:106} INFO -  Trang 31 - Job 7/20 | Senior Backend Developer (Java, Hanoi)
+[2026-05-21T06:54:55.461+0000] {subprocess.py:106} INFO -  Trang 31 - Job 8/20 | Software Tester (QA QC, Selenium, SQL, Postma
+[2026-05-21T06:54:55.651+0000] {subprocess.py:106} INFO -  Trang 31 - Job 9/20 | Business Analyst (BRD, SRS, Microservices, RE
+[2026-05-21T06:54:55.894+0000] {subprocess.py:106} INFO -  Trang 31 - Job 10/20 | Data Analyst (SQL, Python, PowerBI, Tableau,
+[2026-05-21T06:54:56.055+0000] {subprocess.py:106} INFO -  Trang 31 - Job 11/20 | Senior Game Developer
+[2026-05-21T06:54:56.263+0000] {subprocess.py:106} INFO -  Trang 31 - Job 12/20 | Software/Fullstack Engineer - Dev (PHP/Larave
+[2026-05-21T06:54:56.493+0000] {subprocess.py:106} INFO -  Trang 31 - Job 13/20 | Business Analyst - BA (ERP/CRM/eVAT)
+[2026-05-21T06:54:56.694+0000] {subprocess.py:106} INFO -  Trang 31 - Job 14/20 | Chuyên viên tích hợp hệ thống (Java Developer
+[2026-05-21T06:54:57.310+0000] {subprocess.py:106} INFO -  Trang 31 - Job 15/20 | Senior Mobile Developer - Fintech
+[2026-05-21T06:54:59.802+0000] {subprocess.py:106} INFO -  Trang 31 - Job 16/20 | Middle/ Senior Mobile Developer (React Native
+[2026-05-21T06:55:00.104+0000] {subprocess.py:106} INFO -  Trang 31 - Job 17/20 | (Good English) 5+ YOE Manual QA/QC Tester | B
+[2026-05-21T06:55:00.401+0000] {subprocess.py:106} INFO -  Trang 31 - Job 18/20 | [Urgent] Full-Stack Developer (Java Spring Bo
+[2026-05-21T06:55:00.679+0000] {subprocess.py:106} INFO -  Trang 31 - Job 19/20 | Senior Project Manager
+[2026-05-21T06:55:00.870+0000] {subprocess.py:106} INFO -  Trang 31 - Job 20/20 | Software Engineer (Node.js, AWS, Winforms)
+[2026-05-21T06:55:01.989+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:55:01.990+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 32 ---
+[2026-05-21T06:55:08.485+0000] {subprocess.py:106} INFO -  Trang 32 - Job 1/20 | Software Engineer (Web Application)
+[2026-05-21T06:55:08.635+0000] {subprocess.py:106} INFO -  Trang 32 - Job 2/20 | Chuyên viên NETWORK - TT. Kỹ thuật hạ tầng
+[2026-05-21T06:55:08.829+0000] {subprocess.py:106} INFO -  Trang 32 - Job 3/20 | Software Engineer (Python, TypeScript)
+[2026-05-21T06:55:09.067+0000] {subprocess.py:106} INFO -  Trang 32 - Job 4/20 | Flutter Developer (iOS, Android)
+[2026-05-21T06:55:09.236+0000] {subprocess.py:106} INFO -  Trang 32 - Job 5/20 | UX Specialist (Figma, Adobe XD, A/B Testing)
+[2026-05-21T06:55:09.365+0000] {subprocess.py:106} INFO -  Trang 32 - Job 6/20 | 02 Back-end Developer (Golang, PostgreSQL, AW
+[2026-05-21T06:55:09.529+0000] {subprocess.py:106} INFO -  Trang 32 - Job 7/20 | React Native Developer (JavaScript)- Up to 18
+[2026-05-21T06:55:09.716+0000] {subprocess.py:106} INFO -  Trang 32 - Job 8/20 | Senior Machine Learning Engineer (AI, C/C++,
+[2026-05-21T06:55:09.855+0000] {subprocess.py:106} INFO -  Trang 32 - Job 9/20 | Middle Frontend Dev (React / React Native / M
+[2026-05-21T06:55:10.013+0000] {subprocess.py:106} INFO -  Trang 32 - Job 10/20 | Senior Business Analyst
+[2026-05-21T06:55:10.181+0000] {subprocess.py:106} INFO -  Trang 32 - Job 11/20 | Mid/Sr DevOps Engineer (Terraform/Kubernetes)
+[2026-05-21T06:55:10.332+0000] {subprocess.py:106} INFO -  Trang 32 - Job 12/20 | Agentic AI Engineer/Developer (Vertex AI/ADK)
+[2026-05-21T06:55:10.485+0000] {subprocess.py:106} INFO -  Trang 32 - Job 13/20 | Senior DevOps Engineer (Agile, AWS)
+[2026-05-21T06:55:10.631+0000] {subprocess.py:106} INFO -  Trang 32 - Job 14/20 | AI Engineer
+[2026-05-21T06:55:10.772+0000] {subprocess.py:106} INFO -  Trang 32 - Job 15/20 | Senior System Engineer (C, C++, Linux)
+[2026-05-21T06:55:10.882+0000] {subprocess.py:106} INFO -  Trang 32 - Job 16/20 | Engineering Manager
+[2026-05-21T06:55:11.003+0000] {subprocess.py:106} INFO -  Trang 32 - Job 17/20 | C# Software Engineer [Remote - Mid Level]
+[2026-05-21T06:55:11.186+0000] {subprocess.py:106} INFO -  Trang 32 - Job 18/20 | Fullstack Teachnical Leader (NestJS, Angular,
+[2026-05-21T06:55:11.315+0000] {subprocess.py:106} INFO -  Trang 32 - Job 19/20 | 05 System Admin (Linux)
+[2026-05-21T06:55:11.448+0000] {subprocess.py:106} INFO -  Trang 32 - Job 20/20 | Fullstack Developer (NodeJS/ReactJS/Java Scri
+[2026-05-21T06:55:12.939+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:55:12.939+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 33 ---
+[2026-05-21T06:55:19.517+0000] {subprocess.py:106} INFO -  Trang 33 - Job 1/20 | Senior DevOps Engineer
+[2026-05-21T06:55:19.691+0000] {subprocess.py:106} INFO -  Trang 33 - Job 2/20 | Chuyên viên lập trình AI/ SAP B1 Hepldesk
+[2026-05-21T06:55:19.911+0000] {subprocess.py:106} INFO -  Trang 33 - Job 3/20 | Mid/Senior .NET Engineer (Airlines domain, En
+[2026-05-21T06:55:20.118+0000] {subprocess.py:106} INFO -  Trang 33 - Job 4/20 | Principal iOS Native Engineer (Swift)
+[2026-05-21T06:55:20.338+0000] {subprocess.py:106} INFO -  Trang 33 - Job 5/20 | Principal Android Engineer (Kotlin)
+[2026-05-21T06:55:20.584+0000] {subprocess.py:106} INFO -  Trang 33 - Job 6/20 | IT Business Analyst (English-required)
+[2026-05-21T06:55:20.822+0000] {subprocess.py:106} INFO -  Trang 33 - Job 7/20 | Mobile App Developer (React Native / Web Fron
+[2026-05-21T06:55:21.113+0000] {subprocess.py:106} INFO -  Trang 33 - Job 8/20 | DevSecOps Engineer (English-required)
+[2026-05-21T06:55:21.326+0000] {subprocess.py:106} INFO -  Trang 33 - Job 9/20 | Web3 QAQC
+[2026-05-21T06:55:21.528+0000] {subprocess.py:106} INFO -  Trang 33 - Job 10/20 | Web3 - UI/UX Designer
+[2026-05-21T06:55:21.714+0000] {subprocess.py:106} INFO -  Trang 33 - Job 11/20 | IT - Middle/ Senior QC
+[2026-05-21T06:55:21.832+0000] {subprocess.py:106} INFO -  Trang 33 - Job 12/20 | Senior IT PM (T24 and Banking Project)
+[2026-05-21T06:55:21.996+0000] {subprocess.py:106} INFO -  Trang 33 - Job 13/20 | Kỹ sư phân tích nghiệp vụ (IT Business Analys
+[2026-05-21T06:55:22.209+0000] {subprocess.py:106} INFO -  Trang 33 - Job 14/20 | Agentic Engineer (Python/Go/C/C++ Backend & A
+[2026-05-21T06:55:22.386+0000] {subprocess.py:106} INFO -  Trang 33 - Job 15/20 | Junior Backend Developer (PHP/ NodeJS/ Ruby o
+[2026-05-21T06:55:22.550+0000] {subprocess.py:106} INFO -  Trang 33 - Job 16/20 | Senior Automation Tester (Python/English)
+[2026-05-21T06:55:22.676+0000] {subprocess.py:106} INFO -  Trang 33 - Job 17/20 | Shopify/WordPress Developer
+[2026-05-21T06:55:23.316+0000] {subprocess.py:106} INFO -  Trang 33 - Job 18/20 | DevOps Engineer (Linux)
+[2026-05-21T06:55:23.317+0000] {subprocess.py:106} INFO -  Trang 33 - Job 19/20 | Cloud Technical Engineer (Senior/Manager Leve
+[2026-05-21T06:55:24.325+0000] {subprocess.py:106} INFO -  Trang 33 - Job 20/20 | DevOps Engineering Manager
+[2026-05-21T06:55:25.726+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:55:25.726+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 34 ---
+[2026-05-21T06:55:32.345+0000] {subprocess.py:106} INFO -  Trang 34 - Job 1/20 | Senior Cloud Engineer (Microsoft Azure)
+[2026-05-21T06:55:32.571+0000] {subprocess.py:106} INFO -  Trang 34 - Job 2/20 | Senior Manager IT Infrastructure (Networking/
+[2026-05-21T06:55:32.769+0000] {subprocess.py:106} INFO -  Trang 34 - Job 3/20 | Senior CRM Developer
+[2026-05-21T06:55:32.977+0000] {subprocess.py:106} INFO -  Trang 34 - Job 4/20 | Senior Backend Engineer (AI) - Up to 55k
+[2026-05-21T06:55:33.195+0000] {subprocess.py:106} INFO -  Trang 34 - Job 5/20 | Quản trị hệ thống Cơ sở Dữ liệu (DBA - Databa
+[2026-05-21T06:55:33.512+0000] {subprocess.py:106} INFO -  Trang 34 - Job 6/20 | Mid/Sr Java Developer (English Required) - Up
+[2026-05-21T06:55:34.011+0000] {subprocess.py:106} INFO -  Trang 34 - Job 7/20 | Junior Backend Developer (.NET, C#)
+[2026-05-21T06:55:34.175+0000] {subprocess.py:106} INFO -  Trang 34 - Job 8/20 | [JOB-43] Graphic Designer (Junior)
+[2026-05-21T06:55:34.336+0000] {subprocess.py:106} INFO -  Trang 34 - Job 9/20 | Senior Java Developer
+[2026-05-21T06:55:34.492+0000] {subprocess.py:106} INFO -  Trang 34 - Job 10/20 | Product Operation (Data Analysis, Business An
+[2026-05-21T06:55:34.678+0000] {subprocess.py:106} INFO -  Trang 34 - Job 11/20 | Kỹ Sư Vận Hành Mạng & An Ninh Hệ Thống
+[2026-05-21T06:55:34.832+0000] {subprocess.py:106} INFO -  Trang 34 - Job 12/20 | IT Network & Security Specialist (System Admi
+[2026-05-21T06:55:35.002+0000] {subprocess.py:106} INFO -  Trang 34 - Job 13/20 | Middle AI Engineer (ML, MLOps, CI/CD, AWS)
+[2026-05-21T06:55:35.239+0000] {subprocess.py:106} INFO -  Trang 34 - Job 14/20 | Senior AI Software Engineer (Ecommerce & Grow
+[2026-05-21T06:55:35.421+0000] {subprocess.py:106} INFO -  Trang 34 - Job 15/20 | AI Automation Engineer (GenAI / LLMs / Python
+[2026-05-21T06:55:35.621+0000] {subprocess.py:106} INFO -  Trang 34 - Job 16/20 | Project Manager (Korean Topik 6, Agile)
+[2026-05-21T06:55:35.795+0000] {subprocess.py:106} INFO -  Trang 34 - Job 17/20 | Business Analyst/Product Owner (AI/ML/LLM, Ji
+[2026-05-21T06:55:35.923+0000] {subprocess.py:106} INFO -  Trang 34 - Job 18/20 | Backend Engineer (Java, C#, Python, Golang)
+[2026-05-21T06:55:36.047+0000] {subprocess.py:106} INFO -  Trang 34 - Job 19/20 | AI Prompt Engineer (Animation, Design)
+[2026-05-21T06:55:36.199+0000] {subprocess.py:106} INFO -  Trang 34 - Job 20/20 | Junior React Native Developer (JavaScript / T
+[2026-05-21T06:55:37.315+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:55:37.315+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 35 ---
+[2026-05-21T06:55:44.050+0000] {subprocess.py:106} INFO -  Trang 35 - Job 1/20 | Security Engineer (Linux, Windows, DNS)
+[2026-05-21T06:55:44.226+0000] {subprocess.py:106} INFO -  Trang 35 - Job 2/20 | Java Backend Developer (Spring Boot, Git)
+[2026-05-21T06:55:44.390+0000] {subprocess.py:106} INFO -  Trang 35 - Job 3/20 | QA Lead & QA Process Architect
+[2026-05-21T06:55:44.603+0000] {subprocess.py:106} INFO -  Trang 35 - Job 4/20 | Senior Fintech / Payment Engineer (Java, Spri
+[2026-05-21T06:55:44.837+0000] {subprocess.py:106} INFO -  Trang 35 - Job 5/20 | Fullstack Web Developer (ReactJS, NodeJS) ~ U
+[2026-05-21T06:55:45.009+0000] {subprocess.py:106} INFO -  Trang 35 - Job 6/20 | React Native Mobile Apps (iOS, Android) - SI
+[2026-05-21T06:55:45.214+0000] {subprocess.py:106} INFO -  Trang 35 - Job 7/20 | AI Software Engineer (Python/Go/C/C++ & AI Ag
+[2026-05-21T06:55:45.403+0000] {subprocess.py:106} INFO -  Trang 35 - Job 8/20 | Fullstack NodeJS Developer (Middle)
+[2026-05-21T06:55:45.612+0000] {subprocess.py:106} INFO -  Trang 35 - Job 9/20 | 05 Senior/Lead Product Manager ( Fintech)
+[2026-05-21T06:55:45.903+0000] {subprocess.py:106} INFO -  Trang 35 - Job 10/20 | DevOps/ SRE Engineer (Cloud/MLOps/AI)
+[2026-05-21T06:55:46.427+0000] {subprocess.py:106} INFO -  Trang 35 - Job 11/20 | Business Analyst (Tech) - Attractive Salary
+[2026-05-21T06:55:46.756+0000] {subprocess.py:106} INFO -  Trang 35 - Job 12/20 | Senior Product Owner/Business Analyst (AI Pla
+[2026-05-21T06:55:47.050+0000] {subprocess.py:106} INFO -  Trang 35 - Job 13/20 | [English] Project Manager
+[2026-05-21T06:55:47.902+0000] {subprocess.py:106} INFO -  Trang 35 - Job 14/20 | AI Engineer Fullstack (Python, SQL, NoSQL, LL
+[2026-05-21T06:55:48.626+0000] {subprocess.py:106} INFO -  Trang 35 - Job 15/20 | Fullstack Developer (ASP.NET, C#, SQL, ReactJ
+[2026-05-21T06:55:48.627+0000] {subprocess.py:106} INFO -  Trang 35 - Job 16/20 | Senior AI Developer (ML/Python/SQL)
+[2026-05-21T06:55:48.627+0000] {subprocess.py:106} INFO -  Trang 35 - Job 17/20 | Android Engineer (Java/Kotlin) - Captcha
+[2026-05-21T06:55:48.628+0000] {subprocess.py:106} INFO -  Trang 35 - Job 18/20 | Lead Front-end Developer (JavaScript, ReactJS
+[2026-05-21T06:55:48.629+0000] {subprocess.py:106} INFO -  Trang 35 - Job 19/20 | Senior IT Product Business Analyst (PO Assist
+[2026-05-21T06:55:48.630+0000] {subprocess.py:106} INFO -  Trang 35 - Job 20/20 | Backend Engineer (Java, Golang, Cloud, AWS, P
+[2026-05-21T06:55:50.202+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:55:50.203+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 36 ---
+[2026-05-21T06:55:54.620+0000] {subprocess.py:106} INFO -  Trang 36 - Job 1/20 | Senior Java Developer/Squad Lead - SI - MSB -
+[2026-05-21T06:55:54.929+0000] {subprocess.py:106} INFO -  Trang 36 - Job 2/20 | All Levels Security Engineer (Mobile/Web)
+[2026-05-21T06:55:55.169+0000] {subprocess.py:106} INFO -  Trang 36 - Job 3/20 | Business Analyst – Insurance Solutions
+[2026-05-21T06:55:55.431+0000] {subprocess.py:106} INFO -  Trang 36 - Job 4/20 | Database Administrator ( SQL, PostgreSQL, MyS
+[2026-05-21T06:55:55.603+0000] {subprocess.py:106} INFO -  Trang 36 - Job 5/20 | Technical Project Manager (English)
+[2026-05-21T06:55:55.781+0000] {subprocess.py:106} INFO -  Trang 36 - Job 6/20 | Senior Data Scientist
+[2026-05-21T06:55:55.999+0000] {subprocess.py:106} INFO -  Trang 36 - Job 7/20 | React Native Dev (Up to 2,000 USD)
+[2026-05-21T06:55:56.328+0000] {subprocess.py:106} INFO -  Trang 36 - Job 8/20 | Innovation Engineer (AI/Blockchain/MVP)
+[2026-05-21T06:55:56.750+0000] {subprocess.py:106} INFO -  Trang 36 - Job 9/20 | Fresher Data Engineer
+[2026-05-21T06:55:56.976+0000] {subprocess.py:106} INFO -  Trang 36 - Job 10/20 | .NET Developer (Middle, Senior, Principal)
+[2026-05-21T06:55:57.327+0000] {subprocess.py:106} INFO -  Trang 36 - Job 11/20 | Junior/Middle AI Engineer (AI/ML, Python)
+[2026-05-21T06:55:57.640+0000] {subprocess.py:106} INFO -  Trang 36 - Job 12/20 | Senior Java Developer (Spring/OOP)
+[2026-05-21T06:55:57.914+0000] {subprocess.py:106} INFO -  Trang 36 - Job 13/20 | Mobile Automation Engineer (QA)
+[2026-05-21T06:55:58.171+0000] {subprocess.py:106} INFO -  Trang 36 - Job 14/20 | Senior Backend Engineer (Java, Spring, Englis
+[2026-05-21T06:55:58.515+0000] {subprocess.py:106} INFO -  Trang 36 - Job 15/20 | AI Tech Lead (LLM, Python)
+[2026-05-21T06:55:58.780+0000] {subprocess.py:106} INFO -  Trang 36 - Job 16/20 | HO - ETL Specialist (SQL, Python)
+[2026-05-21T06:55:59.029+0000] {subprocess.py:106} INFO -  Trang 36 - Job 17/20 | HO - AI Engineer (Python, Machine Learning)
+[2026-05-21T06:55:59.310+0000] {subprocess.py:106} INFO -  Trang 36 - Job 18/20 | HO - Business Intelligence Executive
+[2026-05-21T06:55:59.573+0000] {subprocess.py:106} INFO -  Trang 36 - Job 19/20 | React Native Fresher (ENG)
+[2026-05-21T06:55:59.787+0000] {subprocess.py:106} INFO -  Trang 36 - Job 20/20 | Technical Architect (Securities/Banking, Java
+[2026-05-21T06:56:01.316+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:56:01.318+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 37 ---
+[2026-05-21T06:56:10.942+0000] {subprocess.py:106} INFO -  Trang 37 - Job 1/20 | 04 Senior Fullstack Dev (Golang, Java, NodeJS
+[2026-05-21T06:56:11.360+0000] {subprocess.py:106} INFO -  Trang 37 - Job 2/20 | Business Analyst (BA)
+[2026-05-21T06:56:11.721+0000] {subprocess.py:106} INFO -  Trang 37 - Job 3/20 | Senior DevOps Engineer (AWS, Linux, CI/CD)
+[2026-05-21T06:56:12.141+0000] {subprocess.py:106} INFO -  Trang 37 - Job 4/20 | Engineering Manager
+[2026-05-21T06:56:12.616+0000] {subprocess.py:106} INFO -  Trang 37 - Job 5/20 | Engineering Team Lead (AI-native, Java, Engli
+[2026-05-21T06:56:12.950+0000] {subprocess.py:106} INFO -  Trang 37 - Job 6/20 | Milient - Senior Fullstack Developer (NodeJS,
+[2026-05-21T06:56:13.205+0000] {subprocess.py:106} INFO -  Trang 37 - Job 7/20 | Chuyên gia Core banking - HDFG
+[2026-05-21T06:56:13.464+0000] {subprocess.py:106} INFO -  Trang 37 - Job 8/20 | Engineering Manager (HRM, SaaS, Golang, Micro
+[2026-05-21T06:56:13.741+0000] {subprocess.py:106} INFO -  Trang 37 - Job 9/20 | SAP IT Project Lead (Test/ Data/ Cutover/ Clo
+[2026-05-21T06:56:14.032+0000] {subprocess.py:106} INFO -  Trang 37 - Job 10/20 | Automation Test Engineer
+[2026-05-21T06:56:14.226+0000] {subprocess.py:106} INFO -  Trang 37 - Job 11/20 | .NET Developer (Angular, C#, RESTful API, SQL
+[2026-05-21T06:56:14.489+0000] {subprocess.py:106} INFO -  Trang 37 - Job 12/20 | Backend Developer (Java)
+[2026-05-21T06:56:14.789+0000] {subprocess.py:106} INFO -  Trang 37 - Job 13/20 | React Native Lead - Sign-on Bonus
+[2026-05-21T06:56:14.960+0000] {subprocess.py:106} INFO -  Trang 37 - Job 14/20 | Jr. Fullstack .Net Developer (ASP.NET, ReactJ
+[2026-05-21T06:56:15.345+0000] {subprocess.py:106} INFO -  Trang 37 - Job 15/20 | Manual Test Engineer (Automotive Domain_From
+[2026-05-21T06:56:15.624+0000] {subprocess.py:106} INFO -  Trang 37 - Job 16/20 | Mid - Senior Business Analyst
+[2026-05-21T06:56:15.862+0000] {subprocess.py:106} INFO -  Trang 37 - Job 17/20 | Technical Lead (NodeJS, ReactJS, .NET)
+[2026-05-21T06:56:16.084+0000] {subprocess.py:106} INFO -  Trang 37 - Job 18/20 | Fullstack Developer (NodeJS/ TypeScript/ Reac
+[2026-05-21T06:56:16.401+0000] {subprocess.py:106} INFO -  Trang 37 - Job 19/20 | Mobile Engineer (iOS, React Native)
+[2026-05-21T06:56:16.620+0000] {subprocess.py:106} INFO -  Trang 37 - Job 20/20 | Regular/Senior Embedded Software Engineer
+[2026-05-21T06:56:17.830+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:56:17.833+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 38 ---
+[2026-05-21T06:56:22.185+0000] {subprocess.py:106} INFO -  Trang 38 - Job 1/20 | AI Developer (Python, GenAI/LLM)
+[2026-05-21T06:56:22.340+0000] {subprocess.py:106} INFO -  Trang 38 - Job 2/20 | Project Manager
+[2026-05-21T06:56:22.536+0000] {subprocess.py:106} INFO -  Trang 38 - Job 3/20 | Business Analyst (HRDomain/SQL/Agile/Scrum/En
+[2026-05-21T06:56:22.754+0000] {subprocess.py:106} INFO -  Trang 38 - Job 4/20 | Product Owner (Business Analyst, AI, Agile/Sc
+[2026-05-21T06:56:22.921+0000] {subprocess.py:106} INFO -  Trang 38 - Job 5/20 | 03 Tester (Manual Tester, Automation Test, QA
+[2026-05-21T06:56:23.090+0000] {subprocess.py:106} INFO -  Trang 38 - Job 6/20 | 03 UI-UX Desginer (Photoshop, Illustrator, Fi
+[2026-05-21T06:56:23.289+0000] {subprocess.py:106} INFO -  Trang 38 - Job 7/20 | 03 Flutter Mobile Apps Developer (Dart, Andro
+[2026-05-21T06:56:23.457+0000] {subprocess.py:106} INFO -  Trang 38 - Job 8/20 | Solution Architect (Java/.NET/NodeJS/Python)
+[2026-05-21T06:56:23.652+0000] {subprocess.py:106} INFO -  Trang 38 - Job 9/20 | 03 Java Backend Developer (Spring, SQL)
+[2026-05-21T06:56:23.868+0000] {subprocess.py:106} INFO -  Trang 38 - Job 10/20 | MaintMaster - Quality Assurance Engineer
+[2026-05-21T06:56:24.058+0000] {subprocess.py:106} INFO -  Trang 38 - Job 11/20 | MaintMaster - Senior Software Developer (Reac
+[2026-05-21T06:56:24.234+0000] {subprocess.py:106} INFO -  Trang 38 - Job 12/20 | Senior Fullstack Developer
+[2026-05-21T06:56:24.351+0000] {subprocess.py:106} INFO -  Trang 38 - Job 13/20 | Caspeco - Backend Developer (NodeJS | Automat
+[2026-05-21T06:56:24.487+0000] {subprocess.py:106} INFO -  Trang 38 - Job 14/20 | ABAP Developer/ SAP Technical Consultant
+[2026-05-21T06:56:24.677+0000] {subprocess.py:106} INFO -  Trang 38 - Job 15/20 | Senior Java Developer (Fintech/Financial)
+[2026-05-21T06:56:24.824+0000] {subprocess.py:106} INFO -  Trang 38 - Job 16/20 | Solution Architecture (Java, AWS, BI) - KCN -
+[2026-05-21T06:56:24.961+0000] {subprocess.py:106} INFO -  Trang 38 - Job 17/20 | PHP Developer (Oracle, Laravel) ~$1600
+[2026-05-21T06:56:25.089+0000] {subprocess.py:106} INFO -  Trang 38 - Job 18/20 | Mobile App Junior~Leader (React Native +Fireb
+[2026-05-21T06:56:25.378+0000] {subprocess.py:106} INFO -  Trang 38 - Job 19/20 | Mid/Sr Golang Software Engineer
+[2026-05-21T06:56:25.538+0000] {subprocess.py:106} INFO -  Trang 38 - Job 20/20 | Linux/Android Kernel Engineer
+[2026-05-21T06:56:26.732+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:56:26.733+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 39 ---
+[2026-05-21T06:56:30.511+0000] {subprocess.py:106} INFO -  Trang 39 - Job 1/20 | Senior Product Owner
+[2026-05-21T06:56:30.657+0000] {subprocess.py:106} INFO -  Trang 39 - Job 2/20 | Fresher/Junior Bridge System Engineer (BrSE,
+[2026-05-21T06:56:30.811+0000] {subprocess.py:106} INFO -  Trang 39 - Job 3/20 | Junior iOS Mobile Developer (Swift, English)
+[2026-05-21T06:56:31.008+0000] {subprocess.py:106} INFO -  Trang 39 - Job 4/20 | Senior Java Engineer (Spring) From 5 Years
+[2026-05-21T06:56:31.236+0000] {subprocess.py:106} INFO -  Trang 39 - Job 5/20 | Business Analyst (BA)
+[2026-05-21T06:56:31.385+0000] {subprocess.py:106} INFO -  Trang 39 - Job 6/20 | Junior/Middle/Senior React Native Developer
+[2026-05-21T06:56:31.528+0000] {subprocess.py:106} INFO -  Trang 39 - Job 7/20 | Frontend Dev (Sitefinity/uCommerce,JS, Jquery
+[2026-05-21T06:56:31.747+0000] {subprocess.py:106} INFO -  Trang 39 - Job 8/20 | Middle/Senior Backend Engineer (Python, FastA
+[2026-05-21T06:56:32.221+0000] {subprocess.py:106} INFO -  Trang 39 - Job 9/20 | Remote Data Engineer - AI Data Platform Japan
+[2026-05-21T06:56:32.479+0000] {subprocess.py:106} INFO -  Trang 39 - Job 10/20 | Senior Java Engineer (Spring Boot, Microservi
+[2026-05-21T06:56:32.690+0000] {subprocess.py:106} INFO -  Trang 39 - Job 11/20 | Fullstack Developer (Java/Vue3/Typescript)
+[2026-05-21T06:56:32.869+0000] {subprocess.py:106} INFO -  Trang 39 - Job 12/20 | Senior Unity Developer
+[2026-05-21T06:56:33.066+0000] {subprocess.py:106} INFO -  Trang 39 - Job 13/20 | Remote - Operations Analyst (AWS CloudWatch)
+[2026-05-21T06:56:33.279+0000] {subprocess.py:106} INFO -  Trang 39 - Job 14/20 | Backend/Fullstack Developer (PHP, ReactJS)
+[2026-05-21T06:56:33.660+0000] {subprocess.py:106} INFO -  Trang 39 - Job 15/20 | System Engineer (Windows, Linux, Cloud)
+[2026-05-21T06:56:33.877+0000] {subprocess.py:106} INFO -  Trang 39 - Job 16/20 | Senior Embedded Engineer (C / C++, Python, Li
+[2026-05-21T06:56:34.126+0000] {subprocess.py:106} INFO -  Trang 39 - Job 17/20 | Senior UI Designer (UI UX, Figma)
+[2026-05-21T06:56:34.323+0000] {subprocess.py:106} INFO -  Trang 39 - Job 18/20 | Senior .Net Developer(C#, ASP.NET Core, Azure
+[2026-05-21T06:56:34.510+0000] {subprocess.py:106} INFO -  Trang 39 - Job 19/20 | Software Engineer (Mobile - Flutter)
+[2026-05-21T06:56:34.787+0000] {subprocess.py:106} INFO -  Trang 39 - Job 20/20 | Data Analyst (SnOP – eLogistics)
+[2026-05-21T06:56:38.524+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:56:39.170+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 40 ---
+[2026-05-21T06:56:46.577+0000] {subprocess.py:106} INFO -  Trang 40 - Job 1/20 | Mid-Senior IOS Developer(Swift, Objective C)
+[2026-05-21T06:56:46.776+0000] {subprocess.py:106} INFO -  Trang 40 - Job 2/20 | NV Triển Khai Phần Mềm MES (MySQL, Chinese)
+[2026-05-21T06:56:46.917+0000] {subprocess.py:106} INFO -  Trang 40 - Job 3/20 | Network Security Engineer (Security, Firebase
+[2026-05-21T06:56:47.093+0000] {subprocess.py:106} INFO -  Trang 40 - Job 4/20 | IT Manager (JavaScript, HTML, CSS, .Net)
+[2026-05-21T06:56:47.252+0000] {subprocess.py:106} INFO -  Trang 40 - Job 5/20 | Senior Tester (Agile, SQL, API, Jira)
+[2026-05-21T06:56:47.393+0000] {subprocess.py:106} INFO -  Trang 40 - Job 6/20 | Senior Fullstack Developer / Team Leader
+[2026-05-21T06:56:47.612+0000] {subprocess.py:106} INFO -  Trang 40 - Job 7/20 | Business Analyst (Agile, Scrum, Waterfall, Io
+[2026-05-21T06:56:47.817+0000] {subprocess.py:106} INFO -  Trang 40 - Job 8/20 | Senior Business Analyst (Odoo, SAP, Oracle)
+[2026-05-21T06:56:47.939+0000] {subprocess.py:106} INFO -  Trang 40 - Job 9/20 | Senior ERP Functional
+[2026-05-21T06:56:48.067+0000] {subprocess.py:106} INFO -  Trang 40 - Job 10/20 | Software Developer (Python, PostgreSQL)
+[2026-05-21T06:56:48.238+0000] {subprocess.py:106} INFO -  Trang 40 - Job 11/20 | Senior Application/ Support Engineer (Java, A
+[2026-05-21T06:56:48.395+0000] {subprocess.py:106} INFO -  Trang 40 - Job 12/20 | (Junior/Senior) IT Business Analyst (API, SQL
+[2026-05-21T06:56:48.696+0000] {subprocess.py:106} INFO -  Trang 40 - Job 13/20 | Data Analyst (SQL, Python, Database, Tableau)
+[2026-05-21T06:56:49.002+0000] {subprocess.py:106} INFO -  Trang 40 - Job 14/20 | [Hanoi] Embedded Software Engineer (C/C++ | M
+[2026-05-21T06:56:49.201+0000] {subprocess.py:106} INFO -  Trang 40 - Job 15/20 | Senior Java Developer
+[2026-05-21T06:56:49.474+0000] {subprocess.py:106} INFO -  Trang 40 - Job 16/20 | IT Business Analyst (AI product)
+[2026-05-21T06:56:49.689+0000] {subprocess.py:106} INFO -  Trang 40 - Job 17/20 | Data Engineer (Python, PowerBI, SnowFlake, Da
+[2026-05-21T06:56:49.907+0000] {subprocess.py:106} INFO -  Trang 40 - Job 18/20 | AI Engineer (Generative AI, MLOps, Scikit-lea
+[2026-05-21T06:56:50.224+0000] {subprocess.py:106} INFO -  Trang 40 - Job 19/20 | Windows Application Developer (Qt, C++, OOP)~
+[2026-05-21T06:56:50.524+0000] {subprocess.py:106} INFO -  Trang 40 - Job 20/20 | Data Analyst/Product Analyst (SQL, Mobile App
+[2026-05-21T06:56:51.581+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:56:51.582+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 41 ---
+[2026-05-21T06:56:55.150+0000] {subprocess.py:106} INFO -  Trang 41 - Job 1/20 | QC Manager cum Product Manager (QA QC/Tester/
+[2026-05-21T06:56:55.357+0000] {subprocess.py:106} INFO -  Trang 41 - Job 2/20 | Senior Backend Developer (Java, Linux, Algori
+[2026-05-21T06:56:55.532+0000] {subprocess.py:106} INFO -  Trang 41 - Job 3/20 | Mid AI Engineer (LLM, NLP, ReactJS, NextJS)
+[2026-05-21T06:56:55.800+0000] {subprocess.py:106} INFO -  Trang 41 - Job 4/20 | Delivery Leader/Delivery Manager
+[2026-05-21T06:56:56.038+0000] {subprocess.py:106} INFO -  Trang 41 - Job 5/20 | Fullstack Dev (.NET, Angular) – Phát Triển Hệ
+[2026-05-21T06:56:56.176+0000] {subprocess.py:106} INFO -  Trang 41 - Job 6/20 | Data Engineer (SQL, Python)
+[2026-05-21T06:56:56.299+0000] {subprocess.py:106} INFO -  Trang 41 - Job 7/20 | (English) AI Project Manager (AI Product)
+[2026-05-21T06:56:56.425+0000] {subprocess.py:106} INFO -  Trang 41 - Job 8/20 | IT Communicator (Japanese N3)
+[2026-05-21T06:56:56.598+0000] {subprocess.py:106} INFO -  Trang 41 - Job 9/20 | Senior Data Engineer
+[2026-05-21T06:56:56.868+0000] {subprocess.py:106} INFO -  Trang 41 - Job 10/20 | Project Manager (Agile, Scrum Master, English
+[2026-05-21T06:56:57.065+0000] {subprocess.py:106} INFO -  Trang 41 - Job 11/20 | (Đống Đa, HN) AI Application Engineer (Python
+[2026-05-21T06:56:57.291+0000] {subprocess.py:106} INFO -  Trang 41 - Job 12/20 | Intermediate/Senior AI Engineer (Python)
+[2026-05-21T06:56:57.435+0000] {subprocess.py:106} INFO -  Trang 41 - Job 13/20 | Implementation Engineer (JavaScript, API, Int
+[2026-05-21T06:56:57.582+0000] {subprocess.py:106} INFO -  Trang 41 - Job 14/20 | Frontend Technical Lead (NextJS/ ReactJS)
+[2026-05-21T06:56:57.751+0000] {subprocess.py:106} INFO -  Trang 41 - Job 15/20 | Team Lead, Software Development (.NET)
+[2026-05-21T06:56:57.933+0000] {subprocess.py:106} INFO -  Trang 41 - Job 16/20 | Senior Software Engineer (Java/NextJS/AI Nati
+[2026-05-21T06:56:58.143+0000] {subprocess.py:106} INFO -  Trang 41 - Job 17/20 | Business Analyst (Agile, Proficient in Englis
+[2026-05-21T06:56:58.335+0000] {subprocess.py:106} INFO -  Trang 41 - Job 18/20 | Game Developer (Cocos Creator)
+[2026-05-21T06:56:58.535+0000] {subprocess.py:106} INFO -  Trang 41 - Job 19/20 | Frontend Developer (ReactJS)
+[2026-05-21T06:56:58.729+0000] {subprocess.py:106} INFO -  Trang 41 - Job 20/20 | Middle/Senior Software Engineer (Java)
+[2026-05-21T06:57:00.503+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:57:00.503+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 42 ---
+[2026-05-21T06:57:05.305+0000] {subprocess.py:106} INFO -  Trang 42 - Job 1/20 | Mid/Senior Java Developer
+[2026-05-21T06:57:05.493+0000] {subprocess.py:106} INFO -  Trang 42 - Job 2/20 | Senior Business Analyst (Customer Care Center
+[2026-05-21T06:57:05.685+0000] {subprocess.py:106} INFO -  Trang 42 - Job 3/20 | Back-end Developer (Node.js/Java)
+[2026-05-21T06:57:05.905+0000] {subprocess.py:106} INFO -  Trang 42 - Job 4/20 | Network & System Administrator
+[2026-05-21T06:57:06.242+0000] {subprocess.py:106} INFO -  Trang 42 - Job 5/20 | Middle/Senior Backend Engineer(English, Fulls
+[2026-05-21T06:57:06.243+0000] {subprocess.py:106} INFO -  Trang 42 - Job 6/20 | AI Agent Engineer (ML, Python, TypeSript, .NE
+[2026-05-21T06:57:06.423+0000] {subprocess.py:106} INFO -  Trang 42 - Job 7/20 | [MIDDLE/SENIOR] FRONTEND DEVELOPER (Jquery, H
+[2026-05-21T06:57:06.555+0000] {subprocess.py:106} INFO -  Trang 42 - Job 8/20 | Manual Tester
+[2026-05-21T06:57:06.753+0000] {subprocess.py:106} INFO -  Trang 42 - Job 9/20 | Junior/Middle Tester (Automation Test/ QA QC)
+[2026-05-21T06:57:06.883+0000] {subprocess.py:106} INFO -  Trang 42 - Job 10/20 | Back End Developer (Golang, SQL, NoSQL)
+[2026-05-21T06:57:06.995+0000] {subprocess.py:106} INFO -  Trang 42 - Job 11/20 | [Remote/ Freelancer] Mid/Sr Backend Dev (.NET
+[2026-05-21T06:57:07.413+0000] {subprocess.py:106} INFO -  Trang 42 - Job 12/20 | Senior AI Engineer (AIML/CV/OCR, Yolo, Python
+[2026-05-21T06:57:09.883+0000] {subprocess.py:106} INFO -  Trang 42 - Job 13/20 | Game Developer (Unity, C#)
+[2026-05-21T06:57:10.054+0000] {subprocess.py:106} INFO -  Trang 42 - Job 14/20 | Data Engineer
+[2026-05-21T06:57:10.288+0000] {subprocess.py:106} INFO -  Trang 42 - Job 15/20 | Senior Back-End Developer (Python, AI/ML, Int
+[2026-05-21T06:57:10.467+0000] {subprocess.py:106} INFO -  Trang 42 - Job 16/20 | Full-Stack Developer (NodeJS/ReactJS/Angular)
+[2026-05-21T06:57:10.672+0000] {subprocess.py:106} INFO -  Trang 42 - Job 17/20 | [HCM/DN-Hybrid] Middle/Senior .NET Engineer
+[2026-05-21T06:57:10.902+0000] {subprocess.py:106} INFO -  Trang 42 - Job 18/20 | [HCM/DN-Hybrid] Middle/Senior Automation Test
+[2026-05-21T06:57:11.134+0000] {subprocess.py:106} INFO -  Trang 42 - Job 19/20 | Senior .NET Engineer (with Azure skills)
+[2026-05-21T06:57:11.364+0000] {subprocess.py:106} INFO -  Trang 42 - Job 20/20 | Lập trình viên AnyCUBE (.NET/.NET Core, Japan
+[2026-05-21T06:57:13.286+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:57:13.287+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 43 ---
+[2026-05-21T06:57:18.652+0000] {subprocess.py:106} INFO -  Trang 43 - Job 1/20 | Business Analyst
+[2026-05-21T06:57:18.838+0000] {subprocess.py:106} INFO -  Trang 43 - Job 2/20 | React Native Frontend Developer
+[2026-05-21T06:57:18.998+0000] {subprocess.py:106} INFO -  Trang 43 - Job 3/20 | Senior AI Engineer
+[2026-05-21T06:57:19.176+0000] {subprocess.py:106} INFO -  Trang 43 - Job 4/20 | Mid/Senior QA Engineer (2 Openings)
+[2026-05-21T06:57:19.290+0000] {subprocess.py:106} INFO -  Trang 43 - Job 5/20 | System & Network Administrator
+[2026-05-21T06:57:19.516+0000] {subprocess.py:106} INFO -  Trang 43 - Job 6/20 | Manual & Automation Test Lead (Tester/QA/QC/P
+[2026-05-21T06:57:19.692+0000] {subprocess.py:106} INFO -  Trang 43 - Job 7/20 | Project Manager (Java, Chinese, English, MySQ
+[2026-05-21T06:57:19.955+0000] {subprocess.py:106} INFO -  Trang 43 - Job 8/20 | DevOps Engineer( Cloud, K8S, DevSecOps)
+[2026-05-21T06:57:20.177+0000] {subprocess.py:106} INFO -  Trang 43 - Job 9/20 | Mid/Senior Fullstack Developer
+[2026-05-21T06:57:20.352+0000] {subprocess.py:106} INFO -  Trang 43 - Job 10/20 | QA Engineer ( Python, AI, Automation Test, CI
+[2026-05-21T06:57:20.617+0000] {subprocess.py:106} INFO -  Trang 43 - Job 11/20 | Fresher Software Engineer (Automation Test, S
+[2026-05-21T06:57:20.842+0000] {subprocess.py:106} INFO -  Trang 43 - Job 12/20 | Product Owner/ Business Analyst (Proficient i
+[2026-05-21T06:57:21.052+0000] {subprocess.py:106} INFO -  Trang 43 - Job 13/20 | AI / ML Engineer (TensorFlow, Pytorch, NLP)
+[2026-05-21T06:57:21.255+0000] {subprocess.py:106} INFO -  Trang 43 - Job 14/20 | TMO - Cloud Engineering Senior Officer / Mana
+[2026-05-21T06:57:21.419+0000] {subprocess.py:106} INFO -  Trang 43 - Job 15/20 | Korean IT Comtor/ Project Coordinator (ERP/CR
+[2026-05-21T06:57:21.700+0000] {subprocess.py:106} INFO -  Trang 43 - Job 16/20 | Junior/Senior Business Analyst (Agile, Jira,
+[2026-05-21T06:57:21.909+0000] {subprocess.py:106} INFO -  Trang 43 - Job 17/20 | Fullstack NodeJs - 3 năm kinh nghiệm
+[2026-05-21T06:57:22.146+0000] {subprocess.py:106} INFO -  Trang 43 - Job 18/20 | Junior Android Developer (Kotlin/Java)
+[2026-05-21T06:57:22.332+0000] {subprocess.py:106} INFO -  Trang 43 - Job 19/20 | Senior Java Engineer (AWS, Spring, SOLID prin
+[2026-05-21T06:57:22.586+0000] {subprocess.py:106} INFO -  Trang 43 - Job 20/20 | DevOps Engineer
+[2026-05-21T06:57:23.625+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:57:23.625+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 44 ---
+[2026-05-21T06:57:27.542+0000] {subprocess.py:106} INFO -  Trang 44 - Job 1/6 | IT Support Administrator (English)
+[2026-05-21T06:57:27.733+0000] {subprocess.py:106} INFO -  Trang 44 - Job 2/6 | Data Scientist / Data Engineer (Python, AI/LL
+[2026-05-21T06:57:27.881+0000] {subprocess.py:106} INFO -  Trang 44 - Job 3/6 | Senior Frontend Developer (Next.js, React.js)
+[2026-05-21T06:57:28.094+0000] {subprocess.py:106} INFO -  Trang 44 - Job 4/6 | IT Fullstack Developer (ReactJS, NextJS, Java
+[2026-05-21T06:57:28.325+0000] {subprocess.py:106} INFO -  Trang 44 - Job 5/6 | Mid/Senior Software Engineer (AI)
+[2026-05-21T06:57:28.497+0000] {subprocess.py:106} INFO -  Trang 44 - Job 6/6 | DevOps Engineer ( Blockchain/web3 )
+[2026-05-21T06:57:30.211+0000] {subprocess.py:106} INFO - 
+[2026-05-21T06:57:30.212+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 45 ---
+[2026-05-21T06:57:48.811+0000] {subprocess.py:106} INFO -  >>> Trang 45 không phản hồi. Dừng.
+[2026-05-21T06:57:50.413+0000] {subprocess.py:106} INFO -  Output file local: /tmp/itviec_jobs_full.csv
+[2026-05-21T06:57:50.496+0000] {subprocess.py:106} INFO -  Đã đọc 2049 dòng cũ từ file local.
+[2026-05-21T06:57:50.545+0000] {subprocess.py:106} INFO -  Crawl xong 866 việc làm mới. Tổng Local: 2049 dòng.
+[2026-05-21T06:57:50.545+0000] {subprocess.py:106} INFO -  Đang cập nhật file lên MinIO (S3)...
+[2026-05-21T06:57:53.698+0000] {subprocess.py:106} INFO -  Đã đọc được 14598 dòng từ MinIO: s3://warehouse/raw/itviec_jobs_full.csv
+[2026-05-21T06:57:53.699+0000] {subprocess.py:106} INFO -  Tổng sau khi gộp với MinIO: 14598 dòng.
+[2026-05-21T06:57:53.700+0000] {subprocess.py:106} INFO -  Đã cập nhật thành công lên MinIO: s3://warehouse/raw/itviec_jobs_full.csv
+[2026-05-21T06:57:53.701+0000] {subprocess.py:106} INFO -  Tổng số record hiện tại trên Data Lake: 14598
+[2026-05-21T06:57:54.311+0000] {subprocess.py:110} INFO - Command exited with return code 0
+[2026-05-21T06:57:54.429+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-05-21T06:57:54.431+0000] {taskinstance.py:353} INFO - Marking task as SUCCESS. dag_id=crawl_etl_itjob, task_id=crawl_data, run_id=scheduled__2026-05-20T02:00:00+00:00, execution_date=20260520T020000, start_date=20260521T064847, end_date=20260521T065754
+[2026-05-21T06:57:54.527+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2026-05-21T06:57:54.594+0000] {taskinstance.py:3901} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-05-21T06:57:54.597+0000] {local_task_job_runner.py:245} INFO - ::endgroup::

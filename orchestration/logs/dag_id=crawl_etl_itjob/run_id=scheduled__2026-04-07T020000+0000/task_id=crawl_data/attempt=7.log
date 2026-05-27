@@ -1,0 +1,58 @@
+[2026-04-08T14:24:20.102+0000] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-04-08T14:24:20.142+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-07T02:00:00+00:00 [queued]>
+[2026-04-08T14:24:20.152+0000] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-07T02:00:00+00:00 [queued]>
+[2026-04-08T14:24:20.153+0000] {taskinstance.py:2867} INFO - Starting attempt 7 of 8
+[2026-04-08T14:24:20.166+0000] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): crawl_data> on 2026-04-07 02:00:00+00:00
+[2026-04-08T14:24:20.170+0000] {standard_task_runner.py:72} INFO - Started process 167 to run task
+[2026-04-08T14:24:20.179+0000] {standard_task_runner.py:104} INFO - Running: ['***', 'tasks', 'run', 'crawl_etl_itjob', 'crawl_data', 'scheduled__2026-04-07T02:00:00+00:00', '--job-id', '32', '--raw', '--subdir', 'DAGS_FOLDER/Crawl_ETL_ITJob.py', '--cfg-path', '/tmp/tmpsiei1g5k']
+[2026-04-08T14:24:20.181+0000] {standard_task_runner.py:105} INFO - Job 32: Subtask crawl_data
+[2026-04-08T14:24:20.215+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:209: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  SQL_ALCHEMY_CONN = conf.get("database", "SQL_ALCHEMY_CONN")
+
+[2026-04-08T14:24:20.300+0000] {task_command.py:467} INFO - Running <TaskInstance: crawl_etl_itjob.crawl_data scheduled__2026-04-07T02:00:00+00:00 [running]> on host 64b3786bead1
+[2026-04-08T14:24:20.301+0000] {warnings.py:109} WARNING - /home/***/.local/lib/python3.8/site-packages/***/settings.py:470: DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+  if conf.get("database", "sql_alchemy_conn") == "none://":
+
+[2026-04-08T14:24:20.437+0000] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='hoa856856@gmail.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='crawl_etl_itjob' AIRFLOW_CTX_TASK_ID='crawl_data' AIRFLOW_CTX_EXECUTION_DATE='2026-04-07T02:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='7' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-04-07T02:00:00+00:00'
+[2026-04-08T14:24:20.438+0000] {taskinstance.py:732} INFO - ::endgroup::
+[2026-04-08T14:24:20.452+0000] {subprocess.py:78} INFO - Tmp dir root location: /tmp
+[2026-04-08T14:24:20.453+0000] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', 'docker exec spark-submit bash -c "xvfb-run -a python3 /opt/spark/scripts/Crawl_Data.py"']
+[2026-04-08T14:24:20.463+0000] {subprocess.py:99} INFO - Output:
+[2026-04-08T14:24:21.167+0000] {subprocess.py:106} INFO -  Bắt đầu crawl ITviec...
+[2026-04-08T14:24:24.394+0000] {subprocess.py:106} INFO - 
+[2026-04-08T14:24:24.399+0000] {subprocess.py:106} INFO - --- Đang xử lý trang 1 ---
+[2026-04-08T14:24:33.202+0000] {subprocess.py:106} INFO -  Trang 1 - Job 1/20 | Android Embedded Senior Engineer (Embedded Linux, C++) | 🔗 https://itviec.com/it-jobs/android-embedded-senior-engineer-embedded-linux-c-datalogic-viet-nam-1824
+[2026-04-08T14:24:33.383+0000] {subprocess.py:106} INFO -  Trang 1 - Job 2/20 | Android Embedded Senior Engineer (Embedded Linux, C++) | 🔗 https://itviec.com/it-jobs/remote-hybrid-backend-engineer-scala-kotlin-golang-semrush-5630
+[2026-04-08T14:24:35.735+0000] {subprocess.py:106} INFO -  Trang 1 - Job 3/20 | Engineer Manager | 🔗 https://itviec.com/it-jobs/engineer-manager-money-forward-vietnam-co-ltd-0743
+[2026-04-08T14:24:38.018+0000] {subprocess.py:106} INFO -  Trang 1 - Job 4/20 | Project Manager | 🔗 https://itviec.com/it-jobs/project-manager-leansoft-3658
+[2026-04-08T14:24:40.272+0000] {subprocess.py:106} INFO -  Trang 1 - Job 5/20 | Virtualization Engineer (Automotive) | 🔗 https://itviec.com/it-jobs/virtualization-engineer-automotive-altaa-vistaa-5534
+[2026-04-08T14:24:40.437+0000] {subprocess.py:106} INFO -  Trang 1 - Job 6/20 | Virtualization Engineer (Automotive) | 🔗 https://itviec.com/it-jobs/some-ip-protocol-engineer-altaa-vistaa-0051
+[2026-04-08T14:24:40.609+0000] {subprocess.py:106} INFO -  Trang 1 - Job 7/20 | SOME/IP Protocol Engineer | 🔗 https://itviec.com/it-jobs/senior-cloud-architect-itviec-recruitment-consulting-4605
+[2026-04-08T14:24:42.938+0000] {subprocess.py:106} INFO -  Trang 1 - Job 8/20 | Senior Mobile App Developer (React Native / Full Stack) | 🔗 https://itviec.com/it-jobs/senior-mobile-app-developer-react-native-full-stack-itviec-recruitment-consulting-3946
+[2026-04-08T14:24:43.213+0000] {subprocess.py:106} INFO -  Trang 1 - Job 9/20 | Senior Mobile App Developer (React Native / Full Stack) | 🔗 https://itviec.com/it-jobs/mid-senior-java-backend-developer-spring-english-logicentra-4651
+[2026-04-08T14:24:45.660+0000] {subprocess.py:106} INFO -  Trang 1 - Job 10/20 | Software Architect | 🔗 https://itviec.com/it-jobs/software-architect-altaa-vistaa-3836
+[2026-04-08T14:24:47.967+0000] {subprocess.py:106} INFO -  Trang 1 - Job 11/20 | Software Engineer (React-Native) | 🔗 https://itviec.com/it-jobs/software-engineer-react-native-pizza-hut-digital-technology-2355
+[2026-04-08T14:24:48.104+0000] {subprocess.py:106} INFO -  Trang 1 - Job 12/20 | Software Engineer (React-Native) | 🔗 https://itviec.com/it-jobs/middle-senior-ai-engineer-st-engineering-0802
+[2026-04-08T14:24:50.365+0000] {subprocess.py:106} INFO -  Trang 1 - Job 13/20 | Manual Tester (Games, QA QC, Tester) | 🔗 https://itviec.com/it-jobs/manual-tester-games-qa-qc-tester-52-entertainment-3313
+[2026-04-08T14:24:52.814+0000] {subprocess.py:106} INFO -  Trang 1 - Job 14/20 | Salesforce Developer (SOQL/SOSL, Apex, JavaScript) | 🔗 https://itviec.com/it-jobs/salesforce-developer-soql-sosl-apex-javascript-t2-soft-company-limited-5128
+[2026-04-08T14:24:53.010+0000] {subprocess.py:106} INFO -  Trang 1 - Job 15/20 | Salesforce Developer (SOQL/SOSL, Apex, JavaScript) | 🔗 https://itviec.com/it-jobs/soc-cybersecurity-engineer-manager-st-engineering-5756
+[2026-04-08T14:24:53.187+0000] {subprocess.py:106} INFO -  Trang 1 - Job 16/20 | SOC Cybersecurity Engineer/Manager | 🔗 https://itviec.com/it-jobs/senior-java-developer-st-engineering-4243
+[2026-04-08T14:24:55.562+0000] {subprocess.py:106} INFO -  Trang 1 - Job 17/20 | AI Scientist | 🔗 https://itviec.com/it-jobs/ai-scientist-st-engineering-3538
+[2026-04-08T14:24:57.878+0000] {subprocess.py:106} INFO -  Trang 1 - Job 18/20 | Lumera - Site Manager | 🔗 https://itviec.com/it-jobs/lumera-site-manager-scandinavian-software-park-2550
+[2026-04-08T14:24:58.044+0000] {subprocess.py:106} INFO -  Trang 1 - Job 19/20 | Lumera - Site Manager | 🔗 https://itviec.com/it-jobs/senior-data-engineer-zuhlke-engineering-vietnam-1015
+[2026-04-08T14:24:58.199+0000] {subprocess.py:106} INFO -  Trang 1 - Job 20/20 | Senior Data Engineer | 🔗 https://itviec.com/it-jobs/senior-lead-fullstack-net-js-software-engineer-kms-technology-5930
+[2026-04-08T14:24:58.200+0000] {subprocess.py:106} INFO -  !!! Lỗi nghiêm trọng: name 'random' is not defined
+[2026-04-08T14:24:58.239+0000] {subprocess.py:106} INFO -  Output file local: /tmp/itviec_jobs_full.csv
+[2026-04-08T14:24:58.249+0000] {subprocess.py:106} INFO -  Đã đọc 967 dòng cũ từ file local.
+[2026-04-08T14:24:58.262+0000] {subprocess.py:106} INFO -  Crawl xong 20 việc làm mới. Tổng Local: 967 dòng.
+[2026-04-08T14:24:58.263+0000] {subprocess.py:106} INFO -  Đang cập nhật file lên MinIO (S3)...
+[2026-04-08T14:25:01.770+0000] {subprocess.py:106} INFO -  Đã đọc được 13516 dòng từ MinIO: s3://warehouse/raw/itviec_jobs_full.csv
+[2026-04-08T14:25:01.770+0000] {subprocess.py:106} INFO -  Tổng sau khi gộp với MinIO: 13516 dòng.
+[2026-04-08T14:25:01.771+0000] {subprocess.py:106} INFO -  Đã cập nhật thành công lên MinIO: s3://warehouse/raw/itviec_jobs_full.csv
+[2026-04-08T14:25:01.771+0000] {subprocess.py:106} INFO -  Tổng số record hiện tại trên Data Lake: 13516
+[2026-04-08T14:25:01.921+0000] {subprocess.py:110} INFO - Command exited with return code 0
+[2026-04-08T14:25:01.978+0000] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-04-08T14:25:01.978+0000] {taskinstance.py:353} INFO - Marking task as SUCCESS. dag_id=crawl_etl_itjob, task_id=crawl_data, run_id=scheduled__2026-04-07T02:00:00+00:00, execution_date=20260407T020000, start_date=20260408T142420, end_date=20260408T142501
+[2026-04-08T14:25:02.069+0000] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2026-04-08T14:25:02.128+0000] {taskinstance.py:3901} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-04-08T14:25:02.131+0000] {local_task_job_runner.py:245} INFO - ::endgroup::
