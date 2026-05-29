@@ -11,6 +11,8 @@ WAREHOUSE_PATH = "s3a://warehouse/iceberg_data"
 HIVE_METASTORE = "thrift://hive-metastore:9083"
 
 CATALOG_NAME = "iceberg"
+
+CATALOG_NAME = "iceberg"
 DATABASE_BRONZE = "bronze"
 TABLE_BRONZE = "it_jobs_raw"
 DATABASE_SILVER = "silver"
@@ -116,6 +118,7 @@ def clean_and_transform(df_new_records):
 
     return (
         df_new_records
+        # Chuẩn hóa tên cột: trim khoảng trắng, chữ thường, thay space bằng _
         .toDF(*[c.strip().lower().replace(" ", "_") for c in df_new_records.columns])
         # Basic Cleaning & Null Filter
         .withColumn("job_title", F.trim(F.col("job_title")))

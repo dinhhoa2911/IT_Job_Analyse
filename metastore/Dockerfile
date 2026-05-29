@@ -19,7 +19,7 @@ RUN curl -L -o /opt/hive/lib/aws-java-sdk-bundle-1.11.271.jar \
 
 # --- THÊM PHẦN NÀY ĐỂ DÙNG SCRIPT CỦA BẠN ---
 COPY start-metastore.sh /usr/local/bin/start-metastore.sh
-RUN chmod +x /usr/local/bin/start-metastore.sh
+RUN sed -i 's/\r$//' /usr/local/bin/start-metastore.sh && chmod +x /usr/local/bin/start-metastore.sh
 
 # Chuyển về user hive
 USER hive
