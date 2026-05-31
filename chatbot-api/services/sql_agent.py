@@ -24,79 +24,108 @@ logger = logging.getLogger(__name__)
 # Reflects the exact Gold + Silver tables produced by Build_Gold.py.
 _SCHEMA_CONTEXT = textwrap.dedent("""
     You have access to an IT job market database (ITviec data) via Trino SQL.
+    Data source: ITviec Vietnam — 9,627 job postings crawled 2025-09-23 → 2026-04-11.
+
+    ⚠ NO SALARY DATA — neither Silver nor Gold contains salary information.
+      If asked about salary, return 0 rows or state this limitation in your query comment.
+      NEVER fabricate salary numbers.
 
     Catalog: iceberg
 
-    === GOLD LAYER (aggregated, star schema) ===
+    === GOLD LAYER (star schema — use for all analytics) ===
 
-    iceberg.gold.fact_job_posting
+    iceberg.gold.fact_job_posting   ← 8,114 distinct jobs (fact rows are more due to explosion)
         fact_id      BIGINT  (PK)
-        job_link     VARCHAR  ← unique job identifier (one job may appear in MANY rows)
-        job_title    VARCHAR
+        job_link     VARCHAR  ← unique job URL — use COUNT(DISTINCT job_link) for job counts
+        job_title    VARCHAR  ← raw job title from posting
         company_id   BIGINT  (FK → dim_company)
         location_id  BIGINT  (FK → dim_location)
         skill_id     BIGINT  (FK → dim_skill)
         mode_id      BIGINT  (FK → dim_work_mode)
         category_id  BIGINT  (FK → dim_job_category)
-        date_id      INT     (FK → dim_date, format YYYYMMDD)
-        one_posting  INT     (always 1 — DO NOT USE for job counts, see CRITICAL NOTE below)
+        date_id      INT     (FK → dim_date)
+        one_posting  INT     ← always 1, DO NOT USE for counting
 
-    ⚠ CRITICAL — fact_job_posting is EXPLODED by BOTH location AND skills_required.
-      One real job posting is duplicated into N_locations × N_skills rows.
-      ALWAYS use COUNT(DISTINCT f.job_link) to count actual jobs.
-      NEVER use COUNT(*), COUNT(f.fact_id), or SUM(f.one_posting) for job counts — they overcount.
+    ⚠ CRITICAL — fact_job_posting is EXPLODED (one job → many rows, one per skill × location).
+      ALWAYS:  COUNT(DISTINCT f.job_link)   ← actual job count
+      NEVER:   COUNT(*) or COUNT(f.fact_id)  ← overcounts massively
 
-    iceberg.gold.dim_skill
-        skill_id    BIGINT, skill_name VARCHAR
-        skill_group VARCHAR  ('Backend'|'Frontend'|'Data & Cloud'|'Other')
+    iceberg.gold.dim_skill          ← 504 skills
+        skill_id    BIGINT
+        skill_name  VARCHAR  ← stored in UPPERCASE: 'PYTHON', 'JAVA', 'REACT', 'SQL', etc.
+                               Always compare with LOWER(): WHERE LOWER(ds.skill_name) = 'python'
+        skill_group VARCHAR  ← WARNING: 91% of skills are 'Other'. Groups:
+                               'Backend'(7)|'Frontend'(9)|'Cloud & DevOps'(6)|'Database'(5)|
+                               'AI & ML'(5)|'Mobile'(5)|'Data Engineering'(3)|
+                               'Software Engineering'(2)|'Testing'(2)|'Other'(460)
+                               Do NOT use skill_group for meaningful filtering — use skill_name directly.
 
-    iceberg.gold.dim_location
-        location_id BIGINT, city_name VARCHAR
-        region      VARCHAR  ('North'|'Central'|'South'|'Other')
+    iceberg.gold.dim_location       ← 10 cities
+        location_id BIGINT
+        city_name   VARCHAR  — exact values (case-sensitive):
+                               'Ho Chi Minh'(5264 jobs) | 'Ha Noi'(3075) | 'Da Nang'(536)
+                               'Others'(82) | 'Binh Duong'(9) | 'International'(4)
+                               'Hung Yen'(4) | 'Hai Phong'(4) | 'Long An'(2) | 'Hue'(1)
+        region      VARCHAR  — 'South' | 'North' | 'Central' | 'Other'
+                               South=HCM+Binh Duong+Long An | North=Hanoi+Hung Yen | Central=DaNang+Hue
 
-    iceberg.gold.dim_company
-        company_id BIGINT, company_name VARCHAR
+    iceberg.gold.dim_company        ← 1,172 companies
+        company_id   BIGINT
+        company_name VARCHAR  ← top hirers: MB BANK(219), BOSCH(96), LG CNS(91), CROSSIAN(87)
 
-    iceberg.gold.dim_work_mode
-        mode_id BIGINT, work_mode VARCHAR  ('office'|'remote'|'hybrid')
+    iceberg.gold.dim_work_mode      ← EXACT string values (case-sensitive):
+        mode_id   BIGINT
+        work_mode VARCHAR  — 'At Office'(8,004 jobs) | 'Remote'(100) | 'Hybrid'(10)
+                             Market is heavily office-based: At Office = ~98% of postings
 
-    iceberg.gold.dim_date
-        date_id INT, full_date DATE
+    iceberg.gold.dim_date           ← 8 distinct months covered
+        date_id      INT
+        full_date    TIMESTAMP
         day INT, month INT, year INT, quarter INT, day_of_week VARCHAR
+        ← Range: 2025-09-23 to 2026-04-11 (months: Sep2025 → Apr2026)
 
-    iceberg.gold.dim_job_category
-        category_id BIGINT
-        category_name VARCHAR
-            ('Data & AI'|'Testing & QA'|'DevOps & Infra'|'Frontend & Mobile'
-            |'Backend'|'Software Engineering'|'Management'|'Product & BA'|'Other')
+    iceberg.gold.dim_job_category   ← 17 categories (use EXACT names below)
+        category_id   BIGINT
+        category_name VARCHAR  — exact values and job counts:
+            'Backend Development'(1483) | 'Other'(1092) | 'Frontend Development'(1041)
+            'Testing & QA'(744) | 'Product & Business Analysis'(572)
+            'DevOps & Infrastructure'(476) | 'Mobile Development'(458)
+            'AI & Machine Learning'(433) | 'Software Engineering'(410)
+            'Management'(361) | 'Data Engineering'(278) | 'ERP & CRM'(198)
+            'Cyber Security'(180) | 'Fullstack Development'(113)
+            'Embedded & IoT'(101) | 'Game Development'(91) | 'Data Analytics'(83)
+        ← NEVER use: 'Backend', 'Data & AI', 'DevOps & Infra', 'Frontend & Mobile' (old names)
 
-    === SILVER LAYER (row-level job data) ===
+    === SILVER LAYER (raw job rows — use only when Gold doesn't have what's needed) ===
 
-    iceberg.silver.it_jobs_clean
-        job_title VARCHAR, company_name VARCHAR, job_link VARCHAR
-        work_mode VARCHAR, salary VARCHAR
-        skills_required ARRAY<VARCHAR>
-        location        ARRAY<VARCHAR>
-        date_posted DATE, ingest_time TIMESTAMP
+    iceberg.silver.it_jobs_clean    ← 9,627 rows (one row per job posting)
+        job_title        VARCHAR
+        company_name     VARCHAR
+        location         ARRAY<VARCHAR>   ← e.g. ['Ho Chi Minh', 'Remote']
+        skills_required  ARRAY<VARCHAR>   ← skill names in UPPERCASE, e.g. ['PYTHON', 'SQL']
+        job_category     VARCHAR          ← granular ITviec category (not same as Gold dim_job_category)
+                                            e.g. 'Backend Developer', 'AI / Machine Learning Engineer'
+        work_mode        VARCHAR          ← 'At Office' | 'Remote' | 'Hybrid'
+        date_posted      TIMESTAMP
+        date_only        DATE
+        job_link         VARCHAR          ← unique job URL
+        crawl_date       TIMESTAMP
+        ingest_time      TIMESTAMP
+        source           VARCHAR          ← always 'ITviec'
+        skill_groups     ARRAY<VARCHAR>
+        ← NO salary column — salary data does not exist in this database
 
     === SQL RULES ===
-    - Always prefix tables with catalog.schema (e.g. iceberg.gold.fact_job_posting)
-    - Use LIMIT ≤ 50 to keep results manageable (daily charts need up to 31 rows)
-    - BANNED FUNCTIONS (Trino does not support these — never use them):
-        array_contains()  → use CROSS JOIN UNNEST or JOIN dim_skill instead
-        collect_list()    → use ARRAY_AGG()
-        size()            → use CARDINALITY()
-    - For ARRAY columns use CROSS JOIN UNNEST(col) AS t(val)
-    - PREFER Gold layer JOINs over Silver ARRAY operations for skill-based queries:
-        WRONG: WHERE array_contains(s.skills_required, 'Python')
-        RIGHT: JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id
-               WHERE LOWER(ds.skill_name) = 'python'
-    - JOIN fact_job_posting to dimensions via their respective *_id foreign keys
-    - Avoid SELECT *; pick only columns needed to answer the question
-    - Order results meaningfully (e.g. COUNT DESC)
-    - CRITICAL COUNTING RULE: fact_job_posting is exploded — one job_link appears in many rows.
-        CORRECT:   COUNT(DISTINCT f.job_link) AS job_count
-        WRONG:     COUNT(*), COUNT(f.fact_id), SUM(f.one_posting)  ← all massively overcount
+    - Always prefix tables: iceberg.gold.fact_job_posting, iceberg.silver.it_jobs_clean, etc.
+    - Use LIMIT ≤ 50 (daily charts may need up to 31 rows)
+    - BANNED FUNCTIONS: array_contains() → CROSS JOIN UNNEST | collect_list() → ARRAY_AGG() | size() → CARDINALITY()
+    - For ARRAY columns: CROSS JOIN UNNEST(col) AS t(val)
+    - Prefer Gold JOINs over Silver ARRAY for skill queries:
+        RIGHT: JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id WHERE LOWER(ds.skill_name) = 'python'
+        WRONG: WHERE array_contains(skills_required, 'Python')
+    - COUNTING: COUNT(DISTINCT f.job_link) — never COUNT(*) or COUNT(f.fact_id)
+    - GROUP BY: use ordinal position (GROUP BY 1), NOT alias
+    - CASE sensitivity: city_name and work_mode are case-sensitive ('Ho Chi Minh' not 'ho chi minh')
 
     === CHART / VISUALIZATION RULES (apply when user asks for a chart or graph) ===
     - Always put the LABEL/CATEGORY column FIRST, the numeric METRIC column SECOND

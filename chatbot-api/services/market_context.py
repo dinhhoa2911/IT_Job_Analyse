@@ -106,6 +106,31 @@ ORDER BY co_count DESC
 LIMIT 6
 """
 
+_SQL_CATEGORY_DIST = """
+SELECT
+    djc.category_name,
+    COUNT(DISTINCT f.job_link) AS job_count
+FROM iceberg.gold.fact_job_posting f
+JOIN iceberg.gold.dim_skill        ds  ON f.skill_id    = ds.skill_id
+JOIN iceberg.gold.dim_job_category djc ON f.category_id = djc.category_id
+WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+GROUP BY djc.category_name
+ORDER BY job_count DESC
+LIMIT 5
+"""
+
+_SQL_REGION_DIST = """
+SELECT
+    dl.region,
+    COUNT(DISTINCT f.job_link) AS job_count
+FROM iceberg.gold.fact_job_posting f
+JOIN iceberg.gold.dim_skill    ds ON f.skill_id    = ds.skill_id
+JOIN iceberg.gold.dim_location dl ON f.location_id = dl.location_id
+WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+GROUP BY dl.region
+ORDER BY job_count DESC
+"""
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _escape(s: str) -> str:
@@ -348,6 +373,14 @@ class MarketContextService:
             skill_rows = _run(conn, _SQL_RELATED_SKILLS.format(skill=safe_skill))
             related_skills = [r["skill_name"] for r in skill_rows]
 
+            # Q5 — job category distribution for this skill
+            cat_rows = _run(conn, _SQL_CATEGORY_DIST.format(skill=safe_skill))
+            category_dist = {r["category_name"]: int(r["job_count"]) for r in cat_rows}
+
+            # Q6 — regional distribution (North / South / Central)
+            region_rows = _run(conn, _SQL_REGION_DIST.format(skill=safe_skill))
+            region_dist = {r["region"]: int(r["job_count"]) for r in region_rows if r["region"]}
+
             conn.close()
 
             insight = MarketInsight(
@@ -357,6 +390,8 @@ class MarketContextService:
                 work_mode_dist  = work_mode_dist,
                 related_skills  = related_skills,
                 location_filter = city_name,
+                category_dist   = category_dist,
+                region_dist     = region_dist,
             )
 
             logger.info(
@@ -393,16 +428,23 @@ def format_market_block(insight: MarketInsight) -> str:
 
     lines = [
         f"=== MARKET CONTEXT — {insight.primary_skill}{loc_str} (Gold layer, Iceberg) ===",
-        f"Tổng vị trí trong database: {insight.total_jobs}",
-        f"Top công ty tuyển dụng: {', '.join(insight.top_companies[:4])}",
+        f"Tổng vị trí thực tế trong database: {insight.total_jobs}",
     ]
+    if insight.top_companies:
+        lines.append(f"Top công ty tuyển dụng: {', '.join(insight.top_companies[:5])}")
     if mode_parts:
         lines.append(f"Work mode: {' | '.join(mode_parts)}")
+    if insight.category_dist:
+        cat_parts = [f"{k}: {v}" for k, v in list(insight.category_dist.items())[:4]]
+        lines.append(f"Ngành nghề chính: {' | '.join(cat_parts)}")
+    if insight.region_dist:
+        region_parts = [f"{k}: {v}" for k, v in sorted(insight.region_dist.items(), key=lambda x: x[1], reverse=True)]
+        lines.append(f"Phân bổ khu vực: {' | '.join(region_parts)}")
     if insight.related_skills:
-        lines.append(f"Kỹ năng hay đi kèm: {', '.join(insight.related_skills[:5])}")
+        lines.append(f"Kỹ năng hay đi kèm: {', '.join(insight.related_skills[:6])}")
     lines.append(
-        "INSTRUCTION: After the job cards, add a short market summary paragraph "
-        "('Thị trường [skill]...') using ONLY the market data above. 2-3 sentences max."
+        "INSTRUCTION: After the job cards, add a market summary using ONLY the numbers above. "
+        "NEVER invent salary figures or company names not listed here. 2-3 sentences."
     )
     lines.append("=== END MARKET CONTEXT ===")
 

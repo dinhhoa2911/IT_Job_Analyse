@@ -66,9 +66,11 @@ class MarketInsight(BaseModel):
     primary_skill:   str
     total_jobs:      int
     top_companies:   list[str]       = Field(default_factory=list)  # ["VNG (24)", "Tiki (18)"]
-    work_mode_dist:  dict[str, int]  = Field(default_factory=dict)  # {"remote": 45, "hybrid": 30}
+    work_mode_dist:  dict[str, int]  = Field(default_factory=dict)  # {"Remote": 45, "Hybrid": 30}
     related_skills:  list[str]       = Field(default_factory=list)  # ["FastAPI", "PostgreSQL"]
     location_filter: Optional[str]   = None                         # "Ho Chi Minh" | None
+    category_dist:   dict[str, int]  = Field(default_factory=dict)  # {"Backend Development": 120}
+    region_dist:     dict[str, int]  = Field(default_factory=dict)  # {"South": 5264, "North": 3075}
 
 
 class ChatResponse(BaseModel):
