@@ -150,8 +150,8 @@ export default function MarketInsightCard({ insight }) {
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                 Top công ty
               </p>
-              <ul className="space-y-1">
-                {insight.top_companies.slice(0, 4).map((c, i) => (
+              <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                {insight.top_companies.map((c, i) => (
                   <li key={c} className="flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300 text-[10px] font-bold flex-shrink-0">
                       {i + 1}

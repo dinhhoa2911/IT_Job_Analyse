@@ -68,9 +68,15 @@ class MarketInsight(BaseModel):
     top_companies:   list[str]       = Field(default_factory=list)  # ["VNG (24)", "Tiki (18)"]
     work_mode_dist:  dict[str, int]  = Field(default_factory=dict)  # {"Remote": 45, "Hybrid": 30}
     related_skills:  list[str]       = Field(default_factory=list)  # ["FastAPI", "PostgreSQL"]
-    location_filter: Optional[str]   = None                         # "Ho Chi Minh" | None
-    category_dist:   dict[str, int]  = Field(default_factory=dict)  # {"Backend Development": 120}
-    region_dist:     dict[str, int]  = Field(default_factory=dict)  # {"South": 5264, "North": 3075}
+    location_filter:  Optional[str]   = None                         # "Ho Chi Minh" | None
+    work_mode_filter: Optional[str]   = None                         # "At Office" | "Remote" | "Hybrid" | None
+    level_filter:     Optional[str]   = None                         # "Senior" | "Junior" | None
+    region_filter:    Optional[str]   = None                         # "South" | "North" | "Central" | None
+    date_filter:      Optional[str]   = None                         # "2025" | "Q1/2025" | "tháng 3/2025" | None
+    category_filter:  Optional[str]   = None                         # "Backend Development" | None
+    company_filter:   Optional[str]   = None                         # "VNG" | None
+    category_dist:    dict[str, int]  = Field(default_factory=dict)  # {"Backend Development": 120}
+    region_dist:      dict[str, int]  = Field(default_factory=dict)  # {"South": 5264, "North": 3075}
 
 
 class ChatResponse(BaseModel):

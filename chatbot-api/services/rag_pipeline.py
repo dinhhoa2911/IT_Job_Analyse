@@ -22,7 +22,7 @@ from openai import OpenAI
 from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
-from services.agent import AgentService
+from services.agent import AgentService, _SHOW_MORE_RE
 from services.learning_path import LearningPathService
 from services.market_context import MarketContextService, format_market_block
 from services.query_classifier import QueryClassifier, is_greeting, is_short_off_topic
@@ -532,6 +532,9 @@ class RAGPipeline:
             '→ Output: "tìm job Java remote HCM"\n'
             '• Prior: "top 10 công ty tuyển nhiều nhất" → New: "tháng 3 thì sao?" '
             '→ Output: "top 10 công ty tuyển nhiều nhất tháng 3 năm 2026"\n'
+            '• Prior: "tìm job senior Python tại HCM làm tại văn phòng" '
+            '→ New: "đưa tao thêm nữa" / "cho xem thêm" / "show more" / "ĐƯA TAO THÊM NỮA ĐI" '
+            '→ Output: "tìm job senior Python tại HCM làm tại văn phòng"\n'
             "Return ONLY the rewritten query — no explanation, no quotes."
         )
         try:
@@ -564,7 +567,10 @@ class RAGPipeline:
             lang = _detect_lang(raw)
             canned = _GREETING_VI if lang == "Vietnamese" else _GREETING_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
-        if is_short_off_topic(raw):
+        # "Show more" follow-ups ("đưa tao thêm", "cho xem thêm", "more jobs" …)
+        # are short messages with no IT keywords so they look off-topic to the
+        # classifier.  Let them through to the agent which handles them explicitly.
+        if is_short_off_topic(raw) and not _SHOW_MORE_RE.search(raw):
             lang = _detect_lang(raw)
             canned = _OUT_OF_SCOPE_VI if lang == "Vietnamese" else _OUT_OF_SCOPE_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
@@ -574,7 +580,7 @@ class RAGPipeline:
         # ── Agentic path (primary) ────────────────────────────────────────
         # AgentService plans tool calls, executes in parallel, synthesizes.
         # Returns None only when planning fails → fall back to classic pipeline.
-        agent_response = self._agent.run(resolved, history, lang)
+        agent_response = self._agent.run(resolved, history, lang, conversation_id=request.conversation_id)
         if agent_response is not None:
             return agent_response
 
@@ -605,11 +611,12 @@ class RAGPipeline:
                                 jobs=jobs, market_insight=market_insight)
 
         if query_type == QueryType.analytics:
-            sql_query = sql_result = chart = None
+            sql_query = sql_result = None
+            chart_list: list[dict] = []
             try:
                 preferred_chart = (_extract_chart_preference(request.message)
                                    or _extract_chart_preference(resolved))
-                sql_query, sql_result, chart = self._sql_agent.query(resolved, preferred_chart)
+                sql_query, sql_result, chart_list = self._sql_agent.query(resolved, preferred_chart)
                 prompt = _build_analytics_prompt(resolved, sql_result, lang)
             except Exception as exc:
                 logger.error("SQL agent failed: %s", exc, exc_info=True)
@@ -617,7 +624,9 @@ class RAGPipeline:
                           f"[ERROR] {exc}\nInform the user politely.")
             answer = self._generate(prompt, _ANALYTICS_SYSTEM_PROMPT, lang, history)
             return ChatResponse(answer=answer, query_type=query_type,
-                                sql_query=sql_query, sql_result=sql_result, chart=chart)
+                                sql_query=sql_query, sql_result=sql_result,
+                                chart=chart_list[0] if chart_list else None,
+                                charts=chart_list)
 
         if query_type == QueryType.learning_path:
             target_role, known_skills = self._extract_learning_path_intent(resolved)

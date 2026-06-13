@@ -11,6 +11,7 @@ import logging
 import re
 import textwrap
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 import trino
@@ -60,14 +61,20 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
                                'Software Engineering'(2)|'Testing'(2)|'Other'(460)
                                Do NOT use skill_group for meaningful filtering — use skill_name directly.
 
-    iceberg.gold.dim_location       ← 10 cities
+    iceberg.gold.dim_location       ← 10 cities  [alias: dl]
         location_id BIGINT
-        city_name   VARCHAR  — exact values (case-sensitive):
-                               'Ho Chi Minh'(5264 jobs) | 'Ha Noi'(3075) | 'Da Nang'(536)
+        city_name   VARCHAR  — EXACT values (case-sensitive, no abbreviations):
+                               'Ho Chi Minh'(5264) | 'Ha Noi'(3075) | 'Da Nang'(536)
                                'Others'(82) | 'Binh Duong'(9) | 'International'(4)
                                'Hung Yen'(4) | 'Hai Phong'(4) | 'Long An'(2) | 'Hue'(1)
+                    ← ALIASES to resolve: HCM/TP.HCM/Saigon → 'Ho Chi Minh'
+                                          Hanoi/HN/Hà Nội   → 'Ha Noi'
+                                          Danang/Đà Nẵng    → 'Da Nang'
         region      VARCHAR  — 'South' | 'North' | 'Central' | 'Other'
-                               South=HCM+Binh Duong+Long An | North=Hanoi+Hung Yen | Central=DaNang+Hue
+                    ← region is in dim_location (alias dl), NOT in dim_date (alias d)!
+                               South=HCM+Binh Duong | North=Hanoi+Hung Yen | Central=DaNang+Hue
+        USAGE: JOIN iceberg.gold.dim_location dl ON f.location_id = dl.location_id
+               → dl.city_name, dl.region  (NOT d.region — d is for dim_date!)
 
     iceberg.gold.dim_company        ← 1,172 companies
         company_id   BIGINT
@@ -115,17 +122,181 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
         skill_groups     ARRAY<VARCHAR>
         ← NO salary column — salary data does not exist in this database
 
+    === TOP N PER GROUP (Window Function Pattern) ===
+    "top 3 kỹ năng mỗi ngành" / "top N skills per category" / "với mỗi X, top N Y":
+    ALWAYS write ONE single query using ROW_NUMBER() window function. NEVER make separate
+    queries per category — that violates the single-call rule and gives wrong results.
+
+    Correct pattern for "top 3 skills per job category":
+      WITH skill_counts AS (
+          SELECT djc.category_name,
+                 ds.skill_name,
+                 COUNT(DISTINCT f.job_link) AS job_count
+          FROM iceberg.gold.fact_job_posting f
+          JOIN iceberg.gold.dim_skill ds        ON f.skill_id    = ds.skill_id
+          JOIN iceberg.gold.dim_job_category djc ON f.category_id = djc.category_id
+          GROUP BY 1, 2
+      ),
+      ranked AS (
+          SELECT category_name, skill_name, job_count,
+                 ROW_NUMBER() OVER (PARTITION BY category_name ORDER BY job_count DESC) AS rn
+          FROM skill_counts
+      )
+      SELECT category_name, skill_name, job_count
+      FROM ranked
+      WHERE rn <= 3
+      ORDER BY category_name, rn
+
+    ✗ WRONG: separate WHERE category='X' queries for each category
+    ✓ RIGHT: one query with ROW_NUMBER() OVER (PARTITION BY ...) covering all categories
+
+    === CO-OCCURRENCE / SKILL CORRELATION QUERIES ===
+    "Kỹ năng nào hay xuất hiện cùng X?" / "skills that appear with X" / "co-occur with X":
+    Always write ONE single query returning BOTH co_count AND pct in the same SELECT.
+    The correct pattern (replace <skill> with the target skill name in lowercase):
+
+      SELECT ds.skill_name,
+             COUNT(DISTINCT f.job_link)                                              AS co_count,
+             ROUND(COUNT(DISTINCT f.job_link) * 100.0 / (
+                 SELECT COUNT(DISTINCT f2.job_link)
+                 FROM iceberg.gold.fact_job_posting f2
+                 JOIN iceberg.gold.dim_skill ds2 ON f2.skill_id = ds2.skill_id
+                 WHERE LOWER(ds2.skill_name) = '<skill>'
+             ), 1)                                                                   AS pct_of_<skill>_jobs
+      FROM iceberg.gold.fact_job_posting f
+      JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id
+      WHERE f.job_link IN (
+          SELECT DISTINCT f2.job_link
+          FROM iceberg.gold.fact_job_posting f2
+          JOIN iceberg.gold.dim_skill ds2 ON f2.skill_id = ds2.skill_id
+          WHERE LOWER(ds2.skill_name) = '<skill>'
+      )
+      AND LOWER(ds.skill_name) != '<skill>'
+      GROUP BY 1
+      ORDER BY co_count DESC
+      LIMIT 10
+
+    ✗ WRONG: WHERE LOWER(ds.skill_name) = 'python' → counts Python itself, always 1 row
+    ✗ WRONG: two separate queries for count and percentage
+    ✓ RIGHT: one query, two output columns (co_count + pct), excludes the target skill itself
+
+    === WORK MODE vs LOCATION — CRITICAL DISAMBIGUATION ===
+    ⚠ "tỷ lệ làm việc tại văn phòng / remote / hybrid" → ALWAYS use dim_work_mode, NEVER dim_location.
+    Vietnamese work mode terms map to ENGLISH DB values (case-sensitive):
+      văn phòng / tại văn phòng / onsite / tại chỗ / "at office" → 'At Office'
+      remote / từ xa / làm từ xa / work from home                → 'Remote'
+      hybrid / kết hợp / linh hoạt                              → 'Hybrid'
+    CORRECT query for work mode distribution:
+      SELECT dw.work_mode, COUNT(DISTINCT f.job_link) AS job_count
+      FROM iceberg.gold.fact_job_posting f
+      JOIN iceberg.gold.dim_work_mode dw ON f.mode_id = dw.mode_id
+      GROUP BY 1
+      ORDER BY 2 DESC
+    WRONG: querying dl.region or dl.city_name for work mode questions.
+    WRONG: using Vietnamese string values like 'Văn phòng' in WHERE clauses — always use English.
+
     === SQL RULES ===
+    ⚠ ABSOLUTE RULE — NO HALLUCINATED LOCATION FILTERS:
+      NEVER add WHERE conditions on city_name or region unless the user EXPLICITLY mentions
+      a specific city or region in their question.
+      "top 5 công ty Python"          → NO location filter (query ALL cities)
+      "top 10 kỹ năng backend"        → NO location filter
+      "top công ty tuyển nhiều nhất"  → NO location filter
+      "top 5 công ty Python ở HCM"    → WHERE dl.city_name = 'Ho Chi Minh'
+      "top skills tại Hà Nội"         → WHERE dl.city_name = 'Ha Noi'
+      Do NOT join dim_location unless the user explicitly requests a city/region filter.
+
+    ⚠ ABSOLUTE RULE — NO HALLUCINATED TIME FILTERS:
+      NEVER add WHERE conditions on dim_date (year, month, quarter, day) unless the user
+      EXPLICITLY mentions a specific time period.
+      "top 10 kỹ năng backend" → NO date filter at all (query all data in the database)
+      "top skills tháng 3 năm 2026" → WHERE d.month=3 AND d.year=2026
+      "phân bổ work mode hiện tại"  → NO date filter (query all data as-is)
+      "kỹ năng hot nhất hiện nay"   → NO date filter
+      "top công ty HCM"             → NO date filter
+      The database covers 2025-09-23 → 2026-04-11. NEVER use year=2023 or any year
+      not explicitly stated by the user. Do not join dim_date unless a time filter is needed.
+      "hiện tại" / "hiện nay" / "currently" / "now" = query ALL data, NO date filter.
+
+    - When the user asks for BOTH count AND percentage in the same question, always SELECT both
+      as separate columns so the frontend can render two charts:
+        SELECT ds.skill_name,
+               COUNT(DISTINCT f.job_link)                                           AS co_count,
+               ROUND(COUNT(DISTINCT f.job_link) * 100.0 / <total_subquery>, 1)     AS pct
+        ...
+      Do NOT collapse them into one column or compute % only in application logic.
+
     - Always prefix tables: iceberg.gold.fact_job_posting, iceberg.silver.it_jobs_clean, etc.
-    - Use LIMIT ≤ 50 (daily charts may need up to 31 rows)
+    - LIMIT rules:
+        • Rankings (company/skill/category): use EXACTLY the number the user requests.
+          "top 5" → LIMIT 5 | "top 15" → LIMIT 15 | "top 20" → LIMIT 20 | "top 50" → LIMIT 50
+          No number specified → LIMIT 10 by default.
+          No hard cap — respect whatever the user asks for.
+        • Daily charts → LIMIT 31 | Monthly charts → LIMIT 12 | Other time-series → LIMIT 50
     - BANNED FUNCTIONS: array_contains() → CROSS JOIN UNNEST | collect_list() → ARRAY_AGG() | size() → CARDINALITY()
     - For ARRAY columns: CROSS JOIN UNNEST(col) AS t(val)
     - Prefer Gold JOINs over Silver ARRAY for skill queries:
         RIGHT: JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id WHERE LOWER(ds.skill_name) = 'python'
         WRONG: WHERE array_contains(skills_required, 'Python')
     - COUNTING: COUNT(DISTINCT f.job_link) — never COUNT(*) or COUNT(f.fact_id)
-    - GROUP BY: use ordinal position (GROUP BY 1), NOT alias
+    - GROUP BY: use ordinal position (GROUP BY 1, 2, 3), NOT alias
+    - CRITICAL: Every column in ORDER BY that is NOT an aggregate MUST also be in GROUP BY.
+      WRONG: GROUP BY d.month ORDER BY d.year, d.month  ← d.year missing from GROUP BY → ERROR
+      RIGHT: GROUP BY d.year, d.month ORDER BY d.year, d.month
+      SAFEST: always use ordinals → GROUP BY 1, 2 ORDER BY 1, 2
     - CASE sensitivity: city_name and work_mode are case-sensitive ('Ho Chi Minh' not 'ho chi minh')
+
+    === PERIOD COMPARISON / QoQ / YoY QUERIES ===
+    "ngành nào tăng trưởng từ Q4 sang Q1" / "so sánh hai kỳ theo category" pattern:
+    Use conditional COUNT(DISTINCT CASE WHEN ...) to pivot multiple periods into columns.
+    ALWAYS break down BY CATEGORY (or whatever dimension the user asks about) — never
+    return a single row of totals when the user wants a ranking or breakdown.
+
+    Example: "ngành IT nào tăng trưởng mạnh nhất từ Q4/2025 sang Q1/2026?"
+      WITH quarterly AS (
+          SELECT djc.category_name,
+                 COUNT(DISTINCT CASE WHEN d.year=2025 AND d.quarter=4 THEN f.job_link END) AS q4_2025,
+                 COUNT(DISTINCT CASE WHEN d.year=2026 AND d.quarter=1 THEN f.job_link END) AS q1_2026
+          FROM iceberg.gold.fact_job_posting f
+          JOIN iceberg.gold.dim_job_category djc ON f.category_id = djc.category_id
+          JOIN iceberg.gold.dim_date d             ON f.date_id    = d.date_id
+          GROUP BY 1
+      )
+      SELECT category_name, q4_2025, q1_2026,
+             ROUND((CAST(q1_2026 AS DOUBLE) - q4_2025) * 100.0 / NULLIF(q4_2025, 0), 1) AS growth_pct
+      FROM quarterly
+      WHERE q4_2025 > 0
+      ORDER BY growth_pct DESC
+
+    Key rules:
+    ✗ WRONG: GROUP BY quarter → returns 2 summary rows (Q4 total, Q1 total) — not a ranking
+    ✓ RIGHT: GROUP BY category_name → 17 rows, one per category, with growth rate per category
+    - growth_pct can be NEGATIVE (decline) — handle in response: if all values negative,
+      note that the market declined and rank by "least decline" not "most growth"
+    - Use CAST(... AS DOUBLE) before percentage math to avoid integer division
+
+    === MONTH-OVER-MONTH (MoM) GROWTH QUERIES ===
+    "tốc độ tăng trưởng theo tháng" / "MoM growth" / "so với tháng trước" — use LAG():
+
+      WITH monthly AS (
+          SELECT d.year, d.month,
+                 CONCAT(CAST(d.year AS VARCHAR), '-', LPAD(CAST(d.month AS VARCHAR), 2, '0')) AS month_label,
+                 COUNT(DISTINCT f.job_link) AS job_count
+          FROM iceberg.gold.fact_job_posting f
+          JOIN iceberg.gold.dim_date d ON f.date_id = d.date_id
+          GROUP BY 1, 2, 3
+      )
+      SELECT month_label,
+             job_count,
+             ROUND(
+                 (job_count - LAG(job_count) OVER (ORDER BY year, month)) * 100.0
+                 / NULLIF(LAG(job_count) OVER (ORDER BY year, month), 0),
+             1) AS mom_growth_pct
+      FROM monthly
+      ORDER BY year, month
+
+    ✗ WRONG: GROUP BY d.month ORDER BY d.year, d.month  ← EXPRESSION_NOT_AGGREGATE error
+    ✓ RIGHT: include ALL ORDER BY columns in GROUP BY, or use ordinal positions
 
     === CHART / VISUALIZATION RULES (apply when user asks for a chart or graph) ===
     - Always put the LABEL/CATEGORY column FIRST, the numeric METRIC column SECOND
@@ -155,26 +326,43 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
       ORDER BY may use either alias or ordinal (both work in Trino)
 """).strip()
 
-_SYSTEM_PROMPT = f"""You are a Trino SQL expert. Generate a single, valid Trino SQL query.
-
-{_SCHEMA_CONTEXT}
-
-Return ONLY the raw SQL — no explanation, no markdown fences, no comments."""
+def _build_system_prompt() -> str:
+    today = date.today().strftime("%Y-%m-%d")
+    critical = (
+        "⚠⚠⚠ CRITICAL RULES — violations produce wrong results:\n"
+        "\n"
+        "RULE 1 — NO HALLUCINATED DATE/TIME FILTERS:\n"
+        "  NEVER join dim_date or add WHERE on year/month/quarter/day\n"
+        "  unless the user EXPLICITLY states a time period (e.g. 'tháng 3', 'năm 2026', 'Q1 2026').\n"
+        "  Data range is 2025-09-23 → 2026-04-11. NEVER use year=2023, 2024, or any\n"
+        "  year/month not stated by the user.\n"
+        "  ✗ WRONG: JOIN dim_date d ON ... WHERE d.year=2023  ← user never said 2023\n"
+        "  ✗ WRONG: WHERE d.month=10 AND d.year=2023          ← hallucinated\n"
+        "  ✓ RIGHT: no dim_date join at all when no time filter needed\n"
+        "\n"
+        "RULE 2 — NO HALLUCINATED LOCATION FILTERS:\n"
+        "  NEVER join dim_location or add WHERE on city_name/region\n"
+        "  unless the user EXPLICITLY mentions a city or region.\n"
+        "  ✗ WRONG: WHERE dl.city_name = 'Ho Chi Minh'  ← user never said HCM\n"
+        "  ✓ RIGHT: no dim_location join when no city filter needed\n"
+        "\n"
+        "RULE 3 — USER INTENT ONLY:\n"
+        "  Query EXACTLY what the user asked. Do not add 'helpful' extra filters.\n"
+        "  'top 5 công ty Python' → no city, no date filter, just skill + company.\n"
+        "  'phân bổ ngành IT' → no date, no city, just category distribution.\n"
+    )
+    return (
+        f"You are a Trino SQL expert. Generate a single, valid Trino SQL query.\n"
+        f"Today's date: {today}. The database covers 2025-09-23 → 2026-04-11.\n\n"
+        f"{critical}\n"
+        f"{_SCHEMA_CONTEXT}\n\n"
+        "Return ONLY the raw SQL — no explanation, no markdown fences, no comments."
+    )
 
 # ── Color palette ─────────────────────────────────────────────────────────────
 # Single bar/line colors — clean, professional
 _LINE_COLOR   = "rgba(14, 165, 233, 1)"      # sky-500
 _LINE_FILL    = "rgba(14, 165, 233, 0.08)"   # sky very transparent
-
-# Multi-series palette (elegant, not rainbow)
-_SERIES_COLORS = [
-    "rgba(99, 102, 241, 0.85)",   # indigo
-    "rgba(14, 165, 233, 0.85)",   # sky
-    "rgba(16, 185, 129, 0.85)",   # emerald
-    "rgba(245, 158, 11, 0.85)",   # amber
-    "rgba(239, 68, 68, 0.85)",    # red
-    "rgba(168, 85, 247, 0.85)",   # violet
-]
 
 # Pie chart — curated elegant palette
 _PIE_COLORS = [
@@ -189,27 +377,35 @@ _PIE_COLORS = [
 ]
 
 # ── Label normalization ────────────────────────────────────────────────────────
+# Order matters — pct must come before job/count to avoid "pct_of_python_jobs" → "Job Count"
 _LABEL_PATTERNS = [
-    (re.compile(r'job|posting|so_luong|viec|count|total', re.IGNORECASE), 'Job Count'),
+    (re.compile(r'pct|percent|ratio|proportion|\brate\b|tỷ.lệ|phần.trăm', re.IGNORECASE), 'Tỷ lệ (%)'),
+    (re.compile(r'job|posting|so_luong|viec|count|total', re.IGNORECASE), 'Số lượng job'),
     (re.compile(r'salary|luong|wage|avg_sal|compensation', re.IGNORECASE), 'Avg Salary'),
-    (re.compile(r'company|cong_ty|employer|firm', re.IGNORECASE), 'Companies'),
-    (re.compile(r'skill|ky_nang', re.IGNORECASE), 'Skills'),
+    (re.compile(r'company|cong_ty|employer|firm', re.IGNORECASE), 'Công ty'),
+    (re.compile(r'skill|ky_nang', re.IGNORECASE), 'Kỹ năng'),
 ]
 
+_PCT_COL_RE = re.compile(r'pct|percent|ratio|proportion|\brate\b', re.IGNORECASE)
+
 def _normalize_label(col: str) -> str:
-    """Map SQL column aliases to clean English labels."""
+    """Map SQL column aliases to clean display labels."""
     for pattern, label in _LABEL_PATTERNS:
         if pattern.search(col):
             return label
     return col.replace("_", " ").title()
+
+def _is_pct_col(col: str) -> bool:
+    """True khi column name gợi ý dữ liệu phần trăm (0-100)."""
+    return bool(_PCT_COL_RE.search(col))
 
 # ── Nhận dạng date string dạng "YYYY-MM-DD" hoặc "YYYY-MM" ───────────────────
 _DATE_STRING_RE = re.compile(r'^\d{4}-\d{2}(-\d{2})?$')
 
 
 def _is_numeric(value: Any) -> bool:
-    """Return True for int/float but not bool or None."""
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    """Return True for int/float/Decimal but not bool or None."""
+    return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
 
 
 def _is_date_like(value: Any) -> bool:
@@ -246,7 +442,9 @@ def _first_non_none(rows: list[dict], col: str) -> Any:
 
 
 def _safe_num(value: Any) -> float | int:
-    """Trả về giá trị numeric, hoặc 0 nếu None/invalid."""
+    """Trả về giá trị numeric, hoặc 0 nếu None/invalid. Decimal → float."""
+    if isinstance(value, Decimal):
+        return float(value)
     return value if _is_numeric(value) else 0
 
 
@@ -301,11 +499,24 @@ _SCALE_HORIZONTAL = {
 
 # ── Chart spec builders ───────────────────────────────────────────────────────
 
-def _bar_spec(labels, data, label_text, horizontal=False):
+def _title_plugin(text: str) -> dict:
+    return {
+        "display": True,
+        "text": text,
+        "font": {"size": 14, "weight": "600", "family": "'Inter', sans-serif"},
+        "color": "#111827",
+        "align": "center",
+        "padding": {"top": 6, "bottom": 14},
+    }
+
+
+def _bar_spec(labels, data, label_text, horizontal=False, title: str | None = None):
     colors = (_PIE_COLORS * ((len(labels) // len(_PIE_COLORS)) + 1))[:len(labels)]
     opts   = {"scales": _SCALE_HORIZONTAL if horizontal else _SCALE_XY}
     if horizontal:
         opts["indexAxis"] = "y"
+    if title:
+        opts["plugins"] = {"title": _title_plugin(title)}
     return {
         "type": "bar",
         "data": {"labels": labels, "datasets": [{
@@ -317,7 +528,10 @@ def _bar_spec(labels, data, label_text, horizontal=False):
     }
 
 
-def _line_spec(labels, data, label_text, fill=False):
+def _line_spec(labels, data, label_text, fill=False, title: str | None = None):
+    opts: dict = {"scales": _SCALE_XY}
+    if title:
+        opts["plugins"] = {"title": _title_plugin(title)}
     return {
         "type": "line",
         "data": {"labels": labels, "datasets": [{
@@ -329,46 +543,129 @@ def _line_spec(labels, data, label_text, fill=False):
             "pointStyle": "circle",
             "pointBackgroundColor": _LINE_COLOR, "borderWidth": 2,
         }]},
-        "options": {"scales": _SCALE_XY},
+        "options": opts,
     }
 
 
-def _pie_spec(ctype, labels, data, label_text):
-    return {
+def _pie_spec(ctype, labels, data, label_text, title: str | None = None):
+    n = len(labels)
+    colors = (_PIE_COLORS * ((n // len(_PIE_COLORS)) + 1))[:n]
+    opts: dict = {}
+    if title:
+        opts["plugins"] = {"title": _title_plugin(title)}
+    spec: dict = {
         "type": ctype,
         "data": {"labels": labels, "datasets": [{
             "label": label_text, "data": data,
-            "backgroundColor": _PIE_COLORS[:len(labels)], "borderWidth": 0,
+            "backgroundColor": colors, "borderWidth": 0,
         }]},
+    }
+    if opts:
+        spec["options"] = opts
+    return spec
+
+
+def _make_chart(ctype: str, labels, data, label_text, title: str | None = None) -> dict:
+    if ctype == "line":             return _line_spec(labels, data, label_text, fill=False, title=title)
+    if ctype == "area":             return _line_spec(labels, data, label_text, fill=True,  title=title)
+    if ctype in ("pie","doughnut"): return _pie_spec(ctype, labels, data, label_text, title=title)
+    if ctype == "horizontalBar":    return _bar_spec(labels, data, label_text, horizontal=True, title=title)
+    return _bar_spec(labels, data, label_text, title=title)
+
+
+_COL_DISPLAY: dict[str, str] = {
+    "category_name": "Ngành", "category": "Ngành",
+    "skill_name": "Kỹ năng", "skill": "Kỹ năng",
+    "company_name": "Công ty", "company": "Công ty",
+    "city_name": "Thành phố", "location": "Địa điểm",
+    "work_mode": "Hình thức làm việc",
+    "region": "Khu vực",
+}
+
+def _col_display(col: str) -> str:
+    return _COL_DISPLAY.get(col.lower(), col.replace("_", " ").title())
+
+
+def _grouped_bar_chart(
+    rows: list[dict],
+    group_col: str,
+    item_col: str,
+    value_col: str,
+) -> dict:
+    """
+    Pivot (group, item, value) rows → grouped horizontal bar chart.
+    Each rank (Top 1, Top 2, Top 3…) becomes a dataset.
+    Stores item names in dataset.skillNames for tooltip display.
+    """
+    groups: list[str] = list(dict.fromkeys(str(r[group_col]) for r in rows))
+    group_items: dict[str, list[tuple[str, float]]] = {g: [] for g in groups}
+    for r in rows:
+        group_items[str(r[group_col])].append(
+            (str(r.get(item_col, "")), _safe_num(r.get(value_col)))
+        )
+
+    max_rank = max((len(v) for v in group_items.values()), default=0)
+
+    datasets = []
+    for rank in range(max_rank):
+        vals: list[float] = []
+        names: list[str] = []
+        for g in groups:
+            items = group_items[g]
+            if rank < len(items):
+                name, val = items[rank]
+                vals.append(val)
+                names.append(name)
+            else:
+                vals.append(0)
+                names.append("")
+        color = _PIE_COLORS[rank % len(_PIE_COLORS)]
+        datasets.append({
+            "label": f"Top {rank + 1}",
+            "data": vals,
+            "skillNames": names,        # picked up by ChartRenderer for tooltip
+            "backgroundColor": color,
+            "borderWidth": 0,
+            "borderRadius": 3,
+            "borderSkipped": False,
+        })
+
+    n = len(groups)
+    max_len = max((len(g) for g in groups), default=0)
+    horiz = n > 5 or max_len > 14
+
+    item_d  = _col_display(item_col).lower()
+    group_d = _col_display(group_col).lower()
+    title_text = f"Top {max_rank} {item_d} — theo từng {group_d}"
+
+    opts: dict = {"scales": _SCALE_HORIZONTAL if horiz else _SCALE_XY}
+    if horiz:
+        opts["indexAxis"] = "y"
+    opts["plugins"] = {"title": _title_plugin(title_text)}
+
+    return {
+        "type": "bar",
+        "data": {"labels": groups, "datasets": datasets},
+        "options": opts,
     }
 
 
-def _make_chart(ctype: str, labels, data, label_text) -> dict:
-    if ctype == "line":             return _line_spec(labels, data, label_text, fill=False)
-    if ctype == "area":             return _line_spec(labels, data, label_text, fill=True)
-    if ctype in ("pie","doughnut"): return _pie_spec(ctype, labels, data, label_text)
-    if ctype == "horizontalBar":    return _bar_spec(labels, data, label_text, horizontal=True)
-    return _bar_spec(labels, data, label_text)
 
-
-def _build_chart_spec(rows: list[dict], preferred: str | None = None) -> dict | None:
+def _build_chart_spec(rows: list[dict], preferred: str | None = None) -> list[dict]:
     """
-    Tạo Chart.js spec từ SQL rows với smart chart type selection.
+    Build Chart.js specs from SQL result rows. Returns [] / [1] / [N] charts.
 
-    preferred: 'bar'|'line'|'area'|'pie'|'doughnut'|'horizontalBar' — override của user.
-    Nếu None thì auto-detect:
-      - Date col + numeric         → line
-      - Time labels (ngày/tháng)   → line nếu dense (≥60%), bar nếu sparse
-      - Category ≤ 6               → doughnut
-      - Category 7-20              → bar
-      - Category > 20              → horizontalBar
-      - Multi-series               → grouped bar
+    Shape detection:
+      (date/time, value…)           → line chart(s), one per metric
+      (group, item, value)          → grouped bar (pivot by group, one dataset per rank)
+      (label, count, pct…)          → one chart per metric; pct → doughnut if ≤8 items
+      (label, value)                → bar / doughnut / line depending on n and label type
     """
     if not rows or len(rows) < 2:
-        return None
+        return []
     columns = list(rows[0].keys())
     if len(columns) < 2:
-        return None
+        return []
 
     date_cols = [c for c in columns if _is_date_like(_first_non_none(rows, c))]
     num_cols  = [c for c in columns if _is_numeric(_first_non_none(rows, c))]
@@ -378,44 +675,68 @@ def _build_chart_spec(rows: list[dict], preferred: str | None = None) -> dict | 
         and not _is_date_like(_first_non_none(rows, c))
     ]
 
-    # ── 1. Date object + numeric → time series ────────────────────────────────
+    # ── 1. Time-series: date/time labels + 1..N metrics ──────────────────────
     if date_cols and num_cols:
         label_col   = date_cols[0]
-        value_col   = num_cols[0]
         sorted_rows = sorted(rows, key=lambda r: _parse_date_val(r[label_col]))
         labels = [str(r[label_col]).strip()[:10] for r in sorted_rows]
-        data   = [_safe_num(r[value_col]) for r in sorted_rows]
-        ctype  = preferred if preferred in ("bar","line","area") else "line"
-        return _make_chart(ctype, labels, data, _normalize_label(value_col))
+        ctype  = preferred if preferred in ("bar", "line", "area") else "line"
 
-    # ── 2. Multi-series: string + 2+ numeric ─────────────────────────────────
+        charts = []
+        for col in num_cols:
+            data = [_safe_num(r[col]) for r in sorted_rows]
+            lbl  = _normalize_label(col)
+            charts.append(_make_chart(ctype, labels, data, lbl, title=lbl))
+        return charts
+
+    # ── 2. Grouped top-N: 2 str cols + 1 numeric with repeating first col ────
+    # Shape: (group, item, value) e.g. (category, skill, job_count)
+    if len(str_cols) >= 2 and len(num_cols) == 1:
+        group_col = str_cols[0]
+        item_col  = str_cols[1]
+        value_col = num_cols[0]
+        group_labels = [str(r[group_col]) for r in rows]
+        if len(group_labels) != len(set(group_labels)):  # repeating → grouped data
+            return [_grouped_bar_chart(rows, group_col, item_col, value_col)]
+
+    # ── 3. Multi-metric: 1 str label + 2..N numeric → one chart per metric ───
     if str_cols and len(num_cols) >= 2:
         label_col = str_cols[0]
         labels    = [str(r[label_col]) for r in rows]
-        datasets  = [
-            {
-                "label": _normalize_label(col),
-                "data": [_safe_num(r[col]) for r in rows],
-                "backgroundColor": _SERIES_COLORS[i % len(_SERIES_COLORS)],
-                "borderRadius": 5, "borderSkipped": False,
-            }
-            for i, col in enumerate(num_cols)
-        ]
-        ctype = preferred if preferred in ("bar","line","horizontalBar") else "bar"
-        opts  = {"scales": _SCALE_HORIZONTAL if ctype == "horizontalBar" else _SCALE_XY}
-        if ctype == "horizontalBar":
-            opts["indexAxis"] = "y"
-            ctype = "bar"
-        return {"type": ctype, "data": {"labels": labels, "datasets": datasets}, "options": opts}
+        n         = len(labels)
+        max_len   = max(len(str(l)) for l in labels)
+        horiz     = n > 8 or max_len > 20
 
-    # ── 3. Single series: string + 1 numeric ─────────────────────────────────
+        charts = []
+        for col in num_cols:
+            data   = [_safe_num(r[col]) for r in rows]
+            lbl    = _normalize_label(col)
+            is_pct = _is_pct_col(col)
+
+            all_pos = all(v >= 0 for v in data)
+            if preferred in ("pie", "doughnut") and all_pos:
+                charts.append(_pie_spec(preferred, labels, data, lbl, title=lbl))
+            elif is_pct and n <= 8 and all_pos:
+                # % proportional data, small set, no negatives → doughnut
+                charts.append(_pie_spec("doughnut", labels, data, lbl, title=lbl))
+            else:
+                # Negative values (e.g. growth_pct decline) or large n → bar
+                charts.append(_bar_spec(labels, data, lbl, horizontal=horiz, title=lbl))
+        return charts
+
+    # ── 4. Single metric: 1 str label + 1 numeric ────────────────────────────
     if str_cols and num_cols:
         label_col = str_cols[0]
         value_col = num_cols[0]
         labels    = [str(r[label_col]) for r in rows]
         data      = [_safe_num(r[value_col]) for r in rows]
+        lbl       = _normalize_label(value_col)
 
-        # Sort numeric string labels ("01","02","11") đúng thứ tự số
+        # Still repeating labels but no secondary str col to pivot → skip chart
+        if len(labels) != len(set(labels)):
+            return []
+
+        # Sort numeric-string labels ("01","02"…) chronologically
         try:
             pairs  = sorted(zip(labels, data), key=lambda x: float(x[0]))
             labels = [p[0] for p in pairs]
@@ -425,19 +746,23 @@ def _build_chart_spec(rows: list[dict], preferred: str | None = None) -> dict | 
 
         is_time = _is_time_label(labels)
         n       = len(labels)
+        avg_len = sum(len(str(l)) for l in labels) / max(n, 1)
 
         if preferred:
             ctype = preferred
         elif is_time:
             ctype = "line" if _is_dense_time(labels) else "bar"
         else:
-            if n <= 6:    ctype = "doughnut"
-            elif n <= 20: ctype = "bar"
-            else:         ctype = "horizontalBar"
+            if n <= 5 and avg_len <= 12:
+                ctype = "doughnut"
+            elif n > 5 or avg_len > 12:
+                ctype = "horizontalBar"
+            else:
+                ctype = "bar"
 
-        return _make_chart(ctype, labels, data, _normalize_label(value_col))
+        return [_make_chart(ctype, labels, data, lbl, title=lbl)]
 
-    # ── Fallback: 2 numeric cols, first là label-like int ────────────────────
+    # ── 5. Fallback: 2 numeric cols, first is a day/month ordinal ────────────
     if len(num_cols) == 2 and not str_cols and not date_cols:
         label_col  = num_cols[0]
         value_col  = num_cols[1]
@@ -445,10 +770,11 @@ def _build_chart_spec(rows: list[dict], preferred: str | None = None) -> dict | 
         if first_vals and 1 <= min(first_vals) <= max(first_vals) <= 31:
             labels = [f"{int(r[label_col]):02d}" for r in rows]
             data   = [_safe_num(r[value_col]) for r in rows]
-            ctype  = preferred if preferred in ("bar","line","area") else "bar"
-            return _make_chart(ctype, labels, data, _normalize_label(value_col))
+            lbl    = _normalize_label(value_col)
+            ctype  = preferred if preferred in ("bar", "line", "area") else "bar"
+            return [_make_chart(ctype, labels, data, lbl, title=lbl)]
 
-    return None
+    return []
 
 
 class SQLAgentService:
@@ -494,7 +820,7 @@ class SQLAgentService:
             model=settings.openai_model,
             max_tokens=512,
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "system", "content": _build_system_prompt()},
                 {"role": "user", "content": question},
             ],
         )
@@ -529,13 +855,14 @@ class SQLAgentService:
             conn.close()
     # Public API
 
-    def query(self, question: str, preferred_chart: str | None = None) -> tuple[str, list[dict], dict | None]:
+    def query(self, question: str, preferred_chart: str | None = None) -> tuple[str, list[dict], list[dict]]:
         """
-        @brief Translate a question to SQL, execute it, and return results with an optional chart.
+        @brief Translate a question to SQL, execute it, and return results with chart specs.
 
         @param question        Natural-language analytics question.
         @param preferred_chart Chart type requested by user ('bar','line','area','pie','doughnut','horizontalBar').
-        @return                3-tuple of (sql_string, result_rows, chart_spec).
+        @return                3-tuple of (sql_string, result_rows, chart_specs).
+                               chart_specs is a list: [] (none), [1 chart], or [2 charts].
         """
         sql = self._generate_sql(question)
         logger.info("Generated SQL:\n%s", sql)
@@ -543,7 +870,7 @@ class SQLAgentService:
         rows = self._execute(sql)
         logger.info("SQL returned %d row(s).", len(rows))
 
-        chart = _build_chart_spec(rows, preferred=preferred_chart)
-        logger.info("Chart type: %s", chart["type"] if chart else "none")
+        charts = _build_chart_spec(rows, preferred=preferred_chart)
+        logger.info("Charts: %d spec(s), types=%s", len(charts), [c["type"] for c in charts])
 
-        return sql, rows, chart
+        return sql, rows, charts

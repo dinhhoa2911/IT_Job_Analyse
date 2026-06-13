@@ -7,6 +7,41 @@
 import React, { useState } from "react";
 import { FiChevronDown, FiChevronUp, FiMap } from "react-icons/fi";
 
+const SKILL_DISPLAY = {
+  AI:"AI", ML:"ML", SQL:"SQL", AWS:"AWS", GCP:"GCP", API:"API",
+  HTML:"HTML", CSS:"CSS", PHP:"PHP", "QA":"QA", "QC":"QC", "QA QC":"QA/QC",
+  OOP:"OOP", UI:"UI", UX:"UX", SDK:"SDK", ETL:"ETL", NLP:"NLP",
+  LLM:"LLM", RPA:"RPA", ERP:"ERP", CRM:"CRM", SAP:"SAP", BI:"BI", IT:"IT",
+  ".NET":".NET", "NODE.JS":"Node.js", "VUE.JS":"Vue.js", "REACT.JS":"React.js",
+  "NEXT.JS":"Next.js", "NUXT.JS":"Nuxt.js", "CICD":"CI/CD",
+  "DEVOPS":"DevOps", "POSTGRESQL":"PostgreSQL", "MONGODB":"MongoDB",
+  "MYSQL":"MySQL", "JAVASCRIPT":"JavaScript", "TYPESCRIPT":"TypeScript",
+  "REACT NATIVE":"React Native", "SPRING BOOT":"Spring Boot",
+  "GITHUB":"GitHub", "GITLAB":"GitLab", "ELASTICSEARCH":"Elasticsearch",
+  "KUBERNETES":"Kubernetes", "TENSORFLOW":"TensorFlow", "PYTORCH":"PyTorch",
+  "FASTAPI":"FastAPI", "CHATGPT":"ChatGPT", "OPENAI":"OpenAI",
+  "PYTHON":"Python", "JAVA":"Java", "REACT":"React", "ANGULAR":"Angular",
+  "VUE":"Vue", "DOCKER":"Docker", "LINUX":"Linux", "REDIS":"Redis",
+  "KAFKA":"Kafka", "SPARK":"Spark", "HADOOP":"Hadoop", "AIRFLOW":"Airflow",
+  "FLUTTER":"Flutter", "SWIFT":"Swift", "KOTLIN":"Kotlin", "SCALA":"Scala",
+  "RUST":"Rust", "RUBY":"Ruby", "GO":"Go", "DJANGO":"Django", "FLASK":"Flask",
+  "SPRING":"Spring", "LARAVEL":"Laravel", "ORACLE":"Oracle", "AZURE":"Azure",
+  "CLOUD":"Cloud", "DATABASE":"Database", "MICROSERVICE":"Microservices",
+  "ENGLISH":"English", "JAPANESE":"Japanese", "KOREAN":"Korean",
+  "AGILE":"Agile", "SCRUM":"Scrum", "JIRA":"Jira", "BLOCKCHAIN":"Blockchain",
+  "TAILWIND":"Tailwind", "AUTOMATION TEST":"Automation Test",
+  "TEAM MANAGEMENT":"Team Management", "PROJECT MANAGEMENT":"Project Management",
+  "BUSINESS ANALYSIS":"Business Analysis",
+};
+
+function formatSkillName(raw) {
+  if (!raw) return raw;
+  const key = raw.trim().toUpperCase();
+  if (SKILL_DISPLAY[key]) return SKILL_DISPLAY[key];
+  // Title-case fallback
+  return raw.trim().replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
 /** Tailwind tokens keyed by skill_group (lower-cased prefix match). */
 const GROUP_COLORS = {
   "backend":         { badge: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",   bar: "bg-blue-500"    },
@@ -126,11 +161,13 @@ export default function LearningPathCard({ learningPath }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug">
-                        {step.skill_name}
+                        {formatSkillName(step.skill_name)}
                       </span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${gc.badge}`}>
-                        {step.skill_group}
-                      </span>
+                      {step.skill_group && step.skill_group !== "Other" && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${gc.badge}`}>
+                          {step.skill_group}
+                        </span>
+                      )}
                     </div>
 
                     {/* Market freq bar */}

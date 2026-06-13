@@ -53,9 +53,9 @@ class Settings(BaseSettings):
     minio_cv_bucket: str  = "user-cvs"
 
     # Search pool sizes (final top_k is the result count returned to user)
-    top_k_results: int = 5       # final results returned to user
-    retrieval_k: int = 20        # candidates fetched per retriever (dense & sparse)
-    rerank_k: int = 10           # candidates passed to cross-encoder after RRF
+    top_k_results: int = 10      # final results returned to user
+    retrieval_k: int = 30        # candidates fetched per retriever (dense & sparse)
+    rerank_k: int = 20           # candidates passed to cross-encoder after RRF
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -96,6 +96,15 @@ FROM iceberg.gold.fact_job_posting f
 JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id
 WHERE f.job_link IN (SELECT job_link FROM cat_jobs)
 {exclude_known_filter}
+AND LOWER(ds.skill_name) NOT IN (
+    'data engineer','software engineer','backend developer','frontend developer',
+    'fullstack developer','mobile developer','devops engineer','qa engineer',
+    'data analyst','data scientist','machine learning engineer','ai engineer',
+    'cloud engineer','embedded engineer','game developer','security engineer',
+    'product manager','business analyst',
+    'ai','cloud','database','it','oop','agile','scrum',
+    'english','japanese','korean','team management','project management'
+)
 GROUP BY ds.skill_name, ds.skill_group
 HAVING COUNT(DISTINCT f.job_link) >= 5
 ORDER BY (

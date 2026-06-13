@@ -495,6 +495,7 @@ class HybridSearchService:
         self,
         queries: list[str],
         top_k: int | None = None,
+        pool_k: int | None = None,
     ) -> list[JobResult]:
         """
         @brief Hybrid search over multiple query variants with a single global RRF + rerank pass.
@@ -504,7 +505,7 @@ class HybridSearchService:
             dense_i  = _dense_search(qᵢ,  k=retrieval_k)
             sparse_i = _sparse_search(qᵢ, k=retrieval_k)
           all_lists = [dense_0, sparse_0, dense_1, sparse_1, ...]
-          fused     = _rrf_fusion_multi(all_lists, top_n=rerank_k)
+          fused     = _rrf_fusion_multi(all_lists, top_n=pool_k or rerank_k)
           reranked  = _rerank(queries[0], fused, top_k)   ← always original query
 
         The cross-encoder always uses queries[0] (the original user query,
@@ -513,9 +514,16 @@ class HybridSearchService:
 
         @param queries  List from QueryProcessor.process(); queries[0] must be the original.
         @param top_k    Final result count (default: settings.top_k_results).
+        @param pool_k   Override for the RRF fusion pool size passed to the reranker.
+                        Lets callers over-fetch (e.g. when post-filtering out
+                        already-seen job_links for "show me more" follow-ups)
+                        without changing the global settings.rerank_k. Defaults
+                        to settings.rerank_k, and is widened to top_k when the
+                        caller asks for more final results than the default pool.
         @return         List of JobResult sorted by cross-encoder relevance descending.
         """
         top_k = top_k or settings.top_k_results
+        fusion_pool = max(pool_k or settings.rerank_k, top_k)
 
         # Collect dense + sparse rank lists for every query variant
         all_rank_lists: list[list[_Doc]] = []
@@ -524,7 +532,7 @@ class HybridSearchService:
             all_rank_lists.append(self._sparse_search(q, k=settings.retrieval_k))
 
         # Global RRF across all 2×N rank lists
-        fused = self._rrf_fusion_multi(all_rank_lists, top_n=settings.rerank_k)
+        fused = self._rrf_fusion_multi(all_rank_lists, top_n=fusion_pool)
 
         # Rerank against the ORIGINAL query (queries[0])
         reranked = self._rerank(queries[0], fused, top_k=top_k)
