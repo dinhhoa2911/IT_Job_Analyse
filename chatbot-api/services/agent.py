@@ -661,8 +661,12 @@ class AgentService:
 
             has_structured_filter = bool(
                 insight and (
-                    insight.co_skills
-                    or insight.location_filter
+                    # co_skills alone is NOT a structured filter — only explicit user
+                    # constraints (location, mode, level, date, category, company) warrant
+                    # Gold exact search. Multi-skill AND queries without other filters use
+                    # Milvus (better recall; avoids 0-result Gold SQL paths from category
+                    # mismatch or INNER JOIN dropping partially-indexed jobs).
+                    insight.location_filter
                     or insight.region_filter
                     or insight.work_mode_filter
                     or insight.level_filter
@@ -671,9 +675,11 @@ class AgentService:
                     or insight.company_filter
                 )
             )
-            should_use_exact_gold = bool(
-                query_skills and (len(query_skills) > 1 or has_structured_filter)
-            )
+            # Use exact Gold search only when a structured filter is active.
+            # When only co-skills are present (no location/mode/etc.), Milvus gives
+            # better recall than Gold SQL INNER JOINs (which can under-return due to
+            # strict category joins or partially-indexed dimension rows).
+            should_use_exact_gold = bool(query_skills and has_structured_filter)
             used_exact_gold = False
             if should_use_exact_gold:
                 exact_jobs = self._market.search_matching_jobs(

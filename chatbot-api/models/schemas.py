@@ -77,8 +77,9 @@ class MarketInsight(BaseModel):
     company_filter:   Optional[str]   = None                         # "VNG" | None
     category_dist:    dict[str, int]  = Field(default_factory=dict)  # {"Backend Development": 120}
     region_dist:      dict[str, int]  = Field(default_factory=dict)  # {"South": 5264, "North": 3075}
-    co_skills:        list[str]       = Field(default_factory=list)  # ["KUBERNETES"] when joint filter active
-    or_skill_totals:  dict[str, int]  = Field(default_factory=dict)  # {"ORACLE": 294, "POSTGRESQL": 427} for OR queries
+    co_skills:            list[str]       = Field(default_factory=list)  # ["KUBERNETES"] when joint filter active
+    or_skill_totals:      dict[str, int]  = Field(default_factory=dict)  # {"ORACLE": 294, "POSTGRESQL": 427} for OR queries
+    related_skill_counts: dict[str, int]  = Field(default_factory=dict)  # {"C++": 98, "Linux": 45} co-occurrence counts
 
 
 class ChatResponse(BaseModel):

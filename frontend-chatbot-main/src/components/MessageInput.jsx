@@ -210,12 +210,11 @@ function MessageInput({
         {isLoading ? (
           <button
             type="button"
-            onClick={onStop}
-            className="relative w-8 h-8 rounded-full bg-black dark:bg-white flex items-center justify-center flex-shrink-0 hover:scale-110 active:scale-95 transition-transform"
+            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onStop(); }}
+            className="w-8 h-8 rounded-full bg-black dark:bg-white flex items-center justify-center flex-shrink-0 cursor-pointer"
             title="Dừng"
           >
-            <span className="absolute inset-0 rounded-full bg-black dark:bg-white animate-ping opacity-30" />
-            <FiSquare className="w-3 h-3 text-white dark:text-black relative z-10" />
+            <FiSquare className="w-3 h-3 text-white dark:text-black pointer-events-none" />
           </button>
         ) : (
           <button type="submit"

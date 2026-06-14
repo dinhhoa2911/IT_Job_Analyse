@@ -66,6 +66,7 @@ function modeColor(mode) {
  * @returns {JSX.Element|null}
  */
 function WorkModeBar({ dist }) {
+  const [hovered, setHovered] = useState(null);
   const entries = Object.entries(dist).filter(([, v]) => v > 0);
   if (entries.length === 0) return null;
 
@@ -78,8 +79,14 @@ function WorkModeBar({ dist }) {
         .map(([mode, count]) => {
           const pct = Math.round((count / total) * 100);
           const c   = modeColor(mode);
+          const isHovered = hovered === mode;
           return (
-            <div key={mode} className="flex items-center gap-2">
+            <div
+              key={mode}
+              className="flex items-center gap-2 cursor-default"
+              onMouseEnter={() => setHovered(mode)}
+              onMouseLeave={() => setHovered(null)}
+            >
               <span className={`text-xs w-14 flex-shrink-0 capitalize ${c.text}`}>{mode}</span>
               <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
                 <div
@@ -87,12 +94,47 @@ function WorkModeBar({ dist }) {
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right flex-shrink-0">
-                {pct}%
-              </span>
+              {isHovered ? (
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 text-right flex-shrink-0 whitespace-nowrap">
+                  {count.toLocaleString()}/{total.toLocaleString()}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right flex-shrink-0">
+                  {pct}%
+                </span>
+              )}
             </div>
           );
         })}
+    </div>
+  );
+}
+
+function RelatedSkills({ skills, counts = {}, total }) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+        Kỹ năng đi kèm
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {skills.slice(0, 6).map((s) => {
+          const cnt = counts?.[s];
+          const isHovered = hovered === s;
+          return (
+            <span
+              key={s}
+              onMouseEnter={() => setHovered(s)}
+              onMouseLeave={() => setHovered(null)}
+              className="text-xs bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full cursor-default transition-all"
+            >
+              {isHovered && cnt != null
+                ? `${s} (${cnt.toLocaleString()}/${total.toLocaleString()})`
+                : s}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -216,21 +258,7 @@ export default function MarketInsightCard({ insight }) {
 
           {/* Related skills */}
           {insight.related_skills.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Kỹ năng đi kèm
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {insight.related_skills.slice(0, 6).map((s) => (
-                  <span
-                    key={s}
-                    className="text-xs bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <RelatedSkills skills={insight.related_skills} counts={insight.related_skill_counts} total={insight.total_jobs} />
           )}
         </div>
       )}

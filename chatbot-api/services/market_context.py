@@ -1167,7 +1167,7 @@ class MarketContextService:
             secondary_skills = [
                 s for s in all_query_skills
                 if s.upper() != primary_skill.upper()
-            ][:1]
+            ][:2]
         co_skill_where = _build_co_skill_where(secondary_skills)
 
         location_key = filters.get("location")
@@ -1185,6 +1185,14 @@ class MarketContextService:
 
         date_join, date_where = _build_date_clauses(query)
         cat_join, cat_where = _build_category_clauses(query)
+        # Suppress category filter when: (a) primary skill is itself a category keyword
+        # (avoids double-restricting e.g. "embedded" + category='Embedded & IoT'), OR
+        # (b) co-skills are active — the AND intersection is already specific enough,
+        # and role descriptors like "full stack" would incorrectly restrict to
+        # 'Fullstack Development' category, dropping jobs categorised as Frontend/Backend.
+        if cat_where and (primary_skill.lower() in _CATEGORY_KEYWORDS or secondary_skills):
+            cat_join  = ""
+            cat_where = ""
         _comp_join, comp_where = _build_company_clauses(query, self._company_list)
         level_parts = [
             part for part in (_build_level_clause(query), _build_role_title_clause(query))
@@ -1251,6 +1259,19 @@ class MarketContextService:
                     rows = _run(conn, _SQL_MATCHING_JOBS.format(
                         **{**common_params, "skill": _escape(primary_skill)}
                     ))
+                    # Fallback: co-skill joint filter too strict → retry primary-only.
+                    # Use distinct job_link count (not raw row count) because the SQL
+                    # groups by (title, company, city, work_mode, job_link) so one
+                    # job_link can produce multiple rows for different city/mode combos.
+                    distinct_links = len({row.get("job_link", "") for row in rows})
+                    if distinct_links < 3 and secondary_skills:
+                        logger.info(
+                            "Exact Gold: joint filter '%s' + %s → %d distinct jobs (< 3); retrying primary only.",
+                            primary_skill, secondary_skills, distinct_links,
+                        )
+                        rows = _run(conn, _SQL_MATCHING_JOBS.format(
+                            **{**common_params, "co_skill_where": "", "skill": _escape(primary_skill)}
+                        ))
             finally:
                 conn.close()
         except Exception as exc:
@@ -1336,13 +1357,13 @@ class MarketContextService:
             secondary_skills: list[str] = []
             logger.debug("Co-skill filter disabled: OR connector detected in query.")
         else:
-            # Cap at 1: pick only the SECOND skill mentioned (immediately after primary).
-            # A third skill is often a role descriptor ("devops", "engineer") rather
-            # than a strict technical co-requirement, making the intersection too narrow.
+            # Cap at 2: use up to 2 co-skills so queries like "Python và TensorFlow"
+            # correctly require BOTH (not just the first one found).
+            # Capped at 2 (not unlimited) to avoid over-narrowing for generic queries.
             secondary_skills = [
                 s for s in all_query_skills
                 if s.upper() != primary_skill.upper()
-            ][:1]
+            ][:2]
         co_skill_where   = _build_co_skill_where(secondary_skills)
         co_skill_exclude = _build_co_skill_exclude(secondary_skills)
 
@@ -1373,6 +1394,14 @@ class MarketContextService:
 
         # 5. Category — from query text
         cat_join, cat_where = _build_category_clauses(query)
+        # Suppress category filter when: (a) triggered by the primary skill's own keyword
+        # (e.g. "Embedded IoT" → primary=EMBEDDED → category='Embedded & IoT' would double-
+        # restrict and drop ~83% of valid jobs), OR (b) co-skills are active — role descriptor
+        # keywords like "full stack" would otherwise restrict to 'Fullstack Development' and
+        # exclude jobs that are categorised as Frontend/Backend but require all three skills.
+        if cat_where and (primary_skill.lower() in _CATEGORY_KEYWORDS or secondary_skills):
+            cat_join  = ""
+            cat_where = ""
 
         # 6. Company — from query text
         comp_join, comp_where = _build_company_clauses(query, self._company_list)
@@ -1515,6 +1544,11 @@ class MarketContextService:
                 r["skill_name"] for r in skill_rows
                 if r["skill_name"].lower() not in _SKILL_BLOCKLIST
             ]
+            related_skill_counts = {
+                r["skill_name"]: int(r["co_count"])
+                for r in skill_rows
+                if r["skill_name"].lower() not in _SKILL_BLOCKLIST
+            }
 
             # Q5 — job category distribution
             # dim_job_category is already JOINed inside _SQL_CATEGORY_DIST (hardcoded).
@@ -1548,22 +1582,23 @@ class MarketContextService:
             conn.close()
 
             insight = MarketInsight(
-                primary_skill    = primary_skill,
-                total_jobs       = total_jobs,
-                top_companies    = top_companies,
-                work_mode_dist   = work_mode_dist,
-                related_skills   = related_skills,
-                location_filter  = city_name,
-                work_mode_filter = _WORK_MODE_CANONICAL.get(work_mode_key) if work_mode_key else None,
-                level_filter     = _extract_level_label(query),
-                region_filter    = _extract_region_label(query),
-                date_filter      = _extract_date_label(query),
-                category_filter  = _extract_category_label(query),
-                company_filter   = _extract_company_label(query, self._company_list),
-                category_dist    = category_dist,
-                region_dist      = region_dist,
-                co_skills        = secondary_skills,
-                or_skill_totals  = or_skill_totals,
+                primary_skill         = primary_skill,
+                total_jobs            = total_jobs,
+                top_companies         = top_companies,
+                work_mode_dist        = work_mode_dist,
+                related_skills        = related_skills,
+                related_skill_counts  = related_skill_counts,
+                location_filter       = city_name,
+                work_mode_filter      = _WORK_MODE_CANONICAL.get(work_mode_key) if work_mode_key else None,
+                level_filter          = _extract_level_label(query),
+                region_filter         = _extract_region_label(query),
+                date_filter           = _extract_date_label(query),
+                category_filter       = _extract_category_label(query) if cat_where else None,
+                company_filter        = _extract_company_label(query, self._company_list),
+                category_dist         = category_dist,
+                region_dist           = region_dist,
+                co_skills             = secondary_skills,
+                or_skill_totals       = or_skill_totals,
             )
 
             logger.info(
