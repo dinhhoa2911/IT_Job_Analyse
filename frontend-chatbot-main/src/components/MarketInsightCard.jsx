@@ -23,6 +23,7 @@ import { FiBarChart2, FiChevronDown, FiChevronUp } from "react-icons/fi";
  * @property {WorkModeDist} work_mode_dist   - Distribution of work modes across postings.
  * @property {string[]}     related_skills   - Co-occurring skills found in the postings.
  * @property {string|null}  location_filter  - Active location filter, or null for nationwide.
+ * @property {Object.<string, number>} [or_skill_totals] - Skill counts for OR queries.
  */
 
 /**
@@ -115,7 +116,12 @@ export default function MarketInsightCard({ insight }) {
   if (!insight) return null;
 
   const locLabel = insight.location_filter ? ` · ${insight.location_filter}` : "";
-  const title    = `${insight.primary_skill}${locLabel}`;
+  const orEntries = Object.entries(insight.or_skill_totals || {})
+    .filter(([, count]) => Number(count) > 0);
+  const hasOrComparison = orEntries.length > 1;
+  const title = hasOrComparison
+    ? `${orEntries.map(([skill]) => skill).join(" / ")}${locLabel}`
+    : `${insight.primary_skill}${locLabel}`;
 
   return (
     <div className="mt-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/30 overflow-hidden text-sm">
@@ -131,7 +137,7 @@ export default function MarketInsightCard({ insight }) {
             Thị trường {title}
           </span>
           <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-600 text-white text-xs font-semibold">
-            {insight.total_jobs} jobs
+            {hasOrComparison ? `${orEntries.length} skills` : `${insight.total_jobs} jobs`}
           </span>
         </div>
         {open
@@ -143,6 +149,41 @@ export default function MarketInsightCard({ insight }) {
       {/* Body */}
       {open && (
         <div className="px-4 pb-4 pt-1 grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+          {/* OR skill comparison */}
+          {hasOrComparison && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                So sánh kỹ năng
+              </p>
+              <div className="space-y-1.5">
+                {orEntries.map(([skill, count]) => {
+                  const maxCount = Math.max(...orEntries.map(([, c]) => Number(c)));
+                  const pct = maxCount > 0
+                    ? Math.max(8, Math.round((Number(count) / maxCount) * 100))
+                    : 0;
+                  return (
+                    <div key={skill} className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 truncate">
+                          {skill}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                          {Number(count).toLocaleString()} jobs
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40">
+                        <div
+                          className="h-1.5 rounded-full bg-indigo-500 transition-all duration-700"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Top companies */}
           {insight.top_companies.length > 0 && (

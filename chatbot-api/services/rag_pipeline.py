@@ -567,13 +567,36 @@ class RAGPipeline:
             lang = _detect_lang(raw)
             canned = _GREETING_VI if lang == "Vietnamese" else _GREETING_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
-        # "Show more" follow-ups ("đưa tao thêm", "cho xem thêm", "more jobs" …)
-        # are short messages with no IT keywords so they look off-topic to the
-        # classifier.  Let them through to the agent which handles them explicitly.
         if is_short_off_topic(raw) and not _SHOW_MORE_RE.search(raw):
             lang = _detect_lang(raw)
             canned = _OUT_OF_SCOPE_VI if lang == "Vietnamese" else _OUT_OF_SCOPE_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
+
+        # "Show more" follow-ups must NOT be rewritten by _resolve_query — that
+        # strips the "thêm" signal and the agent's fallback loses the show-more
+        # pattern.  Pass the raw message directly so the planning LLM can read
+        # the history and repeat the previous search.
+        if _SHOW_MORE_RE.search(raw):
+            if not history:
+                lang = _detect_lang(raw)
+                no_ctx = (
+                    "Tôi không tìm thấy lịch sử tìm kiếm trước đó (phiên làm việc đã hết hạn). "
+                    "Bạn vui lòng tìm kiếm lại nhé!"
+                    if lang == "Vietnamese"
+                    else "No previous search found in this session — please search again."
+                )
+                return ChatResponse(answer=no_ctx, query_type=QueryType.career_advice)
+            agent_response = self._agent.run(raw, history, lang, conversation_id=request.conversation_id)
+            if agent_response is not None:
+                return agent_response
+            # Agent couldn't recover → friendly fallback instead of out-of-scope
+            lang = _detect_lang(raw)
+            no_ctx = (
+                "Tôi không thể tìm thêm kết quả lúc này. Bạn thử tìm kiếm lại nhé!"
+                if lang == "Vietnamese"
+                else "Could not load more results. Please try searching again."
+            )
+            return ChatResponse(answer=no_ctx, query_type=QueryType.career_advice)
 
         resolved = self._resolve_query(request.message, history) if history else request.message
 
@@ -602,8 +625,39 @@ class RAGPipeline:
                 logger.error("Vector search failed: %s", exc, exc_info=True)
                 jobs = []
             filters        = _extract_filters(resolved)
-            jobs           = _post_filter(jobs, filters)
-            market_insight = self._market_ctx.get_insight(jobs, resolved, filters)
+            query_skills   = self._market_ctx.extract_query_skills(resolved)
+            market_insight = self._market_ctx.get_insight(
+                jobs,
+                resolved,
+                filters,
+                original_query=resolved,
+            )
+            has_structured_filter = bool(
+                market_insight and (
+                    market_insight.co_skills
+                    or market_insight.location_filter
+                    or market_insight.region_filter
+                    or market_insight.work_mode_filter
+                    or market_insight.level_filter
+                    or market_insight.date_filter
+                    or market_insight.category_filter
+                    or market_insight.company_filter
+                )
+            )
+            used_exact_gold = False
+            if query_skills and (len(query_skills) > 1 or has_structured_filter):
+                exact_jobs = self._market_ctx.search_matching_jobs(
+                    resolved,
+                    filters,
+                    limit=settings.top_k_results,
+                    original_query=resolved,
+                    fallback_jobs=jobs,
+                )
+                if exact_jobs is not None:
+                    jobs = exact_jobs
+                    used_exact_gold = True
+            if not used_exact_gold:
+                jobs = _post_filter(jobs, filters)
             market_block   = format_market_block(market_insight) if market_insight else None
             prompt         = _build_search_prompt(resolved, jobs, lang, market_block)
             answer         = self._generate(prompt, _SEARCH_SYSTEM_PROMPT, lang, history)

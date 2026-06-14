@@ -49,10 +49,17 @@ from collections import Counter
 import trino
 
 from config import settings
-from constants import LOCATION_CITY_NAME
+from constants import LOCATION_CITY_NAME, SKILL_QUERY_ALIASES
 from models.schemas import JobResult, MarketInsight
 
 logger = logging.getLogger(__name__)
+
+# ── Region display names (Vietnamese) ────────────────────────────────────────
+_REGION_VI: dict[str, str] = {
+    "South":   "miền Nam",
+    "North":   "miền Bắc",
+    "Central": "miền Trung",
+}
 
 # ── Work mode canonical name map ──────────────────────────────────────────────
 # Maps internal key (from constants.WORK_MODE_KEYWORDS) → Gold dim_work_mode.work_mode value
@@ -92,6 +99,9 @@ _CATEGORY_KEYWORDS: dict[str, str] = {
     "devops":           "DevOps & Infrastructure",
     "dev-ops":          "DevOps & Infrastructure",
     "infrastructure":   "DevOps & Infrastructure",
+    "cloud native":     "DevOps & Infrastructure",
+    "sre":              "DevOps & Infrastructure",
+    "site reliability": "DevOps & Infrastructure",
     "hạ tầng":          "DevOps & Infrastructure",
     "sysadmin":         "DevOps & Infrastructure",
     "system admin":     "DevOps & Infrastructure",
@@ -101,35 +111,50 @@ _CATEGORY_KEYWORDS: dict[str, str] = {
     "ios":              "Mobile Development",
     "react native":     "Mobile Development",
     "flutter":          "Mobile Development",
+    "swift":            "Mobile Development",
+    "kotlin":           "Mobile Development",
     "lập trình mobile": "Mobile Development",
     # AI & Machine Learning
-    "ai":               "AI & Machine Learning",
-    "machine learning": "AI & Machine Learning",
-    "ml":               "AI & Machine Learning",
-    "deep learning":    "AI & Machine Learning",
-    "data science":     "AI & Machine Learning",
-    "trí tuệ nhân tạo": "AI & Machine Learning",
-    "học máy":          "AI & Machine Learning",
+    "ai":                  "AI & Machine Learning",
+    "machine learning":    "AI & Machine Learning",
+    "ml":                  "AI & Machine Learning",
+    "deep learning":       "AI & Machine Learning",
+    "data science":        "AI & Machine Learning",
+    "generative ai":       "AI & Machine Learning",
+    "gen ai":              "AI & Machine Learning",
+    "llm":                 "AI & Machine Learning",
+    "nlp":                 "AI & Machine Learning",
+    "computer vision":     "AI & Machine Learning",
+    "mlops":               "AI & Machine Learning",
+    "prompt engineering":  "AI & Machine Learning",
+    "trí tuệ nhân tạo":   "AI & Machine Learning",
+    "học máy":             "AI & Machine Learning",
     # Data Engineering
-    "data engineer":    "Data Engineering",
-    "data pipeline":    "Data Engineering",
-    "etl":              "Data Engineering",
-    "big data":         "Data Engineering",
-    "dữ liệu":          "Data Engineering",
-    "kỹ thuật dữ liệu": "Data Engineering",
+    "data engineer":       "Data Engineering",
+    "data pipeline":       "Data Engineering",
+    "etl":                 "Data Engineering",
+    "big data":            "Data Engineering",
+    "data warehouse":      "Data Engineering",
+    "lakehouse":           "Data Engineering",
+    "lake house":          "Data Engineering",
+    "dbt":                 "Data Engineering",
+    "dữ liệu":             "Data Engineering",
+    "kỹ thuật dữ liệu":   "Data Engineering",
     # Data Analytics
-    "data analyst":     "Data Analytics",
-    "analytics":        "Data Analytics",
-    "phân tích dữ liệu":"Data Analytics",
+    "data analyst":        "Data Analytics",
+    "analytics":           "Data Analytics",
+    "phân tích dữ liệu":   "Data Analytics",
     "business intelligence":"Data Analytics",
-    "bi analyst":       "Data Analytics",
+    "bi analyst":          "Data Analytics",
     # Cyber Security
-    "security":         "Cyber Security",
-    "cybersecurity":    "Cyber Security",
-    "cyber security":   "Cyber Security",
-    "bảo mật":          "Cyber Security",
-    "an ninh mạng":     "Cyber Security",
-    "pentest":          "Cyber Security",
+    "security":            "Cyber Security",
+    "cybersecurity":       "Cyber Security",
+    "cyber security":      "Cyber Security",
+    "devsecops":           "Cyber Security",
+    "penetration testing": "Cyber Security",
+    "bảo mật":             "Cyber Security",
+    "an ninh mạng":        "Cyber Security",
+    "pentest":             "Cyber Security",
     # Embedded & IoT
     "embedded":         "Embedded & IoT",
     "iot":              "Embedded & IoT",
@@ -167,6 +192,15 @@ _CATEGORY_KEYWORDS: dict[str, str] = {
     "other":            "Other",
     "khác":             "Other",
 }
+
+# ── OR-connector detection ────────────────────────────────────────────────────
+# When the user connects skills with "or / hoặc / hay", they want a UNION of
+# results, not an intersection.  Co-skill (AND) filtering must be disabled in
+# this case to avoid over-narrowing market stats.
+_OR_PATTERN = re.compile(
+    r"\b(hoặc|hoac|hay|or|either|versus|vs)\b",
+    re.IGNORECASE,
+)
 
 # Location abbreviations that must NOT be mistaken for company names (strategy 2
 # of _build_company_clauses uses a capitalised-word heuristic after trigger words
@@ -239,6 +273,7 @@ JOIN iceberg.gold.dim_skill ds ON f.skill_id = ds.skill_id
 {category_join}
 {company_join}
 WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+{co_skill_where}
 {location_where}
 {region_where}
 {work_mode_where}
@@ -260,6 +295,7 @@ JOIN iceberg.gold.dim_company  dc ON f.company_id  = dc.company_id
 {date_join}
 {category_join}
 WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+{co_skill_where}
 {location_where}
 {region_where}
 {work_mode_where}
@@ -269,7 +305,7 @@ WHERE LOWER(ds.skill_name) = LOWER('{skill}')
 {company_where}
 GROUP BY dc.company_name
 ORDER BY job_count DESC
-LIMIT 50
+LIMIT 100
 """
 
 # NOTE: dim_work_mode is already JOINed in this template (hardcoded) so we
@@ -287,6 +323,7 @@ JOIN iceberg.gold.dim_work_mode dwm ON f.mode_id  = dwm.mode_id
 {category_join}
 {company_join}
 WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+{co_skill_where}
 {location_where}
 {region_where}
 {date_where}
@@ -319,7 +356,9 @@ WHERE f.job_link IN (
     JOIN iceberg.gold.dim_skill ds2 ON f2.skill_id = ds2.skill_id
     WHERE LOWER(ds2.skill_name) = LOWER('{skill}')
 )
+{co_skill_where}
 AND LOWER(ds.skill_name) != LOWER('{skill}')
+{co_skill_exclude}
 {location_where}
 {region_where}
 {work_mode_where}
@@ -347,6 +386,7 @@ JOIN iceberg.gold.dim_job_category djc ON f.category_id = djc.category_id
 {date_join}
 {company_join}
 WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+{co_skill_where}
 {location_where}
 {region_where}
 {work_mode_where}
@@ -370,6 +410,7 @@ JOIN iceberg.gold.dim_location dl ON f.location_id = dl.location_id
 {category_join}
 {company_join}
 WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+{co_skill_where}
 {work_mode_where}
 {date_where}
 {level_where}
@@ -377,6 +418,48 @@ WHERE LOWER(ds.skill_name) = LOWER('{skill}')
 {company_where}
 GROUP BY dl.region
 ORDER BY job_count DESC
+"""
+
+_SQL_MATCHING_JOBS = """
+WITH matching_jobs AS (
+    SELECT DISTINCT
+        f.job_link,
+        f.job_title,
+        dc.company_name,
+        dl.city_name,
+        dwm.work_mode,
+        f.date_id
+    FROM iceberg.gold.fact_job_posting f
+    JOIN iceberg.gold.dim_skill     ds  ON f.skill_id    = ds.skill_id
+    JOIN iceberg.gold.dim_company   dc  ON f.company_id  = dc.company_id
+    JOIN iceberg.gold.dim_location  dl  ON f.location_id = dl.location_id
+    JOIN iceberg.gold.dim_work_mode dwm ON f.mode_id     = dwm.mode_id
+    {date_join}
+    {category_join}
+    WHERE LOWER(ds.skill_name) = LOWER('{skill}')
+    {co_skill_where}
+    {location_where}
+    {region_where}
+    {work_mode_where}
+    {date_where}
+    {level_where}
+    {category_where}
+    {company_where}
+)
+SELECT
+    m.job_title,
+    m.company_name,
+    m.city_name,
+    m.work_mode,
+    m.job_link,
+    array_join(array_sort(array_agg(DISTINCT ds_all.skill_name)), ', ') AS skills,
+    MAX(m.date_id) AS latest_date_id
+FROM matching_jobs m
+JOIN iceberg.gold.fact_job_posting f_all ON m.job_link = f_all.job_link
+JOIN iceberg.gold.dim_skill ds_all ON f_all.skill_id = ds_all.skill_id
+GROUP BY m.job_title, m.company_name, m.city_name, m.work_mode, m.job_link
+ORDER BY latest_date_id DESC, m.job_title
+LIMIT {limit}
 """
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -389,6 +472,45 @@ def _escape(s: str) -> str:
     @return   String with single quotes doubled (SQL standard escaping).
     """
     return s.replace("'", "''")
+
+
+def _build_co_skill_where(secondary_skills: list[str]) -> str:
+    """
+    @brief Build AND subquery clauses requiring job_link to also appear with each secondary skill.
+
+    Each clause narrows the result set to jobs that require BOTH the primary skill
+    AND the given secondary skill simultaneously (intersection, not union).
+
+    @param secondary_skills  List of canonical skill names (original casing from dim_skill).
+    @return                  Multi-line AND clause string, or "" when list is empty.
+    """
+    parts = []
+    for skill in secondary_skills:
+        safe = _escape(skill)
+        parts.append(
+            f"AND f.job_link IN (\n"
+            f"    SELECT DISTINCT f2.job_link FROM iceberg.gold.fact_job_posting f2\n"
+            f"    JOIN iceberg.gold.dim_skill ds2 ON f2.skill_id = ds2.skill_id\n"
+            f"    WHERE LOWER(ds2.skill_name) = LOWER('{safe}')\n"
+            f")"
+        )
+    return "\n".join(parts)
+
+
+def _build_co_skill_exclude(secondary_skills: list[str]) -> str:
+    """
+    @brief Build an AND NOT IN clause excluding secondary skills from related-skills results.
+
+    Prevents secondary skills (already known to the user) from appearing in the
+    'related skills' list, keeping it genuinely informative.
+
+    @param secondary_skills  List of canonical skill names to exclude.
+    @return                  AND LOWER(ds.skill_name) NOT IN (...) clause, or "" when empty.
+    """
+    if not secondary_skills:
+        return ""
+    escaped = ", ".join(f"'{_escape(s.lower())}'" for s in secondary_skills)
+    return f"AND LOWER(ds.skill_name) NOT IN ({escaped})"
 
 
 def _build_location_clauses(city: str | None) -> tuple[str, str]:
@@ -617,6 +739,22 @@ def _build_level_clause(query: str) -> str:
     return ""
 
 
+def _build_role_title_clause(query: str) -> str:
+    """
+    Return an AND clause for explicit role-title phrases that are not categories.
+
+    Example: "Database Administrator Oracle hoặc PostgreSQL" should show DBA
+    postings, not every backend/SRE job that happens to mention PostgreSQL.
+    """
+    q = query.lower()
+    if re.search(r"\b(database administrator|dba)\b", q):
+        return (
+            "AND (LOWER(f.job_title) LIKE '%database administrator%' "
+            "OR LOWER(f.job_title) LIKE '%dba%')"
+        )
+    return ""
+
+
 def _extract_level_label(query: str) -> str | None:
     """Return human-readable level label ('Senior', 'Junior', …) detected in query, or None."""
     q = query.lower()
@@ -708,12 +846,19 @@ def _extract_company_label(query: str, top_companies: list[str]) -> str | None:
 # Skills that look like job titles or are too generic to be useful as market context filters.
 # These appear in dim_skill but picking them as "primary skill" produces wrong market stats.
 _SKILL_BLOCKLIST: frozenset[str] = frozenset({
-    # Job titles stored as skills
+    # Job titles / roles stored as skills — produce near-zero market counts because
+    # jobs are almost never tagged with these as actual skill_name values in dim_skill.
+    # Using them as primary_skill yields misleadingly tiny totals (often 1-3 jobs).
+    # Let the fallback pick a real technology from the job results instead.
     "data engineer", "software engineer", "backend developer", "frontend developer",
     "fullstack developer", "mobile developer", "devops engineer", "qa engineer",
     "data analyst", "data scientist", "machine learning engineer", "ai engineer",
     "cloud engineer", "embedded engineer", "game developer", "security engineer",
     "product manager", "business analyst",
+    "database administrator",   # almost no jobs tagged with this; use ORACLE/POSTGRESQL instead
+    "system administrator",     # same issue
+    "network engineer",         # same issue
+    "dba",                      # too ambiguous (Database Administrator abbreviation vs. skill)
     # Generic / non-actionable
     "ai", "cloud", "database", "it", "oop", "software", "technology",
     "english", "japanese", "korean",  # languages — not useful for market skill context
@@ -861,12 +1006,14 @@ class MarketContextService:
         """
         @brief Detect the primary skill for Gold-layer market queries.
 
-        Priority order (highest first):
+        Priority order:
           Strategy 0 — query intent (user explicitly named a skill):
-            Scan the query against dim_skill. Longest match wins so "React Native"
-            beats "React" and "Spring Boot" beats "Spring".
-            This ensures "tìm job React remote" → React market context, NOT
-            JavaScript (which is more frequent in React job results but irrelevant).
+            Normalize aliases then find ALL skills mentioned in the query.
+            Picks the LEFTMOST match (first skill the user mentioned), with
+            longer skill names winning ties at the same position.
+            "golang kubernetes devops" → GO wins (pos 0) over KUBERNETES (pos 3).
+            "react native developer" → REACT_NATIVE wins over REACT (same pos 0,
+            longer name).
 
           Strategy 1 — job result frequency (fallback for skill-agnostic queries):
             Parse 'Skills:' from returned job text_content and pick the most
@@ -879,14 +1026,37 @@ class MarketContextService:
         """
         # Strategy 0 — user intent: scan query against dim_skill (highest priority)
         if self._skill_lookup:
+            # Step 0a: Normalize aliases so "golang" → "go", "vue.js" → "vue", etc.
             query_lower = query.lower()
-            for skill_lower in sorted(self._skill_lookup, key=len, reverse=True):
+            for alias, canonical in sorted(SKILL_QUERY_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
+                escaped = re.escape(alias)
+                query_lower = re.sub(
+                    rf"(?<![a-z0-9.]){escaped}(?![a-z0-9.])",
+                    canonical,
+                    query_lower,
+                )
+
+            # Step 0b: Find ALL matching skills with their position in the query.
+            # Tiebreaker: at same position, prefer the LONGER skill name
+            # (so "react_native" beats "react" when both start at position 0).
+            candidates: list[tuple[int, int, str]] = []  # (pos, -len, skill_lower)
+            for skill_lower in self._skill_lookup:
                 if skill_lower in _SKILL_BLOCKLIST:
                     continue
-                if re.search(r"(?<!\w)" + re.escape(skill_lower) + r"(?!\w)", query_lower):
-                    matched = self._skill_lookup[skill_lower]
-                    logger.debug("Primary skill from query intent: '%s'", matched)
-                    return matched
+                m = re.search(r"(?<!\w)" + re.escape(skill_lower) + r"(?!\w)", query_lower)
+                if m:
+                    candidates.append((m.start(), -len(skill_lower), skill_lower))
+
+            if candidates:
+                # Sort: leftmost position first, then longest skill name on tie
+                candidates.sort()
+                skill_lower = candidates[0][2]
+                matched = self._skill_lookup[skill_lower]
+                logger.debug(
+                    "Primary skill from query intent: '%s' (pos=%d, candidates=%d)",
+                    matched, candidates[0][0], len(candidates),
+                )
+                return matched
 
         # Strategy 1 — frequency from job results (fallback when query has no skill)
         skill = _extract_from_jobs(jobs)
@@ -895,11 +1065,230 @@ class MarketContextService:
 
         return None
 
+    def _extract_all_skills(self, query: str) -> list[str]:
+        """
+        @brief Detect ALL skills mentioned in a query, sorted by their position (leftmost first).
+
+        Applies the same alias normalisation as _extract_primary_skill, then finds
+        every matching skill in dim_skill. Overlapping matches are deduplicated —
+        the longer (more specific) skill wins when two skills start at the same position
+        (e.g. "REACT_NATIVE" wins over "REACT").
+
+        @param query  User query string.
+        @return       List of original-casing skill names ordered by appearance in query.
+                      Empty list when skill lookup is not loaded or no skills found.
+        """
+        if not self._skill_lookup:
+            return []
+
+        # Alias normalisation (same as _extract_primary_skill Step 0a)
+        query_lower = query.lower()
+        for alias, canonical in sorted(SKILL_QUERY_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
+            escaped = re.escape(alias)
+            query_lower = re.sub(
+                rf"(?<![a-z0-9.]){escaped}(?![a-z0-9.])",
+                canonical,
+                query_lower,
+            )
+
+        # Collect all matching skills with their start position
+        candidates: list[tuple[int, int, str]] = []  # (pos, -len, skill_lower)
+        for skill_lower in self._skill_lookup:
+            if skill_lower in _SKILL_BLOCKLIST:
+                continue
+            m = re.search(r"(?<!\w)" + re.escape(skill_lower) + r"(?!\w)", query_lower)
+            if m:
+                candidates.append((m.start(), -len(skill_lower), skill_lower))
+
+        # Sort: leftmost first, then longest name on tie
+        candidates.sort()
+
+        # Deduplicate: skip any skill whose match range overlaps an already-accepted skill.
+        # This prevents "react" from being listed alongside "react_native" for the same token.
+        accepted: list[tuple[int, int, str]] = []  # (start, end, skill_name)
+        for pos, neg_len, skill_lower in candidates:
+            end = pos + (-neg_len)
+            if any(
+                not (end <= a_start or pos >= a_end)
+                for a_start, a_end, _ in accepted
+            ):
+                continue
+            accepted.append((pos, end, self._skill_lookup[skill_lower]))
+
+        return [skill for _, _, skill in accepted]
+
+    def extract_query_skills(self, query: str) -> list[str]:
+        """
+        Return explicit skill names mentioned by the user query.
+
+        This public wrapper is used by search orchestration to decide when job
+        cards must be exact Gold-layer matches instead of semantic candidates.
+        """
+        if not self._skills_loaded:
+            self._load_skills()
+            self._skills_loaded = True
+        return self._extract_all_skills(query)
+
+    def search_matching_jobs(
+        self,
+        query: str,
+        filters: dict,
+        limit: int = 10,
+        original_query: str = "",
+        fallback_jobs: list[JobResult] | None = None,
+    ) -> list[JobResult] | None:
+        """
+        Fetch exact job cards from Gold using the same structured filters as market stats.
+
+        Returns None when the query is not suitable for exact matching or Trino is
+        unavailable. Returns an empty list when exact matching is applicable but
+        no job satisfies all filters.
+        """
+        if not self._skills_loaded:
+            self._load_skills()
+            self._skills_loaded = True
+        if not self._companies_loaded:
+            self._load_companies()
+            self._companies_loaded = True
+
+        primary_skill = self._extract_primary_skill(fallback_jobs or [], query)
+        if not primary_skill:
+            return None
+
+        all_query_skills = self._extract_all_skills(query)
+        or_check = f"{original_query} {query}"
+        is_or_query = bool(_OR_PATTERN.search(or_check) and len(all_query_skills) > 1)
+
+        if is_or_query:
+            skill_filters = all_query_skills
+            secondary_skills: list[str] = []
+        else:
+            skill_filters = [primary_skill]
+            secondary_skills = [
+                s for s in all_query_skills
+                if s.upper() != primary_skill.upper()
+            ][:1]
+        co_skill_where = _build_co_skill_where(secondary_skills)
+
+        location_key = filters.get("location")
+        city_name = LOCATION_CITY_NAME.get(location_key) if location_key else None
+        loc_join, loc_where = _build_location_clauses(city_name)
+
+        has_location_join = bool(loc_join)
+        region_join, region_where = _build_region_clause(query, location_join_already=has_location_join)
+        # _SQL_MATCHING_JOBS already joins dim_location as dl, so only WHERE parts are used.
+        if region_join:
+            region_join = ""
+
+        work_mode_key = filters.get("work_mode")
+        _wm_join, wm_where = _build_work_mode_clauses(work_mode_key)
+
+        date_join, date_where = _build_date_clauses(query)
+        cat_join, cat_where = _build_category_clauses(query)
+        _comp_join, comp_where = _build_company_clauses(query, self._company_list)
+        level_parts = [
+            part for part in (_build_level_clause(query), _build_role_title_clause(query))
+            if part
+        ]
+        level_where = "\n".join(level_parts)
+
+        common_params = {
+            "co_skill_where":  co_skill_where,
+            "date_join":       date_join,
+            "category_join":   cat_join,
+            "location_where":  loc_where,
+            "region_where":    region_where,
+            "work_mode_where": wm_where,
+            "date_where":      date_where,
+            "level_where":     level_where,
+            "category_where":  cat_where,
+            "company_where":   comp_where,
+            "limit":           max(1, min(int(limit), 50)),
+        }
+
+        try:
+            conn = trino.dbapi.connect(
+                host=settings.trino_host,
+                port=settings.trino_port,
+                user=settings.trino_user,
+                catalog=settings.trino_catalog,
+                request_timeout=8,
+            )
+            try:
+                if is_or_query:
+                    per_skill_limit = max(common_params["limit"], 10)
+                    rows_by_skill: list[list[dict]] = []
+                    for skill in skill_filters:
+                        rows_by_skill.append(
+                            _run(conn, _SQL_MATCHING_JOBS.format(
+                                **{
+                                    **common_params,
+                                    "skill": _escape(skill),
+                                    "co_skill_where": "",
+                                    "limit": per_skill_limit,
+                                }
+                            ))
+                        )
+
+                    rows = []
+                    seen_links: set[str] = set()
+                    max_len = max((len(group) for group in rows_by_skill), default=0)
+                    for idx in range(max_len):
+                        for group in rows_by_skill:
+                            if idx >= len(group):
+                                continue
+                            row = group[idx]
+                            link = row.get("job_link") or ""
+                            if link in seen_links:
+                                continue
+                            seen_links.add(link)
+                            rows.append(row)
+                            if len(rows) >= common_params["limit"]:
+                                break
+                        if len(rows) >= common_params["limit"]:
+                            break
+                else:
+                    rows = _run(conn, _SQL_MATCHING_JOBS.format(
+                        **{**common_params, "skill": _escape(primary_skill)}
+                    ))
+            finally:
+                conn.close()
+        except Exception as exc:
+            logger.warning("Exact Gold job search unavailable (Trino error): %s", exc)
+            return None
+
+        jobs: list[JobResult] = []
+        for row in rows:
+            skills = row.get("skills") or ""
+            text = (
+                f"Job Title: {row.get('job_title') or ''}. "
+                f"Company: {row.get('company_name') or ''}. "
+                f"Location: {row.get('city_name') or ''}. "
+                f"Work Mode: {row.get('work_mode') or ''}. "
+                f"Skills: {skills}"
+            )
+            jobs.append(
+                JobResult(
+                    job_id=abs(hash(row.get("job_link") or text)),
+                    job_title=row.get("job_title") or "",
+                    job_link=row.get("job_link") or "",
+                    text_content=text,
+                    score=0.0,
+                )
+            )
+
+        logger.info(
+            "Exact Gold job search ready | skills=%s | co_skills=%s | rows=%d",
+            skill_filters, secondary_skills, len(jobs),
+        )
+        return jobs
+
     def get_insight(
         self,
-        jobs:    list[JobResult],
-        query:   str,
-        filters: dict,
+        jobs:           list[JobResult],
+        query:          str,
+        filters:        dict,
+        original_query: str = "",
     ) -> "MarketInsight | None":
         """
         @brief Main entry point — called from RAGPipeline after vector search completes.
@@ -915,10 +1304,13 @@ class MarketContextService:
           - region    : regional keywords (miền Nam/Bắc/Trung, South/North/Central)
           - level     : seniority level keywords (senior, junior, etc.)
 
-        @param jobs     Reranked job results used to detect the primary skill.
-        @param query    Original user query string (skill detection + filter extraction).
-        @param filters  Dict with keys ``work_mode`` and ``location`` (values may be None).
-        @return         Populated MarketInsight, or None if Trino unavailable or no skill found.
+        @param jobs            Reranked job results used to detect the primary skill.
+        @param query           LLM-normalised query (skill detection + filter extraction).
+        @param filters         Dict with keys ``work_mode`` and ``location``.
+        @param original_query  Raw user message before LLM normalisation.
+                               Used for OR-connector detection because the LLM often strips
+                               connectors like "hoặc"/"or" when generating tool arguments.
+        @return                Populated MarketInsight, or None if Trino unavailable or no skill found.
         """
         # Lazy-load skill and company lists on first real request
         if not self._skills_loaded:
@@ -932,6 +1324,27 @@ class MarketContextService:
         if not primary_skill:
             logger.info("Market context skipped: no primary skill detected.")
             return None
+
+        # ── Detect secondary skills for joint filter ─────────────────────────────
+        # OR connectors ("hoặc", "hay", "or") mean UNION, not intersection.
+        # Disable co_skill filtering so the market count stays broad.
+        # Check BOTH the tool query and the raw user message because the LLM
+        # often strips Vietnamese connectors when building its tool call args.
+        all_query_skills = self._extract_all_skills(query)
+        _or_check = f"{original_query} {query}"
+        if _OR_PATTERN.search(_or_check):
+            secondary_skills: list[str] = []
+            logger.debug("Co-skill filter disabled: OR connector detected in query.")
+        else:
+            # Cap at 1: pick only the SECOND skill mentioned (immediately after primary).
+            # A third skill is often a role descriptor ("devops", "engineer") rather
+            # than a strict technical co-requirement, making the intersection too narrow.
+            secondary_skills = [
+                s for s in all_query_skills
+                if s.upper() != primary_skill.upper()
+            ][:1]
+        co_skill_where   = _build_co_skill_where(secondary_skills)
+        co_skill_exclude = _build_co_skill_exclude(secondary_skills)
 
         # ── Build all filter clause sets ──────────────────────────────────────
 
@@ -970,24 +1383,28 @@ class MarketContextService:
         safe_skill = _escape(primary_skill)
 
         # ── Shared placeholder dict helpers ──────────────────────────────────
-        # Base set of placeholders used by most queries
+        # Base set of placeholders used by most queries.
+        # co_skill_where is captured from the enclosing scope so that fallback
+        # reassignment (secondary_skills = [] → co_skill_where = "") is picked up
+        # automatically on the next _base_params() call.
         def _base_params(*, skip_category_join=False, skip_category_where=False,
                          skip_company_join=False,
                          skip_work_mode_join=False, skip_work_mode_where=False) -> dict:
             return {
-                "skill":          safe_skill,
-                "location_join":  final_location_join,
-                "location_where": loc_where,
-                "region_where":   region_where,
-                "work_mode_join": "" if skip_work_mode_join else wm_join,
-                "work_mode_where":"" if skip_work_mode_where else wm_where,
-                "date_join":      date_join,
-                "date_where":     date_where,
-                "level_where":    level_where,
-                "category_join":  "" if skip_category_join else cat_join,
-                "category_where": "" if skip_category_where else cat_where,
-                "company_join":   "" if skip_company_join else comp_join,
-                "company_where":  comp_where,
+                "skill":           safe_skill,
+                "co_skill_where":  co_skill_where,
+                "location_join":   final_location_join,
+                "location_where":  loc_where,
+                "region_where":    region_where,
+                "work_mode_join":  "" if skip_work_mode_join else wm_join,
+                "work_mode_where": "" if skip_work_mode_where else wm_where,
+                "date_join":       date_join,
+                "date_where":      date_where,
+                "level_where":     level_where,
+                "category_join":   "" if skip_category_join else cat_join,
+                "category_where":  "" if skip_category_where else cat_where,
+                "company_join":    "" if skip_company_join else comp_join,
+                "company_where":   comp_where,
             }
 
         try:
@@ -999,9 +1416,23 @@ class MarketContextService:
                 request_timeout=8,
             )
 
-            # Q1 — total jobs for this skill (+ all active filters)
+            # Q1 — total jobs for this skill (+ all active filters, including co_skill joint filter)
             total_rows = _run(conn, _SQL_TOTAL_JOBS.format(**_base_params()))
             total_jobs = int(total_rows[0]["total"]) if total_rows else 0
+
+            # Co-skill filter too strict → fall back to primary only when joint intersection
+            # is 0 or so narrow (< 3 jobs) that market stats become meaningless.
+            # Threshold = 3: 0-2 jobs means virtually no data; 3+ is informative enough.
+            if secondary_skills and total_jobs < 3:
+                logger.info(
+                    "Market context: joint filter '%s' + %s → %d jobs (< 5); falling back to primary only.",
+                    primary_skill, secondary_skills, total_jobs,
+                )
+                secondary_skills = []
+                co_skill_where   = ""
+                co_skill_exclude = ""
+                total_rows = _run(conn, _SQL_TOTAL_JOBS.format(**_base_params()))
+                total_jobs = int(total_rows[0]["total"]) if total_rows else 0
 
             if total_jobs == 0:
                 logger.info(
@@ -1010,6 +1441,43 @@ class MarketContextService:
                 )
                 conn.close()
                 return None
+
+            # OR-query multi-skill counting ────────────────────────────────────
+            # When user connected skills with "hoặc/or/hay", count each skill
+            # independently and pick the one with most jobs as the primary for
+            # the detailed breakdown (Q2-Q6).  All counts go into or_skill_totals
+            # so the market block can display a comparison for every skill.
+            is_or_query = bool(_OR_PATTERN.search(_or_check))
+            or_skill_totals: dict[str, int] = {}
+            if is_or_query and len(all_query_skills) > 1:
+                # Seed with the current primary's count (already fetched)
+                or_skill_totals[primary_skill] = total_jobs
+                # Count every other detected skill with the same filters
+                for skill_i in all_query_skills:
+                    if skill_i.upper() == primary_skill.upper():
+                        continue
+                    rows_i = _run(conn, _SQL_TOTAL_JOBS.format(
+                        **{**_base_params(), "skill": _escape(skill_i)}
+                    ))
+                    if rows_i:
+                        cnt_i = int(rows_i[0]["total"])
+                        if cnt_i > 0:
+                            or_skill_totals[skill_i] = cnt_i
+                # Re-select primary = skill with most jobs → richer detailed breakdown
+                if or_skill_totals:
+                    best = max(or_skill_totals, key=or_skill_totals.get)
+                    if best.upper() != primary_skill.upper():
+                        logger.info(
+                            "OR query: switching primary from '%s' (%d) to '%s' (%d) for detailed breakdown.",
+                            primary_skill, total_jobs, best, or_skill_totals[best],
+                        )
+                        primary_skill = best
+                        safe_skill    = _escape(primary_skill)
+                    total_jobs = or_skill_totals[primary_skill]
+                logger.info(
+                    "OR query skill counts: %s",
+                    {k: v for k, v in sorted(or_skill_totals.items(), key=lambda x: x[1], reverse=True)},
+                )
 
             # Q2 — top companies
             # dim_company is already joined inside _SQL_TOP_COMPANIES, so skip comp_join
@@ -1036,8 +1504,17 @@ class MarketContextService:
             }
 
             # Q4 — related / co-occurring skills
-            skill_rows = _run(conn, _SQL_RELATED_SKILLS.format(**_base_params()))
-            related_skills = [r["skill_name"] for r in skill_rows]
+            # co_skill_exclude strips secondary skills from the results (user already knows them).
+            # Also apply _SKILL_BLOCKLIST in Python to remove generic job-title noise
+            # (e.g. "BACKEND DEVELOPER", "DATABASE") that slips through the SQL.
+            skill_rows = _run(conn, _SQL_RELATED_SKILLS.format(
+                **_base_params(),
+                co_skill_exclude=co_skill_exclude,
+            ))
+            related_skills = [
+                r["skill_name"] for r in skill_rows
+                if r["skill_name"].lower() not in _SKILL_BLOCKLIST
+            ]
 
             # Q5 — job category distribution
             # dim_job_category is already JOINed inside _SQL_CATEGORY_DIST (hardcoded).
@@ -1053,16 +1530,17 @@ class MarketContextService:
             # We also skip region_where here (we're grouping by region anyway) but
             # keep location_where so city filter can still narrow the region breakdown.
             region_params = {
-                "skill":          safe_skill,
-                "work_mode_join": wm_join,
+                "skill":           safe_skill,
+                "co_skill_where":  co_skill_where,
+                "work_mode_join":  wm_join,
                 "work_mode_where": wm_where,
-                "date_join":      date_join,
-                "date_where":     date_where,
-                "level_where":    level_where,
-                "category_join":  cat_join,
-                "category_where": cat_where,
-                "company_join":   comp_join,
-                "company_where":  comp_where,
+                "date_join":       date_join,
+                "date_where":      date_where,
+                "level_where":     level_where,
+                "category_join":   cat_join,
+                "category_where":  cat_where,
+                "company_join":    comp_join,
+                "company_where":   comp_where,
             }
             region_rows = _run(conn, _SQL_REGION_DIST.format(**region_params))
             region_dist = {r["region"]: int(r["job_count"]) for r in region_rows if r["region"]}
@@ -1084,6 +1562,8 @@ class MarketContextService:
                 company_filter   = _extract_company_label(query, self._company_list),
                 category_dist    = category_dist,
                 region_dist      = region_dist,
+                co_skills        = secondary_skills,
+                or_skill_totals  = or_skill_totals,
             )
 
             logger.info(
@@ -1115,8 +1595,7 @@ def format_market_block(insight: MarketInsight) -> str:
     if insight.location_filter:
         active_filters.append(insight.location_filter)
     if insight.region_filter:
-        _region_vi = {"South": "miền Nam", "North": "miền Bắc", "Central": "miền Trung"}
-        active_filters.append(_region_vi.get(insight.region_filter, insight.region_filter))
+        active_filters.append(_REGION_VI.get(insight.region_filter, insight.region_filter))
     if insight.work_mode_filter:
         active_filters.append(insight.work_mode_filter)
     if insight.level_filter:
@@ -1138,10 +1617,32 @@ def format_market_block(insight: MarketInsight) -> str:
         )
     ]
 
+    # Joint-filter header: show all required skills when co_skills filter is active
+    all_required = [insight.primary_skill] + insight.co_skills
+    skill_header = " + ".join(all_required) if insight.co_skills else insight.primary_skill
+    joint_note = (
+        f" [yêu cầu đồng thời: {' & '.join(all_required)}]"
+        if insight.co_skills else ""
+    )
+
+    # OR-query comparison: sorted descending by job count
+    or_comparison: str = ""
+    or_instruction: str = ""
+    if insight.or_skill_totals and len(insight.or_skill_totals) > 1:
+        sorted_or = sorted(insight.or_skill_totals.items(), key=lambda x: x[1], reverse=True)
+        or_comparison = " | ".join(f"{sk}: {cnt} vị trí" for sk, cnt in sorted_or)
+        or_instruction = (
+            f" OR query detected: user asked about {len(sorted_or)} skills. "
+            f"Mention ALL counts — {or_comparison} — in the summary. "
+            f"Detailed breakdown below is for {insight.primary_skill} (most jobs)."
+        )
+
     lines = [
-        f"=== MARKET CONTEXT — {insight.primary_skill}{loc_str} (Gold layer, Iceberg) ===",
-        f"Tổng vị trí trong database (filter đang áp dụng: {filter_desc}): {insight.total_jobs}",
+        f"=== MARKET CONTEXT — {skill_header}{loc_str} (Gold layer, Iceberg) ===",
+        f"Tổng vị trí trong database (filter đang áp dụng: {filter_desc}){joint_note}: {insight.total_jobs}",
     ]
+    if or_comparison:
+        lines.append(f"So sánh các kỹ năng (OR query): {or_comparison}")
     if insight.top_companies:
         co_note = f" (chỉ công ty '{insight.company_filter}')" if insight.company_filter else ""
         lines.append(f"Top công ty tuyển dụng{co_note}: {', '.join(insight.top_companies[:5])}")
@@ -1164,13 +1665,14 @@ def format_market_block(insight: MarketInsight) -> str:
 
     # Build LLM instruction with full context awareness
     example_desc = f"{insight.primary_skill}"
+    if insight.co_skills:
+        example_desc += f" (kết hợp {' & '.join(insight.co_skills)})"
     if insight.level_filter:
         example_desc = f"{insight.level_filter} {example_desc}"
     if insight.location_filter:
         example_desc += f" tại {insight.location_filter}"
     elif insight.region_filter:
-        _region_vi2 = {"South": "miền Nam", "North": "miền Bắc", "Central": "miền Trung"}
-        example_desc += f" tại {_region_vi2.get(insight.region_filter, insight.region_filter)}"
+        example_desc += f" tại {_REGION_VI.get(insight.region_filter, insight.region_filter)}"
     if insight.work_mode_filter:
         example_desc += f" ({insight.work_mode_filter})"
     if insight.category_filter:
@@ -1180,12 +1682,28 @@ def format_market_block(insight: MarketInsight) -> str:
     if insight.date_filter:
         example_desc += f" — {insight.date_filter}"
 
+    joint_instruction = ""
+    if insight.co_skills:
+        joint_instruction = (
+            f" Lưu ý quan trọng: {insight.total_jobs} là số vị trí yêu cầu ĐỒNG THỜI cả "
+            f"{' lẫn '.join(all_required)} (không phải từng kỹ năng riêng lẻ)."
+        )
+
+    wm_rule = (
+        f"Work mode filter is ACTIVE ({insight.work_mode_filter}) — mention it in the description."
+        if insight.work_mode_filter
+        else "Work mode filter is NOT active — DO NOT add '(At Office)', '(Remote)', '(Hybrid)' "
+             "to the job count sentence. Vietnam market is ~98% at-office by default; "
+             "this is not worth highlighting unless the user explicitly asked for a mode."
+    )
+
     lines.append(
         "INSTRUCTION: After the job cards, add a market summary using ONLY the numbers above. "
-        f"The total ({insight.total_jobs}) already applies ALL active filters ({filter_desc}). "
+        f"The total ({insight.total_jobs}) already applies ALL active filters ({filter_desc}).{joint_instruction}{or_instruction} "
         f"Describe it as the count for that specific context, e.g. 'Có {insight.total_jobs} vị trí {example_desc}'. "
+        f"{wm_rule} "
         "Distribution fields (Work mode, Ngành nghề, Phân bổ khu vực) show the BROADER market without their respective filter applied — "
-        "use them to give context ('phần lớn là at-office', 'chủ yếu ở Backend Development') but do NOT add their counts to total. "
+        "reference them only as secondary context ('chủ yếu ở Backend Development'), never add their counts to the total. "
         "NEVER invent salary figures or company names not listed above. 2-3 sentences max."
     )
     lines.append("=== END MARKET CONTEXT ===")

@@ -195,6 +195,7 @@ function App() {
 
   const wasVoiceInputRef    = useRef(false);
   const abortControllerRef  = useRef(null);
+  const requestSeqRef       = useRef(0);
 
   const handleCloseSidebar = useCallback(() => {
     setSidebarClosing(true);
@@ -281,13 +282,18 @@ function App() {
    * @returns {Promise<void>}
    */
   const handleStop = useCallback(() => {
+    requestSeqRef.current += 1;
     abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
     setIsLoading(false);
   }, []);
 
   const handleSendMessage = useCallback(
     async (text) => {
       if (isLoading) return;
+      const requestId = ++requestSeqRef.current;
 
       const conv = activeConvRef.current;
 
@@ -336,6 +342,7 @@ function App() {
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
         const data = await res.json();
+        if (controller.signal.aborted || requestId !== requestSeqRef.current) return;
 
         const botMessage = {
           id: Date.now() + 1,
@@ -358,10 +365,14 @@ function App() {
           )
         );
         speakText(data.answer);
-        setIsLoading(false);
+        if (requestId === requestSeqRef.current) {
+          abortControllerRef.current = null;
+          setIsLoading(false);
+        }
       } catch (err) {
         // User clicked stop — abort silently, loading already reset by handleStop
         if (err?.name === "AbortError") return;
+        if (requestId !== requestSeqRef.current) return;
 
         const raw = err?.message ?? "";
         let friendly;
@@ -392,7 +403,10 @@ function App() {
             c.active ? { ...c, messages: [...c.messages, errMessage] } : c
           )
         );
-        setIsLoading(false);
+        if (requestId === requestSeqRef.current) {
+          abortControllerRef.current = null;
+          setIsLoading(false);
+        }
       }
     },
     [isLoading]
@@ -576,6 +590,7 @@ function App() {
                 onSendMessage={handleSendMessage}
                 onOpenCVModal={handleOpenCVModal}
                 onVoiceSubmit={handleVoiceSubmit}
+                onStop={handleStop}
                 isLoading={isLoading}
                 isSpeaking={isSpeaking}
               />

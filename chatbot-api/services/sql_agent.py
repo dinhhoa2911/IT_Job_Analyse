@@ -61,6 +61,27 @@ _SCHEMA_CONTEXT = textwrap.dedent("""
                                'Software Engineering'(2)|'Testing'(2)|'Other'(460)
                                Do NOT use skill_group for meaningful filtering — use skill_name directly.
 
+    ⚠ SKILL NAME ALIASES — resolve user input to exact DB skill_name before writing SQL:
+        'golang'               → WHERE LOWER(ds.skill_name) = 'go'           (453 jobs)
+        'k8s'                  → WHERE LOWER(ds.skill_name) = 'kubernetes'   (193 jobs)
+        'react native'         → WHERE LOWER(ds.skill_name) = 'react_native' (205 jobs, UNDERSCORE)
+        'nodejs'/'node js'     → WHERE LOWER(ds.skill_name) = 'node.js'      (616 jobs)
+        'vuejs'/'vue.js'       → WHERE LOWER(ds.skill_name) = 'vue'          (165 jobs; DB has VUE not VUE.JS)
+        'ci/cd'/'ci cd'        → WHERE LOWER(ds.skill_name) = 'cicd'         (467 jobs, no slash)
+        'scikit-learn'/'sklearn'→ WHERE LOWER(ds.skill_name) = 'scikitlearn' (9 jobs, no hyphen)
+        'microservices'        → WHERE LOWER(ds.skill_name) = 'microservice' (380 jobs, singular)
+        'elastic search'       → WHERE LOWER(ds.skill_name) = 'elasticsearch'(26 jobs)
+        'elk'                  → WHERE LOWER(ds.skill_name) = 'elk stack'    (5 jobs; separate from elasticsearch)
+        'postgres'             → WHERE LOWER(ds.skill_name) = 'postgresql'   (427 jobs)
+        'dotnet'/'dot net'     → WHERE LOWER(ds.skill_name) = '.net'         (742 jobs)
+        'airflow'              → WHERE LOWER(ds.skill_name) = 'apache airflow'(11 jobs)
+        'apache kafka'         → WHERE LOWER(ds.skill_name) = 'kafka'        (118 jobs)
+        'nest.js'/'nestjs'     → WHERE LOWER(ds.skill_name) = 'nestjs'       (136 jobs, no dot)
+        WRONG: WHERE LOWER(ds.skill_name) = 'golang'     ← skill doesn't exist in DB
+        WRONG: WHERE LOWER(ds.skill_name) = 'vue.js'     ← doesn't exist; DB has 'vue'
+        WRONG: WHERE LOWER(ds.skill_name) = 'ci/cd'      ← slash version doesn't exist; DB has 'cicd'
+        WRONG: WHERE LOWER(ds.skill_name) = 'microservices' ← plural doesn't exist; DB has 'microservice'
+
     iceberg.gold.dim_location       ← 10 cities  [alias: dl]
         location_id BIGINT
         city_name   VARCHAR  — EXACT values (case-sensitive, no abbreviations):

@@ -228,9 +228,32 @@ Given a user query, call the appropriate tool(s).
 DATABASE FACTS (Gold layer — real ITviec data):
   • 8,114 distinct jobs | 504 skills (stored UPPERCASE) | 1,172 companies | 10 cities | 17 categories
   • Date range: 2025-09-23 → 2026-04-11 (8 months)
-  • Work mode: office-dominant market — always call run_analytics to get exact counts/ratios.
-  • Top cities: Ho Chi Minh | Ha Noi | Da Nang — call run_analytics for exact percentages.
+  • Work mode: 'At Office'(~98%) | 'Remote'(~1.2%) | 'Hybrid'(~0.1%) — office-dominant market.
+  • Top cities: Ho Chi Minh(5264 job-rows) | Ha Noi(3075) | Da Nang(536) — call run_analytics for exact %.
   • ⚠ NO SALARY DATA — the database has zero salary information. Never call run_analytics for salary.
+
+SKILL NAME ALIASES — resolve ANY variant to canonical before routing:
+  golang/Golang/golng(typo) → GO (453 jobs)
+  k8s/k8/kube               → KUBERNETES (193 jobs)
+  react native/react-native/reactnative → REACT_NATIVE (205 jobs, UNDERSCORE in DB)
+  nodejs/node js/NodeJS     → NODE.JS (616 jobs)
+  vuejs/vue.js/VueJS        → VUE (165 jobs — NOT VUE.JS, DB has VUE)
+  ci/cd / ci cd / cicd      → CICD (467 jobs, no slash in DB)
+  scikit-learn/sklearn       → SCIKITLEARN (9 jobs)
+  microservices              → MICROSERVICE (380 jobs, singular)
+  elastic search             → ELASTICSEARCH (26 jobs)
+  elk/elk stack              → ELK STACK (5 jobs, separate from ELASTICSEARCH)
+  postgres                   → POSTGRESQL | dotnet/dot net → .NET
+  airflow                    → APACHE AIRFLOW | apache kafka → KAFKA
+  powerbi                    → POWER BI | tailwindcss → TAILWIND
+
+CATEGORIES (17 total, exact names for SQL):
+  Backend Development(1483) | Frontend Development(1041) | Testing & QA(744)
+  Product & Business Analysis(572) | DevOps & Infrastructure(476) | Mobile Development(458)
+  AI & Machine Learning(433) | Software Engineering(410) | Management(361)
+  Data Engineering(278) | ERP & CRM(198) | Cyber Security(180)
+  Fullstack Development(113) | Embedded & IoT(101) | Game Development(91)
+  Data Analytics(83) | Other(1092)
 
 ROUTING RULES (follow strictly):
 1. Call search_jobs → user wants to FIND or SEE specific job postings.
@@ -501,8 +524,8 @@ _SHOW_MORE_RE = re.compile(
 # Signals that a user message is likely a job search (used to find the prior query).
 _SEARCH_SIGNAL_RE = re.compile(
     r"(?:job|việc|tìm|senior|junior|middle|fresher|intern|developer|engineer|"
-    r"python|java|react|angular|vue|backend|frontend|fullstack|devops|mobile|"
-    r"tuyển|lập trình|data|ai\b|ml\b)",
+    r"python|java|react|angular|vue|golang|node|backend|frontend|fullstack|devops|mobile|"
+    r"tuyển|lập trình|data|ai\b|ml\b|kotlin|swift|flutter|docker|kubernetes|k8s)",
     re.I,
 )
 
@@ -595,11 +618,17 @@ class AgentService:
 
     # ── Tool execution ────────────────────────────────────────────────────────
 
-    def _exec_search_jobs(self, query: str, exclude_keys: set[str] | None = None) -> ToolResult:
+    def _exec_search_jobs(self, query: str, exclude_keys: set[str] | None = None, original_query: str = "") -> ToolResult:
         try:
+            intent_query = (
+                original_query
+                if original_query and not _SHOW_MORE_RE.search(original_query)
+                else query
+            )
             expanded = self._qp.process(query)
             desired  = settings.top_k_results
-            filters  = _extract_filters(query)
+            filters  = _extract_filters(intent_query)
+            query_skills = self._market.extract_query_skills(intent_query)
 
             # Over-fetch: headroom for (a) location/mode/level post-filter,
             # (b) cross-turn exclude, (c) within-turn title+company dedup.
@@ -623,8 +652,47 @@ class AgentService:
                 pool_k = min(desired + len(exclude_keys or ()) + desired, settings.retrieval_k)
             jobs   = self._search.search_multi(expanded, top_k=pool_k, pool_k=pool_k)
 
+            insight = self._market.get_insight(
+                jobs,
+                intent_query,
+                filters,
+                original_query=original_query or intent_query,
+            )
+
+            has_structured_filter = bool(
+                insight and (
+                    insight.co_skills
+                    or insight.location_filter
+                    or insight.region_filter
+                    or insight.work_mode_filter
+                    or insight.level_filter
+                    or insight.date_filter
+                    or insight.category_filter
+                    or insight.company_filter
+                )
+            )
+            should_use_exact_gold = bool(
+                query_skills and (len(query_skills) > 1 or has_structured_filter)
+            )
+            used_exact_gold = False
+            if should_use_exact_gold:
+                exact_jobs = self._market.search_matching_jobs(
+                    intent_query,
+                    filters,
+                    limit=desired + len(exclude_keys or ()),
+                    original_query=original_query or intent_query,
+                    fallback_jobs=jobs,
+                )
+                if exact_jobs is not None:
+                    jobs = exact_jobs
+                    used_exact_gold = True
+                    logger.info(
+                        "search_jobs: using exact Gold job cards (%d rows) for structured query.",
+                        len(jobs),
+                    )
+
             # Relevance gate: off-domain queries (e.g. "lao công") score ≪ -2.
-            if jobs and max(j.score for j in jobs) < _MIN_RERANK_SCORE:
+            if not used_exact_gold and jobs and max(j.score for j in jobs) < _MIN_RERANK_SCORE:
                 logger.info(
                     "search_jobs: best score %.3f < threshold %.1f — off-domain, returning empty",
                     max(j.score for j in jobs), _MIN_RERANK_SCORE,
@@ -636,7 +704,8 @@ class AgentService:
             if exclude_keys:
                 jobs = [j for j in jobs if _job_key(j) not in exclude_keys]
 
-            jobs = _post_filter(jobs, filters)
+            if not used_exact_gold:
+                jobs = _post_filter(jobs, filters)
 
             # Within-turn dedup by (title, company): keeps distinct opportunities even
             # when multiple companies post the same role title.
@@ -649,7 +718,6 @@ class AgentService:
                     deduped.append(job)
             jobs = deduped[:desired]
 
-            insight = self._market.get_insight(jobs, query, filters)
             logger.info("search_jobs → %d jobs (excluded=%d)", len(jobs), len(exclude_keys or ()))
             return ToolResult(name="search_jobs", jobs=jobs, market_insight=insight, filters=filters)
         except Exception as e:
@@ -712,7 +780,7 @@ class AgentService:
     ) -> list[ToolResult]:
         """Run all tool calls concurrently and collect results."""
         dispatch = {
-            "search_jobs":   lambda a: self._exec_search_jobs(a["query"], exclude_keys),
+            "search_jobs":   lambda a: self._exec_search_jobs(a["query"], exclude_keys, original_query=original_query),
             "run_analytics": lambda a: self._exec_analytics(a["question"], original_query),
             "career_advice": lambda a: self._exec_career_advice(a["question"]),
             "learning_path": lambda a: self._exec_learning_path(
@@ -821,6 +889,40 @@ class AgentService:
         lang: str,
         history: list[dict],
     ) -> ChatResponse:
+        # ── OR query: merge multiple search_jobs insights ─────────────────────
+        # When the agent splits "A hoặc B" into two search_jobs calls, each
+        # get_insight sees only 1 skill → or_skill_totals is empty in both.
+        # Fix: pick primary (most jobs), inject all skills into or_skill_totals,
+        # and clear non-primary market_insight so the synthesis prompt shows
+        # exactly one market block (with the full OR comparison).
+        _or_primary: "ToolResult | None" = None
+        search_with_insight = [
+            r for r in results
+            if r.name == "search_jobs" and r.success and r.market_insight is not None
+        ]
+        if len(search_with_insight) > 1:
+            _or_primary = max(search_with_insight, key=lambda r: r.market_insight.total_jobs)
+            merged_totals: dict[str, int] = {}
+            for r in search_with_insight:
+                if r.market_insight.or_skill_totals:
+                    for skill, total in r.market_insight.or_skill_totals.items():
+                        merged_totals.setdefault(skill, total)
+                else:
+                    merged_totals.setdefault(
+                        r.market_insight.primary_skill,
+                        r.market_insight.total_jobs,
+                    )
+            _or_primary.market_insight.or_skill_totals = merged_totals
+            for r in search_with_insight:
+                if r is not _or_primary:
+                    r.market_insight = None
+            logger.info(
+                "OR merge: primary=%s (%d jobs), or_skill_totals=%s",
+                _or_primary.market_insight.primary_skill,
+                _or_primary.market_insight.total_jobs,
+                merged_totals,
+            )
+
         prompt = self._build_synthesis_prompt(query, results, lang)
         system = _SYNTH_SYSTEM.format(lang=lang)
 
@@ -864,6 +966,10 @@ class AgentService:
                     logger.warning("Agent made %d run_analytics calls — ignoring extra", analytics_count)
             elif r.name == "learning_path" and r.success:
                 learning_path_result = r.learning_path_result
+
+        # OR query: ensure primary result's jobs win (not arbitrary last-loop order)
+        if _or_primary is not None and _or_primary.jobs:
+            jobs = _or_primary.jobs
 
         # primary chart for backward-compat (existing chart field in ChatResponse)
         primary_chart = charts[0] if charts else None
@@ -919,7 +1025,7 @@ class AgentService:
                     logger.info(
                         "show-more fallback: re-running search for '%s'", last_q[:80]
                     )
-                    results = [self._exec_search_jobs(last_q, exclude_keys)]
+                    results = [self._exec_search_jobs(last_q, exclude_keys, original_query=resolved_query)]
                     if conversation_id:
                         for r in results:
                             if r.name == "search_jobs" and r.success and r.jobs:
