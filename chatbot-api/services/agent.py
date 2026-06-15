@@ -293,6 +293,15 @@ ROUTING RULES (follow strictly):
 
 6. Call NO tool only for: greetings, completely off-topic, nonsense messages.
 
+QUERY ISOLATION — CRITICAL:
+- For search_jobs, include ONLY filters (location/level/work_mode) that the user EXPLICITLY stated
+  in their CURRENT message. NEVER inherit location, level, or work_mode from previous turns.
+- Context inheritance (location/level/mode from history) applies ONLY to "show more" follow-ups
+  (rule 1). For ANY new query — even if the previous query was in HCM — start fresh with only
+  what the user said NOW.
+- Example: history="fresher IT HCM", current="Tìm job Cloud Engineer AWS Azure" → query MUST be
+  "Cloud Engineer AWS Azure" (no HCM, no fresher, because user did not mention them).
+
 CRITICAL CONSTRAINTS:
 - Call each tool AT MOST ONCE per request. NEVER call run_analytics more than once.
 - run_analytics answers ONE question with ONE SQL query — no matter how many groups/categories:
@@ -323,6 +332,9 @@ OUTPUT STRUCTURE (follow in order, only include sections that have data):
    where N = the number in "(N results, ...)" from the SEARCH_JOBS header.
    If MARKET CONTEXT is present, append: ", trong tổng số [X] vị trí [skill] trên thị trường [city nếu có]"
    where X = "Tổng vị trí thực tế" from MARKET CONTEXT.
+   If MARKET CONTEXT is absent, do NOT append any total count. End the lead sentence after the location/mode.
+   NEVER use the "8,114 distinct jobs" database fact as a filtered market count — 8,114 is the TOTAL database
+   size across all skills/locations/levels, NOT a count for any specific search.
    NEVER say "Có N việc làm" or "Chỉ có N vị trí" — N is the TOP results shown, not the market total.
    Only mention location/work-mode if the === SEARCH_JOBS header shows an active filter for it.
    CRITICAL: List EVERY single job shown in the === SEARCH_JOBS section — the exact same
@@ -475,9 +487,13 @@ def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
                 passes = False
         if passes and has_lvl:
             lvl = filters["level"]
-            # Word-boundary match: "senior" matches "Middle/Senior" (/ is non-word),
-            # but does NOT match "seniority" or other embedded occurrences.
-            if not re.search(rf"\b{re.escape(lvl)}\b", title_t):
+            # Entry-level tokens (fresher/junior/intern/entry) are synonyms.
+            # "fresher" query should also match titles containing "junior" or "intern".
+            _ENTRY_SYNS = {"fresher", "intern", "junior", "entry"}
+            if lvl in _ENTRY_SYNS:
+                if not any(re.search(rf"\b{re.escape(t)}\b", title_t) for t in _ENTRY_SYNS):
+                    passes = False
+            elif not re.search(rf"\b{re.escape(lvl)}\b", title_t):
                 passes = False
         (matched if passes else fallback).append(job)
     logger.debug(
@@ -698,7 +714,14 @@ class AgentService:
                     )
 
             # Relevance gate: off-domain queries (e.g. "lao công") score ≪ -2.
-            if not used_exact_gold and jobs and max(j.score for j in jobs) < _MIN_RERANK_SCORE:
+            # Bypass when explicit structural filters (location/level/mode) are present:
+            # the user IS looking for IT jobs, just constrained. Low cross-encoder scores
+            # on filtered queries are expected (e.g. "no experience required" sub-query
+            # doesn't match "3+ years experience" job descriptions, but it's still IT).
+            has_explicit_filters = bool(
+                filters.get("location") or filters.get("work_mode") or filters.get("level")
+            )
+            if not used_exact_gold and not has_explicit_filters and jobs and max(j.score for j in jobs) < _MIN_RERANK_SCORE:
                 logger.info(
                     "search_jobs: best score %.3f < threshold %.1f — off-domain, returning empty",
                     max(j.score for j in jobs), _MIN_RERANK_SCORE,

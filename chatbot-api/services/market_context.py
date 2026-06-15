@@ -730,11 +730,25 @@ _LEVEL_TOKENS: list[str] = [
     "senior", "lead", "principal", "staff", "manager",
 ]
 
+_ENTRY_LEVEL_TOKENS: frozenset[str] = frozenset({"fresher", "intern", "junior", "entry"})
+
 def _build_level_clause(query: str) -> str:
-    """Return an AND clause filtering job_title by seniority level, or '' if none detected."""
+    """Return an AND clause filtering job_title by seniority level, or '' if none detected.
+
+    Entry-level tokens (fresher/intern/junior/entry) are treated as synonyms — any of them
+    in the query generates an OR clause matching all four, so "tìm job fresher" also finds
+    posts titled "Junior Developer" or "Intern Software Engineer".
+    """
     q = query.lower()
     for token in _LEVEL_TOKENS:
         if re.search(rf"\b{re.escape(token)}\b", q):
+            if token in _ENTRY_LEVEL_TOKENS:
+                return (
+                    "AND (LOWER(f.job_title) LIKE '%fresher%' "
+                    "OR LOWER(f.job_title) LIKE '%intern%' "
+                    "OR LOWER(f.job_title) LIKE '%junior%' "
+                    "OR LOWER(f.job_title) LIKE '%entry%')"
+                )
             return f"AND LOWER(f.job_title) LIKE '%{token}%'"
     return ""
 
@@ -1344,6 +1358,22 @@ class MarketContextService:
         primary_skill = self._extract_primary_skill(jobs, query)
         if not primary_skill:
             logger.info("Market context skipped: no primary skill detected.")
+            return None
+
+        # If primary_skill came from Strategy 1 (frequency fallback — user did NOT
+        # name a specific skill) AND the query has an explicit level filter (fresher/
+        # junior/senior), suppress the insight.  Showing e.g. "38 vị trí Fresher JAVA"
+        # when the user asked "fresher IT HCM" is misleading — JAVA was just the most
+        # common skill among the top Milvus hits, not the user's intent.
+        _explicit_skills = self._extract_all_skills(query)
+        _has_level_filter = bool(filters.get("level") or _build_level_clause(query))
+        if not _explicit_skills and _has_level_filter:
+            logger.info(
+                "Market context skipped: primary skill '%s' is a fallback "
+                "(not in query) with explicit level filter — suppressing to avoid "
+                "misleading insight.",
+                primary_skill,
+            )
             return None
 
         # ── Detect secondary skills for joint filter ─────────────────────────────

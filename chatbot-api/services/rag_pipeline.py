@@ -523,13 +523,21 @@ class RAGPipeline:
             "- Include all details: topic, time period, filters, chart/visualization if applicable\n"
             "- If prior context asked for a chart and the follow-up only changes the time period, "
             "keep 'biểu đồ' or 'chart' in the rewrite\n"
+            "CRITICAL — location/level/work_mode inheritance rule:\n"
+            "- Only inherit location/level/work_mode from prior context when the new message is a "
+            "SHORT follow-up that omits the subject (e.g. 'còn Java?', 'thêm nữa', 'remote thì sao').\n"
+            "- NEVER inherit when the new message is a FULL new search with its own role/skills "
+            "(starts with 'tìm job', 'tìm kiếm', 'cho xem', 'find', 'search', etc. AND contains "
+            "a different role or skill set). A self-contained new search means the user started fresh.\n"
             "Examples:\n"
             '• Prior: "biểu đồ job tháng 4 2026" → New: "còn tháng 3?" '
             '→ Output: "biểu đồ số lượng job tháng 3 năm 2026"\n'
             '• Prior: "thống kê job tháng 3 2026" → New: "tháng 2 thì sao" '
             '→ Output: "thống kê biểu đồ số lượng job tháng 2 năm 2026"\n'
             '• Prior: "tìm job Python remote HCM" → New: "còn Java?" '
-            '→ Output: "tìm job Java remote HCM"\n'
+            '→ Output: "tìm job Java remote HCM"  ← short follow-up: inherit location\n'
+            '• Prior: "tìm job fresher IT tại HCM" → New: "Tìm job Cloud Engineer biết AWS và Azure" '
+            '→ Output: "tìm job Cloud Engineer biết AWS và Azure"  ← full new search: NO location inherited\n'
             '• Prior: "top 10 công ty tuyển nhiều nhất" → New: "tháng 3 thì sao?" '
             '→ Output: "top 10 công ty tuyển nhiều nhất tháng 3 năm 2026"\n'
             '• Prior: "tìm job senior Python tại HCM làm tại văn phòng" '
