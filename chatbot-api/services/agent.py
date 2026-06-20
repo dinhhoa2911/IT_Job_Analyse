@@ -736,16 +736,20 @@ class AgentService:
             if not used_exact_gold:
                 jobs = _post_filter(jobs, filters)
 
-            # Within-turn dedup by (title, company): keeps distinct opportunities even
-            # when multiple companies post the same role title.
-            seen: set[str] = set()
-            deduped: list[JobResult] = []
-            for job in jobs:
-                k = _job_key(job)
-                if k not in seen:
-                    seen.add(k)
-                    deduped.append(job)
-            jobs = deduped[:desired]
+            # Within-turn dedup by (title, company): for Milvus results the same job
+            # can appear across multiple sub-queries, so dedup is needed.
+            # Gold results are already keyed by job_link in SQL; same (title, company)
+            # at different cities are distinct opportunities and must NOT be merged.
+            if not used_exact_gold:
+                seen: set[str] = set()
+                deduped: list[JobResult] = []
+                for job in jobs:
+                    k = _job_key(job)
+                    if k not in seen:
+                        seen.add(k)
+                        deduped.append(job)
+                jobs = deduped
+            jobs = jobs[:desired]
 
             logger.info("search_jobs → %d jobs (excluded=%d)", len(jobs), len(exclude_keys or ()))
             return ToolResult(name="search_jobs", jobs=jobs, market_insight=insight, filters=filters)

@@ -193,6 +193,16 @@ _CATEGORY_KEYWORDS: dict[str, str] = {
     "khác":             "Other",
 }
 
+# Keywords that are pure role descriptors — not specific technical domains.
+# When one of these triggers a category filter AND co-skills are active, the
+# category is suppressed (e.g. "full stack React NodeJS" must not restrict to
+# 'Fullstack Development' and miss Frontend/Backend jobs that use all three).
+# Domain keywords ("data analytics", "devops", "security") reflect explicit user
+# intent and must NOT appear here — they should NOT be suppressed with co-skills.
+_ROLE_DESCRIPTOR_KEYWORDS: frozenset[str] = frozenset({
+    "full stack", "fullstack", "full-stack", "lập trình fullstack",
+})
+
 # ── OR-connector detection ────────────────────────────────────────────────────
 # When the user connects skills with "or / hoặc / hay", they want a UNION of
 # results, not an intersection.  Co-skill (AND) filtering must be disabled in
@@ -839,6 +849,19 @@ def _extract_category_label(query: str) -> str | None:
     return None
 
 
+def _extract_category_keyword(query: str) -> str | None:
+    """Return the raw keyword that triggered the category filter, or None."""
+    q = query.lower()
+    for keyword in sorted(_CATEGORY_KEYWORDS, key=len, reverse=True):
+        if keyword.isascii():
+            if not re.search(r"\b" + re.escape(keyword) + r"\b", q):
+                continue
+        elif keyword not in q:
+            continue
+        return keyword
+    return None
+
+
 def _extract_company_label(query: str, top_companies: list[str]) -> str | None:
     """Return company name detected in query, or None."""
     q_lower = query.lower()
@@ -1199,12 +1222,19 @@ class MarketContextService:
 
         date_join, date_where = _build_date_clauses(query)
         cat_join, cat_where = _build_category_clauses(query)
-        # Suppress category filter when: (a) primary skill is itself a category keyword
-        # (avoids double-restricting e.g. "embedded" + category='Embedded & IoT'), OR
-        # (b) co-skills are active — the AND intersection is already specific enough,
-        # and role descriptors like "full stack" would incorrectly restrict to
-        # 'Fullstack Development' category, dropping jobs categorised as Frontend/Backend.
-        if cat_where and (primary_skill.lower() in _CATEGORY_KEYWORDS or secondary_skills):
+        # Suppress category filter when:
+        # (a) primary skill is itself a category keyword (avoid double-restricting, e.g.
+        #     "embedded" → primary=EMBEDDED → category='Embedded & IoT' over-narrows), OR
+        # (b) the triggering keyword is a role descriptor ("full stack", "fullstack") AND
+        #     co-skills are active — "full stack React NodeJS" must not restrict to
+        #     'Fullstack Development' and miss Frontend/Backend jobs using all three skills.
+        # Domain keywords ("data analytics", "devops", "security") are NOT suppressed
+        # with co-skills — they reflect explicit user intent for a specific domain.
+        _cat_kw = _extract_category_keyword(query)
+        if cat_where and (
+            primary_skill.lower() in _CATEGORY_KEYWORDS
+            or (secondary_skills and _cat_kw in _ROLE_DESCRIPTOR_KEYWORDS)
+        ):
             cat_join  = ""
             cat_where = ""
         _comp_join, comp_where = _build_company_clauses(query, self._company_list)
@@ -1238,7 +1268,11 @@ class MarketContextService:
             )
             try:
                 if is_or_query:
-                    per_skill_limit = max(common_params["limit"], 10)
+                    # Fetch more per skill to compensate for a second (title, company)
+                    # dedup that happens in the agent layer — without over-fetching,
+                    # the merge can stop too early and the caller ends up with fewer
+                    # results than `desired` (e.g. 3 instead of 5 for 2-skill OR).
+                    per_skill_limit = max(common_params["limit"] * 3, 15)
                     rows_by_skill: list[list[dict]] = []
                     for skill in skill_filters:
                         rows_by_skill.append(
@@ -1254,6 +1288,7 @@ class MarketContextService:
 
                     rows = []
                     seen_links: set[str] = set()
+                    merge_limit = per_skill_limit  # collect enough for agent-side dedup
                     max_len = max((len(group) for group in rows_by_skill), default=0)
                     for idx in range(max_len):
                         for group in rows_by_skill:
@@ -1265,9 +1300,9 @@ class MarketContextService:
                                 continue
                             seen_links.add(link)
                             rows.append(row)
-                            if len(rows) >= common_params["limit"]:
+                            if len(rows) >= merge_limit:
                                 break
-                        if len(rows) >= common_params["limit"]:
+                        if len(rows) >= merge_limit:
                             break
                 else:
                     rows = _run(conn, _SQL_MATCHING_JOBS.format(
@@ -1424,12 +1459,16 @@ class MarketContextService:
 
         # 5. Category — from query text
         cat_join, cat_where = _build_category_clauses(query)
-        # Suppress category filter when: (a) triggered by the primary skill's own keyword
-        # (e.g. "Embedded IoT" → primary=EMBEDDED → category='Embedded & IoT' would double-
-        # restrict and drop ~83% of valid jobs), OR (b) co-skills are active — role descriptor
-        # keywords like "full stack" would otherwise restrict to 'Fullstack Development' and
-        # exclude jobs that are categorised as Frontend/Backend but require all three skills.
-        if cat_where and (primary_skill.lower() in _CATEGORY_KEYWORDS or secondary_skills):
+        # Suppress category filter when:
+        # (a) primary skill is itself a category keyword (avoid double-restricting), OR
+        # (b) triggering keyword is a role descriptor ("full stack") AND co-skills active —
+        #     "full stack React NodeJS" must not restrict to 'Fullstack Development' and miss
+        #     Frontend/Backend jobs. Domain keywords ("data analytics") are NOT suppressed.
+        _cat_kw = _extract_category_keyword(query)
+        if cat_where and (
+            primary_skill.lower() in _CATEGORY_KEYWORDS
+            or (secondary_skills and _cat_kw in _ROLE_DESCRIPTOR_KEYWORDS)
+        ):
             cat_join  = ""
             cat_where = ""
 
