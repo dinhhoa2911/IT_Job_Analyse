@@ -16,16 +16,16 @@ class Settings(BaseSettings):
     @brief Pydantic settings model — values are read from environment variables or .env.
 
     Field groups:
-      - OpenAI     : LLM model and API key.
+      - Anthropic  : LLM model and API key.
       - Milvus     : Vector database connection and target collection.
       - Trino      : Analytical query engine connection.
       - Embedding  : SentenceTransformer model used during both indexing and retrieval.
       - Reranker   : CrossEncoder model for final relevance scoring.
       - Search pool: Controls candidate counts at each stage of the hybrid pipeline.
     """
-    # OpenAI
-    openai_api_key: str
-    openai_model: str = "gpt-4o-mini"
+    # Anthropic
+    anthropic_api_key: str
+    anthropic_model: str = "claude-sonnet-4-6"
 
     # Milvus
     milvus_host: str = "milvus-standalone"

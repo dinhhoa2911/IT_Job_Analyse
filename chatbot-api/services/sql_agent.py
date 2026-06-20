@@ -15,7 +15,7 @@ from decimal import Decimal
 from typing import Any
 
 import trino
-from openai import OpenAI
+import anthropic
 
 from config import settings
 
@@ -809,7 +809,7 @@ class SQLAgentService:
     """
 
     def __init__(self) -> None:
-        self._client = OpenAI(api_key=settings.openai_api_key)
+        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 
     # Private helpers
@@ -837,15 +837,15 @@ class SQLAgentService:
         @param question  Natural-language analytics question from the user.
         @return          Clean, executable Trino SQL string.
         """
-        response = self._client.chat.completions.create(
-            model=settings.openai_model,
+        response = self._client.messages.create(
+            model=settings.anthropic_model,
             max_tokens=512,
+            system=_build_system_prompt(),
             messages=[
-                {"role": "system", "content": _build_system_prompt()},
                 {"role": "user", "content": question},
             ],
         )
-        sql = response.choices[0].message.content.strip()
+        sql = response.content[0].text.strip()
 
         # Strip accidental markdown code fences
         if sql.startswith("```"):

@@ -23,7 +23,7 @@ import logging
 import re
 
 import trino
-from openai import OpenAI
+import anthropic
 
 from config import settings
 from constants import LOCATION_ALIAS_TO_NAME, LOCATION_CITY_NAME, SKILL_QUERY_ALIASES
@@ -169,7 +169,7 @@ class QueryProcessor:
     """
 
     def __init__(self) -> None:
-        self._client = OpenAI(api_key=settings.openai_api_key)
+        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
         # Fast-path state (populated by _load_db_metadata)
         self._skill_map: dict[str, str] = {}       # lowercase → original casing
@@ -402,15 +402,15 @@ class QueryProcessor:
         @param max_tokens  Token budget for the LLM response (default 256).
         @return            Parsed list of strings, or [user] on parse failure.
         """
-        response = self._client.chat.completions.create(
-            model=settings.openai_model,
+        response = self._client.messages.create(
+            model=settings.anthropic_model,
             max_tokens=max_tokens,
+            system=system,
             messages=[
-                {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         )
-        raw = response.choices[0].message.content.strip()
+        raw = response.content[0].text.strip()
         if raw.startswith("```"):
             lines = raw.splitlines()
             raw = "\n".join(lines[1:-1]).strip()

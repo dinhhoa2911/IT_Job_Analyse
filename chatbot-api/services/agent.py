@@ -39,7 +39,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Optional
 
-from openai import OpenAI
+import anthropic
 
 from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
@@ -109,111 +109,99 @@ def _fmt_skill(raw: str) -> str:
     key = raw.strip().upper()
     return _SKILL_DISPLAY.get(key, raw.strip().title())
 
-# ── Tool specifications (OpenAI function-calling format) ──────────────────────
+# ── Tool specifications (Anthropic tool use format) ───────────────────────────
 
 TOOL_SPECS: list[dict] = [
     {
-        "type": "function",
-        "function": {
-            "name": "search_jobs",
-            "description": (
-                "Search IT job listings in Vietnam by skill, role, seniority, location, work-mode. "
-                "Use when user wants to FIND or SEE actual job postings. "
-                "Handles: 'tìm job Python senior', 'React remote HCM', 'việc làm Data Engineer Hà Nội', "
-                "'jobs at Shopee', 'backend fresher HCMC'."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Natural-language search query (skill / role / location / seniority)",
-                    }
-                },
-                "required": ["query"],
+        "name": "search_jobs",
+        "description": (
+            "Search IT job listings in Vietnam by skill, role, seniority, location, work-mode. "
+            "Use when user wants to FIND or SEE actual job postings. "
+            "Handles: 'tìm job Python senior', 'React remote HCM', 'việc làm Data Engineer Hà Nội', "
+            "'jobs at Shopee', 'backend fresher HCMC'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Natural-language search query (skill / role / location / seniority)",
+                }
             },
+            "required": ["query"],
         },
     },
     {
-        "type": "function",
-        "function": {
-            "name": "run_analytics",
-            "description": (
-                "Query the Gold data lakehouse (Trino/Iceberg star schema) for CURRENT statistics. "
-                "Use for: skill rankings, company counts, work-mode ratios, "
-                "top companies, job counts by location/category/time. "
-                "Keywords that trigger this: 'bao nhiêu', 'top', 'ranking', 'thống kê', "
-                "'phân bố', 'tỷ lệ', 'số lượng', 'nhiều nhất', 'how many', 'statistics'."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "question": {
-                        "type": "string",
-                        "description": (
-                            "Analytics question in natural language. "
-                            "IMPORTANT: preserve ALL numbers and quantities from the user's message "
-                            "exactly as stated. E.g. 'top 15 công ty' → question must contain '15', "
-                            "'top 20 kỹ năng' → question must contain '20'. Never drop numeric values."
-                        ),
-                    }
-                },
-                "required": ["question"],
+        "name": "run_analytics",
+        "description": (
+            "Query the Gold data lakehouse (Trino/Iceberg star schema) for CURRENT statistics. "
+            "Use for: skill rankings, company counts, work-mode ratios, "
+            "top companies, job counts by location/category/time. "
+            "Keywords that trigger this: 'bao nhiêu', 'top', 'ranking', 'thống kê', "
+            "'phân bố', 'tỷ lệ', 'số lượng', 'nhiều nhất', 'how many', 'statistics'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": (
+                        "Analytics question in natural language. "
+                        "IMPORTANT: preserve ALL numbers and quantities from the user's message "
+                        "exactly as stated. E.g. 'top 15 công ty' → question must contain '15', "
+                        "'top 20 kỹ năng' → question must contain '20'. Never drop numeric values."
+                    ),
+                }
             },
+            "required": ["question"],
         },
     },
     {
-        "type": "function",
-        "function": {
-            "name": "career_advice",
-            "description": (
-                "Provide IT career guidance, learning roadmaps, and role comparisons. "
-                "Use when user asks: what to learn, career paths, role differences, salary expectations, "
-                "skills to acquire — WITHOUT stating specific skills they already have. "
-                "This tool does NOT query the database — pure LLM knowledge. "
-                "Examples: 'nên học gì để làm backend', 'DevOps vs SRE', 'roadmap Data Science'."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "question": {
-                        "type": "string",
-                        "description": "Career advice question",
-                    }
-                },
-                "required": ["question"],
+        "name": "career_advice",
+        "description": (
+            "Provide IT career guidance, learning roadmaps, and role comparisons. "
+            "Use when user asks: what to learn, career paths, role differences, salary expectations, "
+            "skills to acquire — WITHOUT stating specific skills they already have. "
+            "This tool does NOT query the database — pure LLM knowledge. "
+            "Examples: 'nên học gì để làm backend', 'DevOps vs SRE', 'roadmap Data Science'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Career advice question",
+                }
             },
+            "required": ["question"],
         },
     },
     {
-        "type": "function",
-        "function": {
-            "name": "learning_path",
-            "description": (
-                "Generate a DATA-DRIVEN skill learning roadmap from real Vietnam job market data. "
-                "Use ONLY when the user explicitly states skills they ALREADY KNOW and asks what "
-                "to learn next to reach a specific TARGET ROLE. "
-                "Triggers: 'tao biết Python + SQL muốn vào Data Engineer', "
-                "'có React + JS cần học gì để Senior Frontend?', "
-                "'Java + Spring Boot để làm Backend cần thêm gì?', "
-                "'I know X and Y, what do I need to become Z?'. "
-                "DO NOT use for generic 'nên học gì' without stated known skills — use career_advice."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "target_role": {
-                        "type": "string",
-                        "description": "The job role the user wants to reach (e.g. 'Data Engineer', 'Backend Developer')",
-                    },
-                    "known_skills": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Skills the user already has, extracted from their message",
-                    },
+        "name": "learning_path",
+        "description": (
+            "Generate a DATA-DRIVEN skill learning roadmap from real Vietnam job market data. "
+            "Use ONLY when the user explicitly states skills they ALREADY KNOW and asks what "
+            "to learn next to reach a specific TARGET ROLE. "
+            "Triggers: 'tao biết Python + SQL muốn vào Data Engineer', "
+            "'có React + JS cần học gì để Senior Frontend?', "
+            "'Java + Spring Boot để làm Backend cần thêm gì?', "
+            "'I know X and Y, what do I need to become Z?'. "
+            "DO NOT use for generic 'nên học gì' without stated known skills — use career_advice."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "target_role": {
+                    "type": "string",
+                    "description": "The job role the user wants to reach (e.g. 'Data Engineer', 'Backend Developer')",
                 },
-                "required": ["target_role"],
+                "known_skills": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Skills the user already has, extracted from their message",
+                },
             },
+            "required": ["target_role"],
         },
     },
 ]
@@ -595,7 +583,7 @@ class AgentService:
         market_ctx:         MarketContextService,
         learning_path_svc:  LearningPathService,
     ) -> None:
-        self._llm           = OpenAI(api_key=settings.openai_api_key)
+        self._llm           = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         self._qp            = query_processor
         self._search        = vector_search
         self._sql           = sql_agent
@@ -609,26 +597,26 @@ class AgentService:
         Call the LLM with tool specs and return a list of tool_call objects.
         Returns [] when the LLM decides no tool is needed (out-of-scope / direct answer).
         """
-        messages: list[dict] = [{"role": "system", "content": _PLAN_SYSTEM}]
+        messages: list[dict] = []
         if history:
             messages.extend(history[-6:])   # last 3 turns for follow-up context
         messages.append({"role": "user", "content": query})
 
-        resp = self._llm.chat.completions.create(
-            model=settings.openai_model,
-            messages=messages,
-            tools=TOOL_SPECS,
-            tool_choice="auto",
+        resp = self._llm.messages.create(
+            model=settings.anthropic_model,
             max_tokens=256,
+            system=_PLAN_SYSTEM,
+            tools=TOOL_SPECS,
+            messages=messages,
         )
-        choice = resp.choices[0]
-        if choice.finish_reason == "tool_calls" and choice.message.tool_calls:
-            calls = choice.message.tool_calls
-            names = [c.function.name for c in calls]
+        if resp.stop_reason == "tool_use":
+            calls = [block for block in resp.content if block.type == "tool_use"]
+            names = [c.name for c in calls]
             logger.info("Agent plan → tools=%s", names)
             return calls
         # LLM chose to answer directly (no tools)
-        direct = (choice.message.content or "").strip()
+        text_blocks = [block for block in resp.content if block.type == "text"]
+        direct = (text_blocks[0].text if text_blocks else "").strip()
         logger.info("Agent plan → no tools, direct answer: '%s...'", direct[:60])
         return []
 
@@ -822,8 +810,8 @@ class AgentService:
         }
 
         def run_one(tc):
-            name = tc.function.name
-            args = json.loads(tc.function.arguments)
+            name = tc.name
+            args = tc.input
             fn   = dispatch.get(name)
             if fn is None:
                 return ToolResult(name=name, success=False, error=f"Unknown tool: {name}")
@@ -959,18 +947,18 @@ class AgentService:
         prompt = self._build_synthesis_prompt(query, results, lang)
         system = _SYNTH_SYSTEM.format(lang=lang)
 
-        msgs: list[dict] = [{"role": "system", "content": system}]
+        msgs: list[dict] = []
         if history:
             msgs.extend(history[-6:])
         msgs.append({"role": "user", "content": prompt})
 
-        resp = self._llm.chat.completions.create(
-            model=settings.openai_model,
-            messages=msgs,
+        resp = self._llm.messages.create(
+            model=settings.anthropic_model,
             max_tokens=2000,
-            temperature=0.3,   # low temp: job listings/numbers must be reproduced verbatim, not "creatively" varied/dropped
+            system=system,
+            messages=msgs,
         )
-        answer = resp.choices[0].message.content
+        answer = resp.content[0].text
 
         # Collect response fields from tool results
         jobs: list[JobResult] | None          = None

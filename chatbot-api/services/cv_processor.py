@@ -5,15 +5,14 @@
 Pipeline:
   1. PDF bytes  →  raw text        (pdfplumber, page-by-page)
   2. Raw text   →  clean text      (whitespace and noise removal)
-  3. Clean text →  CVProfile JSON  (OpenAI structured extraction, temperature=0.1)
+  3. Clean text →  CVProfile JSON  (Anthropic Claude structured extraction)
   4. CVProfile  →  search_queries  (3-4 variants for multi-query hybrid search)
 
 Design notes:
   - pdfplumber handles column-heavy CV layouts far better than pypdf.
-  - LLM temperature=0.1 produces near-deterministic structured output.
   - queries[0] = summary_text; used as the cross-encoder anchor in search_multi.
   - CV text is truncated to 4 000 chars (~1 k tokens) before the LLM call to
-    keep latency predictable within gpt-4o-mini's context window.
+    keep latency predictable within the model's context window.
 """
 
 import io
@@ -23,7 +22,7 @@ import re
 from typing import Optional
 
 import pdfplumber
-from openai import OpenAI
+import anthropic
 
 from config import settings
 from models.schemas import CVProfile
@@ -384,7 +383,7 @@ class CVProcessor:
     """
 
     def __init__(self) -> None:
-        self._llm = OpenAI(api_key=settings.openai_api_key)
+        self._llm = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     def process(self, pdf_bytes: bytes) -> CVProfile:
         """
@@ -482,19 +481,18 @@ class CVProcessor:
         @throws RuntimeError  If the LLM call fails or returns malformed JSON.
         """
         try:
-            resp = self._llm.chat.completions.create(
-                model=settings.openai_model,
-                temperature=0.1,
+            resp = self._llm.messages.create(
+                model=settings.anthropic_model,
                 max_tokens=900,
+                system=_SYSTEM_PROMPT,
                 messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
-                    {"role": "user",   "content": f"CV TEXT:\n{text}"},
+                    {"role": "user", "content": f"CV TEXT:\n{text}"},
                 ],
             )
         except Exception as exc:
             raise RuntimeError(f"LLM call failed: {exc}") from exc
 
-        raw_json = resp.choices[0].message.content.strip()
+        raw_json = resp.content[0].text.strip()
 
         # Strip accidental markdown fences
         raw_json = re.sub(r"^```(?:json)?\n?", "", raw_json)

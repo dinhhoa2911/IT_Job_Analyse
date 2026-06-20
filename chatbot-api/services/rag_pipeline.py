@@ -17,7 +17,7 @@ import json
 import logging
 import re
 
-from openai import OpenAI
+import anthropic
 
 from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
@@ -424,7 +424,7 @@ class RAGPipeline:
     """
 
     def __init__(self) -> None:
-        self._llm             = OpenAI(api_key=settings.openai_api_key)
+        self._llm             = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         self._classifier      = QueryClassifier()
         self._query_processor = QueryProcessor()
         self._vector_search   = HybridSearchService()
@@ -460,17 +460,18 @@ class RAGPipeline:
         @return                  The LLM's text completion.
         """
         system = system_template.format(lang=lang)
-        messages: list[dict] = [{"role": "system", "content": system}]
+        messages: list[dict] = []
         if history:
             messages.extend(history)
         messages.append({"role": "user", "content": prompt})
 
-        response = self._llm.chat.completions.create(
-            model=settings.openai_model,
+        response = self._llm.messages.create(
+            model=settings.anthropic_model,
             max_tokens=1024,
+            system=system,
             messages=messages,
         )
-        return response.choices[0].message.content
+        return response.content[0].text
 
     def _extract_learning_path_intent(self, query: str) -> tuple[str, list[str]]:
         """Extract target_role and known_skills from a learning path query via LLM."""
@@ -482,13 +483,12 @@ class RAGPipeline:
             'Return ONLY valid JSON, no explanation.'
         )
         try:
-            resp = self._llm.chat.completions.create(
-                model=settings.openai_model,
+            resp = self._llm.messages.create(
+                model=settings.anthropic_model,
                 max_tokens=150,
                 messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
             )
-            data = json.loads(resp.choices[0].message.content)
+            data = json.loads(resp.content[0].text)
             return data.get("target_role", ""), data.get("known_skills", [])
         except Exception:
             return query, []
@@ -546,12 +546,12 @@ class RAGPipeline:
             "Return ONLY the rewritten query — no explanation, no quotes."
         )
         try:
-            resp = self._llm.chat.completions.create(
-                model=settings.openai_model,
+            resp = self._llm.messages.create(
+                model=settings.anthropic_model,
                 max_tokens=200,
                 messages=[{"role": "user", "content": prompt}],
             )
-            return resp.choices[0].message.content.strip()
+            return resp.content[0].text.strip()
         except Exception:
             return message
 
