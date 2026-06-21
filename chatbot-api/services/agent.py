@@ -61,6 +61,91 @@ logger = logging.getLogger(__name__)
 # completely off-domain queries score ≪ -2.  Set conservatively to avoid false
 # positives on niche-but-valid IT queries (e.g. "Fortran developer").
 _MIN_RERANK_SCORE = -2.0
+# Stricter threshold when no IT skill / category is detected in the query.
+_MIN_RERANK_SCORE_NO_SKILL = 0.5
+
+# Non-IT topics: queries about these domains should return empty even if Milvus
+# finds literal matches (e.g. "Marketing" matching company names like "FASTBOY
+# MARKETING", or "Marketing" appearing in PM job titles).
+# Only block when no IT skill is co-detected — "Python marketing automation" is valid.
+_NON_IT_TOPICS: frozenset[str] = frozenset({
+    # ── Sales & Marketing ─────────────────────────────────────────────────────
+    "marketing", "digital marketing", "content marketing", "seo marketing",
+    "sales", "bán hàng", "kinh doanh", "thương mại", "commerce",
+    "trade", "xuất nhập khẩu", "import export", "retail", "bán lẻ",
+    "wholesale", "bán buôn", "merchandising", "telesales", "telemarketing",
+    "customer service", "chăm sóc khách hàng", "tư vấn bán hàng",
+    "truyền thông", "public relations", "pr", "quảng cáo", "advertising",
+    "branding", "thương hiệu", "media", "truyền thông",
+    # ── Finance & Accounting ──────────────────────────────────────────────────
+    "kế toán", "accounting", "bookkeeping", "kiểm toán", "auditing",
+    "tài chính", "finance", "financial", "ngân hàng", "banking",
+    "chứng khoán", "stock", "bảo hiểm", "insurance",
+    "thuế", "tax", "taxation", "thu ngân", "cashier",
+    # ── HR & Admin ────────────────────────────────────────────────────────────
+    "nhân sự", "human resources", "tuyển dụng", "recruitment", "recruiter",
+    "hành chính", "administration", "admin", "thư ký", "secretary",
+    "lễ tân", "receptionist", "trợ lý", "assistant",
+    "văn phòng", "office clerk", "lương", "payroll",
+    # ── Legal ─────────────────────────────────────────────────────────────────
+    "luật", "law", "legal", "pháp lý", "luật sư", "lawyer", "attorney",
+    "pháp chế", "compliance officer", "hợp đồng", "contract",
+    # ── Healthcare & Medical ──────────────────────────────────────────────────
+    "y tế", "healthcare", "bác sĩ", "doctor", "nursing", "y tá", "nurse",
+    "dược", "pharmacy", "pharmacist", "dược sĩ", "bệnh viện", "hospital",
+    "nha khoa", "dental", "dentist", "thú y", "veterinary",
+    "dinh dưỡng", "nutrition", "nutritionist",
+    # ── Education ─────────────────────────────────────────────────────────────
+    "giáo viên", "teacher", "teaching", "giảng dạy", "giảng viên", "lecturer",
+    "gia sư", "tutor", "tutoring", "đào tạo", "training",
+    "giáo dục", "education", "sư phạm", "pedagogy",
+    # ── Manual labor & Service ────────────────────────────────────────────────
+    "lao công", "bảo vệ", "vệ sinh", "cleaning", "janitor",
+    "phục vụ", "waiter", "waitress", "bartender", "barista",
+    "nấu ăn", "cooking", "đầu bếp", "chef", "nhà hàng", "restaurant",
+    "khách sạn", "hotel", "hospitality", "du lịch", "tourism", "travel",
+    "hướng dẫn viên", "tour guide", "spa", "massage", "thẩm mỹ", "beauty",
+    "cắt tóc", "hairdresser", "stylist",
+    # ── Construction & Engineering (non-IT) ───────────────────────────────────
+    "xây dựng", "construction", "thợ", "thợ điện", "electrician",
+    "thợ hàn", "welder", "thợ sơn", "painter", "thợ mộc", "carpenter",
+    "kiến trúc sư", "architect", "kỹ sư xây dựng", "civil engineer",
+    "cơ khí", "mechanical", "mechanical engineer",
+    "điện công nghiệp", "industrial electrical",
+    # ── Fashion & Design (non-IT) ─────────────────────────────────────────────
+    "thời trang", "fashion", "may mặc", "textile", "dệt may",
+    "thiết kế nội thất", "interior design",
+    # ── Journalism & Media ────────────────────────────────────────────────────
+    "báo chí", "journalism", "phóng viên", "reporter", "journalist",
+    "biên tập", "editor", "biên tập viên", "phát thanh", "broadcasting",
+    # ── Agriculture ───────────────────────────────────────────────────────────
+    "nông nghiệp", "agriculture", "farming", "chăn nuôi", "livestock",
+    "trồng trọt", "cultivation", "thủy sản", "aquaculture", "fishery",
+    "lâm nghiệp", "forestry",
+    # ── Transportation & Logistics ────────────────────────────────────────────
+    "vận tải", "lái xe", "driver", "tài xế", "giao hàng", "delivery",
+    "shipper", "kho", "warehouse", "kho vận", "logistics",
+    "hải quan", "customs",
+    # ── Real estate ───────────────────────────────────────────────────────────
+    "bất động sản", "real estate", "môi giới", "broker",
+    "cho thuê", "rental", "property",
+    # ── Social work & Public sector ───────────────────────────────────────────
+    "công tác xã hội", "social work", "từ thiện", "charity", "ngo",
+    "công chức", "civil servant", "viên chức",
+    # ── Art & Entertainment ───────────────────────────────────────────────────
+    "nghệ sĩ", "artist", "ca sĩ", "singer", "nhạc sĩ", "musician",
+    "diễn viên", "actor", "đạo diễn", "director",
+    "nhiếp ảnh", "photographer", "photography",
+    "sự kiện", "event", "event planner", "tổ chức sự kiện",
+    # ── Misc non-IT ───────────────────────────────────────────────────────────
+    "thể thao", "sports", "huấn luyện viên", "coach",
+    "tâm lý", "psychology", "psychologist", "counselor",
+    "phiên dịch", "interpreter", "biên dịch", "translator",
+    "môi trường", "environment", "environmental",
+    "hóa chất", "chemical", "chemistry",
+    "dầu khí", "oil and gas", "petroleum",
+    "khoáng sản", "mining", "mỏ",
+})
 
 # ── Skill name formatter ───────────────────────────────────────────────────────
 # DB stores skill names in ALL-CAPS. Map to proper display format.
@@ -709,12 +794,33 @@ class AgentService:
             has_explicit_filters = bool(
                 filters.get("location") or filters.get("work_mode") or filters.get("level")
             )
-            if not used_exact_gold and not has_explicit_filters and jobs and max(j.score for j in jobs) < _MIN_RERANK_SCORE:
-                logger.info(
-                    "search_jobs: best score %.3f < threshold %.1f — off-domain, returning empty",
-                    max(j.score for j in jobs), _MIN_RERANK_SCORE,
+
+            # Hard block: non-IT topic detected AND no IT skill co-present.
+            # "Marketing" alone → blocked. "Python marketing automation" → passes
+            # because query_skills would contain PYTHON.
+            if not query_skills and not has_explicit_filters:
+                q_lower = intent_query.lower()
+                for term in _NON_IT_TOPICS:
+                    if re.search(rf"\b{re.escape(term)}\b", q_lower):
+                        logger.info(
+                            "search_jobs: non-IT topic '%s' detected with no IT skill — off-domain",
+                            term,
+                        )
+                        return ToolResult(name="search_jobs", jobs=[], market_insight=None, filters=filters)
+
+            if not used_exact_gold and not has_explicit_filters and jobs:
+                best_score = max(j.score for j in jobs)
+                has_skill_signal = bool(
+                    query_skills
+                    or (insight and insight.category_filter)
                 )
-                return ToolResult(name="search_jobs", jobs=[], market_insight=None, filters=filters)
+                threshold = _MIN_RERANK_SCORE if has_skill_signal else _MIN_RERANK_SCORE_NO_SKILL
+                if best_score < threshold:
+                    logger.info(
+                        "search_jobs: best score %.3f < threshold %.1f (skill_signal=%s) — off-domain, returning empty",
+                        best_score, threshold, has_skill_signal,
+                    )
+                    return ToolResult(name="search_jobs", jobs=[], market_insight=None, filters=filters)
 
             # Cross-turn exclude: remove jobs already shown in prior turns
             # (keyed by title+company so different-date scrapes of the same job are caught).

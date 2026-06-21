@@ -779,6 +779,29 @@ def _build_role_title_clause(query: str) -> str:
     return ""
 
 
+# Frameworks merged into parent skills during ETL (Clean_Silver.py SKILL_MAPPING).
+# These do NOT exist as separate entries in dim_skill — e.g. "SPRING BOOT" → "JAVA".
+# When user explicitly mentions a framework, add a job_title LIKE filter so market
+# stats reflect that specific framework, not the entire parent-language ecosystem.
+_MERGED_FRAMEWORK_PATTERNS: list[tuple[re.Pattern, str]] = [
+    (re.compile(r"\bspring\s*boot\b", re.I),   "%spring%"),
+    (re.compile(r"\blaravel\b",      re.I),    "%laravel%"),
+    (re.compile(r"\bdjango\b",       re.I),    "%django%"),
+    (re.compile(r"\bflask\b",        re.I),    "%flask%"),
+    (re.compile(r"\bfastapi\b",      re.I),    "%fastapi%"),
+    (re.compile(r"\bcodeigniter\b",  re.I),    "%codeigniter%"),
+    (re.compile(r"\basp\.?net\b",    re.I),    "%asp%net%"),
+]
+
+
+def _build_framework_clause(query: str) -> str:
+    """When user mentions a framework merged into its parent skill, add title filter."""
+    for pattern, like_val in _MERGED_FRAMEWORK_PATTERNS:
+        if pattern.search(query):
+            return f"AND LOWER(f.job_title) LIKE '{like_val}'"
+    return ""
+
+
 def _extract_level_label(query: str) -> str | None:
     """Return human-readable level label ('Senior', 'Junior', …) detected in query, or None."""
     q = query.lower()
@@ -1231,18 +1254,25 @@ class MarketContextService:
         # Domain keywords ("data analytics", "devops", "security") are NOT suppressed
         # with co-skills — they reflect explicit user intent for a specific domain.
         _cat_kw = _extract_category_keyword(query)
+        _skill_low_norm = primary_skill.lower().replace("_", " ")
         if cat_where and (
             primary_skill.lower() in _CATEGORY_KEYWORDS
+            or _skill_low_norm in _CATEGORY_KEYWORDS
             or (secondary_skills and _cat_kw in _ROLE_DESCRIPTOR_KEYWORDS)
         ):
             cat_join  = ""
             cat_where = ""
         _comp_join, comp_where = _build_company_clauses(query, self._company_list)
-        level_parts = [
-            part for part in (_build_level_clause(query), _build_role_title_clause(query))
+        level_base_parts = [
+            part for part in (
+                _build_level_clause(query),
+                _build_role_title_clause(query),
+            )
             if part
         ]
-        level_where = "\n".join(level_parts)
+        framework_clause = _build_framework_clause(query)
+        level_where_base = "\n".join(level_base_parts)
+        level_where = f"{level_where_base}\n{framework_clause}".strip() if framework_clause else level_where_base
 
         common_params = {
             "co_skill_where":  co_skill_where,
@@ -1321,6 +1351,21 @@ class MarketContextService:
                         rows = _run(conn, _SQL_MATCHING_JOBS.format(
                             **{**common_params, "co_skill_where": "", "skill": _escape(primary_skill)}
                         ))
+                        distinct_links = len({row.get("job_link", "") for row in rows})
+
+                    # Fallback: framework title filter too strict → return None so
+                    # Milvus semantic search handles the query. Gold layer lost the
+                    # framework distinction during ETL (e.g. Spring Boot → JAVA), so
+                    # falling back to the broad parent skill returns irrelevant jobs.
+                    # Milvus has the full job description and can match "Spring Boot"
+                    # content semantically.
+                    if distinct_links < 3 and framework_clause:
+                        logger.info(
+                            "Exact Gold: framework filter '%s' → %d distinct jobs (< 3); "
+                            "deferring to Milvus semantic search.",
+                            framework_clause.strip(), distinct_links,
+                        )
+                        return None  # finally block closes conn
             finally:
                 conn.close()
         except Exception as exc:
@@ -1465,8 +1510,10 @@ class MarketContextService:
         #     "full stack React NodeJS" must not restrict to 'Fullstack Development' and miss
         #     Frontend/Backend jobs. Domain keywords ("data analytics") are NOT suppressed.
         _cat_kw = _extract_category_keyword(query)
+        _skill_low_norm = primary_skill.lower().replace("_", " ")
         if cat_where and (
             primary_skill.lower() in _CATEGORY_KEYWORDS
+            or _skill_low_norm in _CATEGORY_KEYWORDS
             or (secondary_skills and _cat_kw in _ROLE_DESCRIPTOR_KEYWORDS)
         ):
             cat_join  = ""
@@ -1476,7 +1523,19 @@ class MarketContextService:
         comp_join, comp_where = _build_company_clauses(query, self._company_list)
 
         # 7. Level — from query text
-        level_where = _build_level_clause(query)
+        # Framework clause intentionally excluded from market stats: frameworks
+        # like Spring Boot are merged into parent skills (JAVA) during ETL, and
+        # filtering by title LIKE '%spring%' is too narrow — most Spring Boot
+        # jobs have generic titles like "Java Developer". Market context should
+        # show the full parent-skill market size.
+        level_parts = [
+            part for part in (
+                _build_level_clause(query),
+                _build_role_title_clause(query),
+            )
+            if part
+        ]
+        level_where = "\n".join(level_parts)
 
         safe_skill = _escape(primary_skill)
 
