@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str
     anthropic_model: str = "claude-sonnet-4-6"
 
+    # OpenAI — used for text-embedding-3-large dense encoder
+    openai_api_key: str = ""
+
     # Milvus
     milvus_host: str = "milvus-standalone"
     milvus_port: int = 19530
@@ -39,8 +42,8 @@ class Settings(BaseSettings):
     trino_user: str = "chatbot"
 
     # Embedding — must match the model used in Vectorize_To_Milvus.py
-    embedding_model: str = "all-MiniLM-L6-v2"
-    embedding_dim: int = 384
+    embedding_model: str = "text-embedding-3-large"
+    embedding_dim: int = 3072
 
     # Reranker — cross-encoder for final relevance scoring
     # multilingual alternative: cross-encoder/mmarco-mMiniLMv2-L12-H384-v1

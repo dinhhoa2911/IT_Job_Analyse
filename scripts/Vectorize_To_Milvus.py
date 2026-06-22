@@ -1,8 +1,10 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
+import os
+import time
 import pandas as pd
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
 from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
 
 # ===========================================================
@@ -28,7 +30,10 @@ TABLE_SILVER = "it_jobs_clean"
 MILVUS_HOST = "milvus-standalone" 
 MILVUS_PORT = "19530"
 COLLECTION_NAME = "it_jobs_rag"
-EMBEDDING_DIM = 384 # 'all-MiniLM-L6-v2' outputs 384 dimensions
+EMBEDDING_MODEL = "text-embedding-3-large"
+EMBEDDING_DIM = 3072  # text-embedding-3-large outputs 3072 dimensions
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+BATCH_SIZE = 500  # texts per OpenAI API call
 
 # ===========================================================
 # 2. Khởi tạo Spark Session (Sửa lỗi ClassNotFoundException)
@@ -99,14 +104,22 @@ print(">>> Converting to Pandas...")
 pdf = df_prepared.toPandas()
 
 # ===========================================================
-# 4. Tạo Vector Embeddings
+# 4. Tạo Vector Embeddings (OpenAI text-embedding-3-large)
 # ===========================================================
-print(">>> Generating Embeddings using Sentence-Transformers...")
-model = SentenceTransformer('all-MiniLM-L6-v2')
+print(f">>> Generating Embeddings using OpenAI {EMBEDDING_MODEL}...")
+oai = OpenAI(api_key=OPENAI_API_KEY)
+texts = pdf['text_content'].tolist()
+all_embeddings = []
 
-# Tạo vector
-embeddings = model.encode(pdf['text_content'].tolist(), show_progress_bar=True)
-pdf['embedding'] = embeddings.tolist()
+for i in range(0, len(texts), BATCH_SIZE):
+    batch = texts[i : i + BATCH_SIZE]
+    print(f"    Batch {i // BATCH_SIZE + 1}/{(len(texts) - 1) // BATCH_SIZE + 1} ({len(batch)} texts)")
+    resp = oai.embeddings.create(model=EMBEDDING_MODEL, input=batch)
+    all_embeddings.extend([d.embedding for d in resp.data])
+    if i + BATCH_SIZE < len(texts):
+        time.sleep(0.5)
+
+pdf['embedding'] = all_embeddings
 
 # ===========================================================
 # 5. Lưu vào Milvus
@@ -130,9 +143,13 @@ fields = [
 schema = CollectionSchema(fields, description="IT Jobs Vector DB")
 collection = Collection(name=COLLECTION_NAME, schema=schema)
 
-# Chèn dữ liệu
-print(">>> Inserting data into Milvus...")
-collection.insert(pdf.to_dict('records')) # Cách insert này sạch hơn bằng list dict
+# Chèn dữ liệu theo batch (3072-dim vectors vượt gRPC 64MB limit nếu insert 1 lần)
+INSERT_BATCH = 500
+print(f">>> Inserting data into Milvus ({len(pdf)} rows, batch size {INSERT_BATCH})...")
+for i in range(0, len(pdf), INSERT_BATCH):
+    batch_df = pdf.iloc[i : i + INSERT_BATCH]
+    collection.insert(batch_df.to_dict('records'))
+    print(f"    Inserted {min(i + INSERT_BATCH, len(pdf))}/{len(pdf)}")
 
 # Tạo Index và Load
 print(">>> Creating Index & Loading Collection...")

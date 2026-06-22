@@ -3,7 +3,7 @@
 @brief Hybrid retrieval pipeline combining dense ANN search with BM25 sparse search.
 
 Pipeline stages:
-  Step 1 — Dense search   : Milvus ANN (cosine similarity on 384-dim embeddings)
+  Step 1 — Dense search   : Milvus ANN (cosine similarity on 3072-dim OpenAI embeddings)
   Step 2 — Sparse search  : BM25 (exact keyword / TF-IDF matching)
   Step 3 — RRF fusion     : Reciprocal Rank Fusion (Cormack et al. 2009, k=60)
   Step 4 — Rerank         : Cross-Encoder (ms-marco-MiniLM-L-6-v2)
@@ -24,9 +24,10 @@ try:
 except ImportError:
     _HAS_UNDERTHESEA = False
 import numpy as np
+from openai import OpenAI
 from pymilvus import Collection, connections, utility
 from rank_bm25 import BM25Okapi
-from sentence_transformers import CrossEncoder, SentenceTransformer
+from sentence_transformers import CrossEncoder
 
 from config import settings
 from models.schemas import JobResult
@@ -107,7 +108,7 @@ class HybridSearchService:
     _RRF_K: int = 60
 
     def __init__(self) -> None:
-        self._encoder: SentenceTransformer | None = None
+        self._openai: OpenAI | None = None
         self._reranker: CrossEncoder | None = None
         self._collection: Collection | None = None
 
@@ -117,19 +118,16 @@ class HybridSearchService:
 
     # Lazy loaders
 
-    def _get_encoder(self) -> SentenceTransformer:
+    def _get_openai(self) -> OpenAI:
         """
-        @brief Lazy-load and cache the dense embedding model.
+        @brief Lazy-create and cache the OpenAI client for text-embedding-3-large.
 
-        The model name must match the one used during indexing in
-        Vectorize_To_Milvus.py; a mismatch produces silent relevance degradation.
-
-        @return  Loaded SentenceTransformer instance.
+        @return  OpenAI client instance.
         """
-        if self._encoder is None:
-            logger.info("Loading dense encoder: %s", settings.embedding_model)
-            self._encoder = SentenceTransformer(settings.embedding_model)
-        return self._encoder
+        if self._openai is None:
+            logger.info("Initializing OpenAI client for embedding model: %s", settings.embedding_model)
+            self._openai = OpenAI(api_key=settings.openai_api_key)
+        return self._openai
 
     def _get_reranker(self) -> CrossEncoder:
         """
@@ -207,10 +205,11 @@ class HybridSearchService:
         @param k      Maximum number of candidates to retrieve.
         @return       Up to k _Doc dicts, each with a ``dense_score`` field.
         """
-        encoder = self._get_encoder()
+        client = self._get_openai()
         collection = self._get_collection()
 
-        query_vec = encoder.encode([query])[0].tolist()
+        resp = client.embeddings.create(model=settings.embedding_model, input=[query])
+        query_vec = resp.data[0].embedding
 
         hits = collection.search(
             data=[query_vec],
@@ -380,7 +379,7 @@ class HybridSearchService:
         latency on the first user request (~5-10 s otherwise).
         """
         logger.info("Warming up HybridSearchService...")
-        self._get_encoder()
+        self._get_openai()
         self._get_reranker()
         self._get_bm25()   # also triggers Milvus connection + corpus fetch
         logger.info("HybridSearchService warmup complete.")
