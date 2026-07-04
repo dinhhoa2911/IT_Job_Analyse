@@ -264,10 +264,12 @@ TOOL_SPECS: list[dict] = [
     {
         "name": "learning_path",
         "description": (
-            "Generate a DATA-DRIVEN skill learning roadmap from real Vietnam job market data. "
-            "Use ONLY when the user explicitly states skills they ALREADY KNOW and asks what "
-            "to learn next to reach a specific TARGET ROLE. "
-            "Triggers: 'tao biết Python + SQL muốn vào Data Engineer', "
+            "Generate a DATA-DRIVEN skill gap analysis and learning roadmap from real Vietnam "
+            "job market data. PRIORITY over search_jobs when user lists skills they ALREADY HAVE "
+            "('tao biết', 'I know', 'có skill') and wants a TARGET ROLE ('muốn làm', 'want to become', "
+            "'thiếu gì', 'cần gì thêm'). The listed skills are the user's PROFILE — not search filters. "
+            "Triggers: 'tao biết HTML CSS JS React, muốn làm senior Fullstack ở HCM', "
+            "'tao biết Python + SQL muốn vào Data Engineer', "
             "'có React + JS cần học gì để Senior Frontend?', "
             "'Java + Spring Boot để làm Backend cần thêm gì?', "
             "'I know X and Y, what do I need to become Z?'. "
@@ -351,10 +353,18 @@ ROUTING RULES (follow strictly):
    • "ngành nào nhiều job nhất" / "category breakdown"
    ⚠ Even if the system prompt contains approximate values, you MUST call run_analytics to get exact data.
 
-3. Call learning_path → user explicitly states skills they ALREADY HAVE and wants a data-driven
-   roadmap to a TARGET ROLE. Extract target_role + known_skills[] from the message.
-   Triggers: "tao biết Python + SQL muốn vào Data Engineer", "có React muốn làm Frontend senior",
-             "Java + Spring để làm Backend cần thêm gì?", "I know X, want to become Y".
+3. Call learning_path → user states skills they ALREADY HAVE and wants to reach a TARGET ROLE.
+   Extract target_role + known_skills[] from the message.
+   ⚠ PRIORITY OVER search_jobs: when user says "tao biết / I know / có skill X Y Z" AND
+   "muốn làm / want to become / cần gì để làm" → ALWAYS call learning_path, NOT search_jobs.
+   The listed skills are their PROFILE, not search filters.
+   Triggers: "tao biết Python + SQL muốn vào Data Engineer",
+             "tao biết HTML CSS JS React, muốn làm senior Fullstack ở HCM",
+             "có React muốn làm Frontend senior", "biết Java Spring Boot, thiếu gì cho Backend",
+             "Java + Spring để làm Backend cần thêm gì?", "I know X, want to become Y",
+             "cần học gì thêm để làm...", "thiếu skill gì cho...", "gap analysis".
+   If query has BOTH skill-gap intent AND location → call learning_path (with location context
+   in target_role, e.g. "Senior Fullstack tại HCM") — do NOT call search_jobs.
 
 4. Call career_advice → ONLY when real data cannot help: role comparisons (Backend vs Frontend),
    interview tips, soft skills, general learning advice WITHOUT specific known skills.
@@ -535,7 +545,9 @@ def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
       • level     — job's title must contain the seniority token (word-boundary)
 
     Jobs matching ALL active filters → matched bucket (shown first).
-    Jobs failing any filter          → fallback bucket (fill remaining slots).
+    Level filter is HARD: mismatched-level jobs are dropped entirely
+    (e.g. "senior" jobs never appear for a "junior" query).
+    Location and work_mode are SOFT: non-matching jobs fill remaining slots.
     """
     has_wm  = bool(filters.get("work_mode"))
     has_loc = bool(filters.get("location"))
@@ -549,7 +561,19 @@ def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
         title_t = job.job_title.lower()
         mode_t  = fields.get("Work Mode", "").lower()
         loc_t   = fields.get("Location",  "").lower()
-        passes  = True
+
+        # Level filter — HARD: drop jobs that don't match the requested level
+        if has_lvl:
+            lvl = filters["level"]
+            _ENTRY_SYNS = {"fresher", "intern", "junior", "entry"}
+            if lvl in _ENTRY_SYNS:
+                if not any(re.search(rf"\b{re.escape(t)}\b", title_t) for t in _ENTRY_SYNS):
+                    continue  # hard drop
+            elif not re.search(rf"\b{re.escape(lvl)}\b", title_t):
+                continue  # hard drop
+
+        # Location + work_mode — SOFT: non-matching goes to fallback
+        passes = True
         if has_wm:
             kws = WORK_MODE_KEYWORDS[filters["work_mode"]]
             if not any(kw in mode_t or kw in content for kw in kws):
@@ -558,23 +582,14 @@ def _post_filter(jobs: list[JobResult], filters: dict) -> list[JobResult]:
             als = LOCATION_ALIASES[filters["location"]]
             if not any(a in loc_t for a in als):
                 passes = False
-        if passes and has_lvl:
-            lvl = filters["level"]
-            # Entry-level tokens (fresher/junior/intern/entry) are synonyms.
-            # "fresher" query should also match titles containing "junior" or "intern".
-            _ENTRY_SYNS = {"fresher", "intern", "junior", "entry"}
-            if lvl in _ENTRY_SYNS:
-                if not any(re.search(rf"\b{re.escape(t)}\b", title_t) for t in _ENTRY_SYNS):
-                    passes = False
-            elif not re.search(rf"\b{re.escape(lvl)}\b", title_t):
-                passes = False
         (matched if passes else fallback).append(job)
     logger.debug(
-        "_post_filter: %d matched / %d fallback (wm=%s loc=%s lvl=%s)",
+        "_post_filter: %d matched / %d fallback / level_dropped=%d (wm=%s loc=%s lvl=%s)",
         len(matched), len(fallback),
+        len(jobs) - len(matched) - len(fallback),
         filters.get("work_mode"), filters.get("location"), filters.get("level"),
     )
-    return matched + fallback  # matching first; caller truncates to desired
+    return matched + fallback
 
 
 def _job_key(job) -> str:

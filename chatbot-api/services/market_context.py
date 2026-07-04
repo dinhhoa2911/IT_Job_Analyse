@@ -203,6 +203,28 @@ _ROLE_DESCRIPTOR_KEYWORDS: frozenset[str] = frozenset({
     "full stack", "fullstack", "full-stack", "lập trình fullstack",
 })
 
+# Skills that already imply a specific category — when the primary skill is one
+# of these AND the detected category matches, the category filter is redundant
+# and must be suppressed (e.g. "NestJS backend" = NestJS IS backend, don't also
+# filter by Backend Development category → over-narrows from 28 to 8).
+_SKILL_IMPLIES_CATEGORY: dict[str, str] = {
+    # Backend frameworks → "Backend Development"
+    "nestjs": "Backend Development", "node.js": "Backend Development",
+    "java": "Backend Development", "go": "Backend Development",
+    "php": "Backend Development", ".net": "Backend Development",
+    "python": "Backend Development", "ruby": "Backend Development",
+    "django": "Backend Development", "flask": "Backend Development",
+    "spring": "Backend Development", "laravel": "Backend Development",
+    # Frontend frameworks → "Frontend Development"
+    "react": "Frontend Development", "vue": "Frontend Development",
+    "angular": "Frontend Development", "next.js": "Frontend Development",
+    "nuxt.js": "Frontend Development", "svelte": "Frontend Development",
+    # Mobile frameworks → "Mobile Development"
+    "react_native": "Mobile Development", "flutter": "Mobile Development",
+    "swift": "Mobile Development", "kotlin": "Mobile Development",
+    "android": "Mobile Development", "ios": "Mobile Development",
+}
+
 # ── OR-connector detection ────────────────────────────────────────────────────
 # When the user connects skills with "or / hoặc / hay", they want a UNION of
 # results, not an intersection.  Co-skill (AND) filtering must be disabled in
@@ -1255,10 +1277,13 @@ class MarketContextService:
         # with co-skills — they reflect explicit user intent for a specific domain.
         _cat_kw = _extract_category_keyword(query)
         _skill_low_norm = primary_skill.lower().replace("_", " ")
+        _detected_cat = _CATEGORY_KEYWORDS.get(_cat_kw, "") if _cat_kw else ""
+        _implied_cat = _SKILL_IMPLIES_CATEGORY.get(primary_skill.lower(), "")
         if cat_where and (
             primary_skill.lower() in _CATEGORY_KEYWORDS
             or _skill_low_norm in _CATEGORY_KEYWORDS
             or (secondary_skills and _cat_kw in _ROLE_DESCRIPTOR_KEYWORDS)
+            or (_implied_cat and _implied_cat == _detected_cat)
         ):
             cat_join  = ""
             cat_where = ""
@@ -1511,10 +1536,13 @@ class MarketContextService:
         #     Frontend/Backend jobs. Domain keywords ("data analytics") are NOT suppressed.
         _cat_kw = _extract_category_keyword(query)
         _skill_low_norm = primary_skill.lower().replace("_", " ")
+        _detected_cat = _CATEGORY_KEYWORDS.get(_cat_kw, "") if _cat_kw else ""
+        _implied_cat = _SKILL_IMPLIES_CATEGORY.get(primary_skill.lower(), "")
         if cat_where and (
             primary_skill.lower() in _CATEGORY_KEYWORDS
             or _skill_low_norm in _CATEGORY_KEYWORDS
             or (secondary_skills and _cat_kw in _ROLE_DESCRIPTOR_KEYWORDS)
+            or (_implied_cat and _implied_cat == _detected_cat)
         ):
             cat_join  = ""
             cat_where = ""

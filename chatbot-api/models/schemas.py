@@ -115,13 +115,13 @@ class LearningPathStep(BaseModel):
     ``bridge_score`` = % of target-category jobs that require BOTH the user's
                        known skills AND this skill — measures how well the skill
                        connects to what the user already knows.
-    ``rank_score``   = 0.6 × market_freq + 0.4 × bridge_score (composite ranking).
+    ``rank_score``   = 0.85 × market_freq + 0.15 × bridge_score (composite ranking).
     """
     skill_name:   str
     skill_group:  str
     market_freq:  float  = Field(..., description="% of target-category jobs requiring this skill")
     bridge_score: float  = Field(..., description="% of target-category jobs needing known_skills + this skill")
-    rank_score:   float  = Field(..., description="Composite score: 0.6×market_freq + 0.4×bridge_score")
+    rank_score:   float  = Field(..., description="Composite score: 0.85×market_freq + 0.15×bridge_score")
     market_count: int    = Field(..., description="Raw count of distinct job postings requiring this skill")
 
 
