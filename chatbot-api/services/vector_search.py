@@ -3,7 +3,7 @@
 @brief Hybrid retrieval pipeline combining dense ANN search with BM25 sparse search.
 
 Pipeline stages:
-  Step 1 — Dense search   : Milvus ANN (cosine similarity on 384-dim embeddings)
+  Step 1 — Dense search   : Milvus ANN (cosine similarity on 3072-dim OpenAI embeddings)
   Step 2 — Sparse search  : BM25 (exact keyword / TF-IDF matching)
   Step 3 — RRF fusion     : Reciprocal Rank Fusion (Cormack et al. 2009, k=60)
   Step 4 — Rerank         : Cross-Encoder (ms-marco-MiniLM-L-6-v2)
@@ -24,9 +24,10 @@ try:
 except ImportError:
     _HAS_UNDERTHESEA = False
 import numpy as np
+from openai import OpenAI
 from pymilvus import Collection, connections, utility
 from rank_bm25 import BM25Okapi
-from sentence_transformers import CrossEncoder, SentenceTransformer
+from sentence_transformers import CrossEncoder
 
 from config import settings
 from models.schemas import JobResult
@@ -107,7 +108,7 @@ class HybridSearchService:
     _RRF_K: int = 60
 
     def __init__(self) -> None:
-        self._encoder: SentenceTransformer | None = None
+        self._openai: OpenAI | None = None
         self._reranker: CrossEncoder | None = None
         self._collection: Collection | None = None
 
@@ -117,19 +118,16 @@ class HybridSearchService:
 
     # Lazy loaders
 
-    def _get_encoder(self) -> SentenceTransformer:
+    def _get_openai(self) -> OpenAI:
         """
-        @brief Lazy-load and cache the dense embedding model.
+        @brief Lazy-create and cache the OpenAI client for text-embedding-3-large.
 
-        The model name must match the one used during indexing in
-        Vectorize_To_Milvus.py; a mismatch produces silent relevance degradation.
-
-        @return  Loaded SentenceTransformer instance.
+        @return  OpenAI client instance.
         """
-        if self._encoder is None:
-            logger.info("Loading dense encoder: %s", settings.embedding_model)
-            self._encoder = SentenceTransformer(settings.embedding_model)
-        return self._encoder
+        if self._openai is None:
+            logger.info("Initializing OpenAI client for embedding model: %s", settings.embedding_model)
+            self._openai = OpenAI(api_key=settings.openai_api_key)
+        return self._openai
 
     def _get_reranker(self) -> CrossEncoder:
         """
@@ -207,10 +205,11 @@ class HybridSearchService:
         @param k      Maximum number of candidates to retrieve.
         @return       Up to k _Doc dicts, each with a ``dense_score`` field.
         """
-        encoder = self._get_encoder()
+        client = self._get_openai()
         collection = self._get_collection()
 
-        query_vec = encoder.encode([query])[0].tolist()
+        resp = client.embeddings.create(model=settings.embedding_model, input=[query])
+        query_vec = resp.data[0].embedding
 
         hits = collection.search(
             data=[query_vec],
@@ -380,7 +379,7 @@ class HybridSearchService:
         latency on the first user request (~5-10 s otherwise).
         """
         logger.info("Warming up HybridSearchService...")
-        self._get_encoder()
+        self._get_openai()
         self._get_reranker()
         self._get_bm25()   # also triggers Milvus connection + corpus fetch
         logger.info("HybridSearchService warmup complete.")
@@ -495,6 +494,7 @@ class HybridSearchService:
         self,
         queries: list[str],
         top_k: int | None = None,
+        pool_k: int | None = None,
     ) -> list[JobResult]:
         """
         @brief Hybrid search over multiple query variants with a single global RRF + rerank pass.
@@ -504,7 +504,7 @@ class HybridSearchService:
             dense_i  = _dense_search(qᵢ,  k=retrieval_k)
             sparse_i = _sparse_search(qᵢ, k=retrieval_k)
           all_lists = [dense_0, sparse_0, dense_1, sparse_1, ...]
-          fused     = _rrf_fusion_multi(all_lists, top_n=rerank_k)
+          fused     = _rrf_fusion_multi(all_lists, top_n=pool_k or rerank_k)
           reranked  = _rerank(queries[0], fused, top_k)   ← always original query
 
         The cross-encoder always uses queries[0] (the original user query,
@@ -513,9 +513,16 @@ class HybridSearchService:
 
         @param queries  List from QueryProcessor.process(); queries[0] must be the original.
         @param top_k    Final result count (default: settings.top_k_results).
+        @param pool_k   Override for the RRF fusion pool size passed to the reranker.
+                        Lets callers over-fetch (e.g. when post-filtering out
+                        already-seen job_links for "show me more" follow-ups)
+                        without changing the global settings.rerank_k. Defaults
+                        to settings.rerank_k, and is widened to top_k when the
+                        caller asks for more final results than the default pool.
         @return         List of JobResult sorted by cross-encoder relevance descending.
         """
         top_k = top_k or settings.top_k_results
+        fusion_pool = max(pool_k or settings.rerank_k, top_k)
 
         # Collect dense + sparse rank lists for every query variant
         all_rank_lists: list[list[_Doc]] = []
@@ -524,7 +531,7 @@ class HybridSearchService:
             all_rank_lists.append(self._sparse_search(q, k=settings.retrieval_k))
 
         # Global RRF across all 2×N rank lists
-        fused = self._rrf_fusion_multi(all_rank_lists, top_n=settings.rerank_k)
+        fused = self._rrf_fusion_multi(all_rank_lists, top_n=fusion_pool)
 
         # Rerank against the ORIGINAL query (queries[0])
         reranked = self._rerank(queries[0], fused, top_k=top_k)

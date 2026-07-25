@@ -13,7 +13,7 @@ Priority order:
 import logging
 import re
 
-from openai import OpenAI
+import anthropic
 
 from config import settings
 from models.schemas import QueryType
@@ -181,7 +181,7 @@ Không giải thích, không dấu câu."""
 
 class QueryClassifier:
     def __init__(self) -> None:
-        self._client = OpenAI(api_key=settings.openai_api_key)
+        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     def classify(self, question: str) -> QueryType:
         stripped = question.strip()
@@ -203,15 +203,15 @@ class QueryClassifier:
 
         # ── Layer 4: LLM classifier ────────────────────────────────────────────
         try:
-            response = self._client.chat.completions.create(
-                model=settings.openai_model,
+            response = self._client.messages.create(
+                model=settings.anthropic_model,
                 max_tokens=16,
+                system=_SYSTEM_PROMPT,
                 messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user", "content": stripped},
                 ],
             )
-            label = response.choices[0].message.content.strip().lower()
+            label = response.content[0].text.strip().lower()
         except Exception as exc:
             logger.error("Classifier API error: %s — fallback to career_advice", exc)
             return QueryType.career_advice

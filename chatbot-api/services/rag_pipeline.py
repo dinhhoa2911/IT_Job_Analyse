@@ -17,12 +17,12 @@ import json
 import logging
 import re
 
-from openai import OpenAI
+import anthropic
 
 from config import settings
 from constants import LOCATION_ALIASES, WORK_MODE_KEYWORDS
 from models.schemas import ChatRequest, ChatResponse, JobResult, QueryType
-from services.agent import AgentService
+from services.agent import AgentService, _SHOW_MORE_RE
 from services.learning_path import LearningPathService
 from services.market_context import MarketContextService, format_market_block
 from services.query_classifier import QueryClassifier, is_greeting, is_short_off_topic
@@ -129,14 +129,20 @@ not a generic article.
 
 LANGUAGE RULE: Respond in {lang}. No exceptions.
 
-SCOPE: Only answer questions about IT skills, career roadmaps, job roles, salary \
-expectations, or hiring trends in Vietnam.
+DATABASE CONTEXT: You are part of an ITviec job analytics system (data: 2025-09 → 2026-04).
+  ⚠ The system has NO salary data. If asked about salary, say honestly:
+    "Hệ thống chưa lưu dữ liệu lương — bạn nên xem trực tiếp job listing để biết mức lương cụ thể."
+  Do NOT invent salary ranges from your training knowledge.
+  For market facts (top companies, skill demand %, remote ratios) that should come from data,
+  say you can check the analytics feature instead of guessing.
+
+SCOPE: IT skills, career roadmaps, job roles, learning paths, tech stack comparisons.
 
 RULES:
-- Be specific. Name actual technologies, companies, salary ranges when you know them.
+- Be specific. Name actual technologies and frameworks.
+- If asked for salary, redirect to job listings — do NOT fabricate numbers.
 - Be direct. Skip "It depends" hedges unless the nuance genuinely matters.
-- Be concise. A good answer is often 3-6 sentences. Use a short bullet list only when \
-  listing truly parallel items (e.g. a tech stack).
+- Be concise. 3-6 sentences. Bullet list only for truly parallel items.
 - Do NOT end with "Hope this helps", "Good luck", or any filler closer.\
 """
 
@@ -418,7 +424,7 @@ class RAGPipeline:
     """
 
     def __init__(self) -> None:
-        self._llm             = OpenAI(api_key=settings.openai_api_key)
+        self._llm             = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         self._classifier      = QueryClassifier()
         self._query_processor = QueryProcessor()
         self._vector_search   = HybridSearchService()
@@ -454,17 +460,18 @@ class RAGPipeline:
         @return                  The LLM's text completion.
         """
         system = system_template.format(lang=lang)
-        messages: list[dict] = [{"role": "system", "content": system}]
+        messages: list[dict] = []
         if history:
             messages.extend(history)
         messages.append({"role": "user", "content": prompt})
 
-        response = self._llm.chat.completions.create(
-            model=settings.openai_model,
+        response = self._llm.messages.create(
+            model=settings.anthropic_model,
             max_tokens=1024,
+            system=system,
             messages=messages,
         )
-        return response.choices[0].message.content
+        return response.content[0].text
 
     def _extract_learning_path_intent(self, query: str) -> tuple[str, list[str]]:
         """Extract target_role and known_skills from a learning path query via LLM."""
@@ -476,13 +483,12 @@ class RAGPipeline:
             'Return ONLY valid JSON, no explanation.'
         )
         try:
-            resp = self._llm.chat.completions.create(
-                model=settings.openai_model,
+            resp = self._llm.messages.create(
+                model=settings.anthropic_model,
                 max_tokens=150,
                 messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
             )
-            data = json.loads(resp.choices[0].message.content)
+            data = json.loads(resp.content[0].text)
             return data.get("target_role", ""), data.get("known_skills", [])
         except Exception:
             return query, []
@@ -517,24 +523,35 @@ class RAGPipeline:
             "- Include all details: topic, time period, filters, chart/visualization if applicable\n"
             "- If prior context asked for a chart and the follow-up only changes the time period, "
             "keep 'biểu đồ' or 'chart' in the rewrite\n"
+            "CRITICAL — location/level/work_mode inheritance rule:\n"
+            "- Only inherit location/level/work_mode from prior context when the new message is a "
+            "SHORT follow-up that omits the subject (e.g. 'còn Java?', 'thêm nữa', 'remote thì sao').\n"
+            "- NEVER inherit when the new message is a FULL new search with its own role/skills "
+            "(starts with 'tìm job', 'tìm kiếm', 'cho xem', 'find', 'search', etc. AND contains "
+            "a different role or skill set). A self-contained new search means the user started fresh.\n"
             "Examples:\n"
             '• Prior: "biểu đồ job tháng 4 2026" → New: "còn tháng 3?" '
             '→ Output: "biểu đồ số lượng job tháng 3 năm 2026"\n'
             '• Prior: "thống kê job tháng 3 2026" → New: "tháng 2 thì sao" '
             '→ Output: "thống kê biểu đồ số lượng job tháng 2 năm 2026"\n'
             '• Prior: "tìm job Python remote HCM" → New: "còn Java?" '
-            '→ Output: "tìm job Java remote HCM"\n'
+            '→ Output: "tìm job Java remote HCM"  ← short follow-up: inherit location\n'
+            '• Prior: "tìm job fresher IT tại HCM" → New: "Tìm job Cloud Engineer biết AWS và Azure" '
+            '→ Output: "tìm job Cloud Engineer biết AWS và Azure"  ← full new search: NO location inherited\n'
             '• Prior: "top 10 công ty tuyển nhiều nhất" → New: "tháng 3 thì sao?" '
             '→ Output: "top 10 công ty tuyển nhiều nhất tháng 3 năm 2026"\n'
+            '• Prior: "tìm job senior Python tại HCM làm tại văn phòng" '
+            '→ New: "đưa tao thêm nữa" / "cho xem thêm" / "show more" / "ĐƯA TAO THÊM NỮA ĐI" '
+            '→ Output: "tìm job senior Python tại HCM làm tại văn phòng"\n'
             "Return ONLY the rewritten query — no explanation, no quotes."
         )
         try:
-            resp = self._llm.chat.completions.create(
-                model=settings.openai_model,
+            resp = self._llm.messages.create(
+                model=settings.anthropic_model,
                 max_tokens=200,
                 messages=[{"role": "user", "content": prompt}],
             )
-            return resp.choices[0].message.content.strip()
+            return resp.content[0].text.strip()
         except Exception:
             return message
 
@@ -558,17 +575,43 @@ class RAGPipeline:
             lang = _detect_lang(raw)
             canned = _GREETING_VI if lang == "Vietnamese" else _GREETING_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
-        if is_short_off_topic(raw):
+        if is_short_off_topic(raw) and not _SHOW_MORE_RE.search(raw):
             lang = _detect_lang(raw)
             canned = _OUT_OF_SCOPE_VI if lang == "Vietnamese" else _OUT_OF_SCOPE_EN
             return ChatResponse(answer=canned, query_type=QueryType.out_of_scope)
+
+        # "Show more" follow-ups must NOT be rewritten by _resolve_query — that
+        # strips the "thêm" signal and the agent's fallback loses the show-more
+        # pattern.  Pass the raw message directly so the planning LLM can read
+        # the history and repeat the previous search.
+        if _SHOW_MORE_RE.search(raw):
+            if not history:
+                lang = _detect_lang(raw)
+                no_ctx = (
+                    "Tôi không tìm thấy lịch sử tìm kiếm trước đó (phiên làm việc đã hết hạn). "
+                    "Bạn vui lòng tìm kiếm lại nhé!"
+                    if lang == "Vietnamese"
+                    else "No previous search found in this session — please search again."
+                )
+                return ChatResponse(answer=no_ctx, query_type=QueryType.career_advice)
+            agent_response = self._agent.run(raw, history, lang, conversation_id=request.conversation_id)
+            if agent_response is not None:
+                return agent_response
+            # Agent couldn't recover → friendly fallback instead of out-of-scope
+            lang = _detect_lang(raw)
+            no_ctx = (
+                "Tôi không thể tìm thêm kết quả lúc này. Bạn thử tìm kiếm lại nhé!"
+                if lang == "Vietnamese"
+                else "Could not load more results. Please try searching again."
+            )
+            return ChatResponse(answer=no_ctx, query_type=QueryType.career_advice)
 
         resolved = self._resolve_query(request.message, history) if history else request.message
 
         # ── Agentic path (primary) ────────────────────────────────────────
         # AgentService plans tool calls, executes in parallel, synthesizes.
         # Returns None only when planning fails → fall back to classic pipeline.
-        agent_response = self._agent.run(resolved, history, lang)
+        agent_response = self._agent.run(resolved, history, lang, conversation_id=request.conversation_id)
         if agent_response is not None:
             return agent_response
 
@@ -590,8 +633,39 @@ class RAGPipeline:
                 logger.error("Vector search failed: %s", exc, exc_info=True)
                 jobs = []
             filters        = _extract_filters(resolved)
-            jobs           = _post_filter(jobs, filters)
-            market_insight = self._market_ctx.get_insight(jobs, resolved, filters)
+            query_skills   = self._market_ctx.extract_query_skills(resolved)
+            market_insight = self._market_ctx.get_insight(
+                jobs,
+                resolved,
+                filters,
+                original_query=resolved,
+            )
+            has_structured_filter = bool(
+                market_insight and (
+                    market_insight.co_skills
+                    or market_insight.location_filter
+                    or market_insight.region_filter
+                    or market_insight.work_mode_filter
+                    or market_insight.level_filter
+                    or market_insight.date_filter
+                    or market_insight.category_filter
+                    or market_insight.company_filter
+                )
+            )
+            used_exact_gold = False
+            if query_skills and (len(query_skills) > 1 or has_structured_filter):
+                exact_jobs = self._market_ctx.search_matching_jobs(
+                    resolved,
+                    filters,
+                    limit=settings.top_k_results,
+                    original_query=resolved,
+                    fallback_jobs=jobs,
+                )
+                if exact_jobs is not None:
+                    jobs = exact_jobs
+                    used_exact_gold = True
+            if not used_exact_gold:
+                jobs = _post_filter(jobs, filters)
             market_block   = format_market_block(market_insight) if market_insight else None
             prompt         = _build_search_prompt(resolved, jobs, lang, market_block)
             answer         = self._generate(prompt, _SEARCH_SYSTEM_PROMPT, lang, history)
@@ -599,11 +673,12 @@ class RAGPipeline:
                                 jobs=jobs, market_insight=market_insight)
 
         if query_type == QueryType.analytics:
-            sql_query = sql_result = chart = None
+            sql_query = sql_result = None
+            chart_list: list[dict] = []
             try:
                 preferred_chart = (_extract_chart_preference(request.message)
                                    or _extract_chart_preference(resolved))
-                sql_query, sql_result, chart = self._sql_agent.query(resolved, preferred_chart)
+                sql_query, sql_result, chart_list = self._sql_agent.query(resolved, preferred_chart)
                 prompt = _build_analytics_prompt(resolved, sql_result, lang)
             except Exception as exc:
                 logger.error("SQL agent failed: %s", exc, exc_info=True)
@@ -611,7 +686,9 @@ class RAGPipeline:
                           f"[ERROR] {exc}\nInform the user politely.")
             answer = self._generate(prompt, _ANALYTICS_SYSTEM_PROMPT, lang, history)
             return ChatResponse(answer=answer, query_type=query_type,
-                                sql_query=sql_query, sql_result=sql_result, chart=chart)
+                                sql_query=sql_query, sql_result=sql_result,
+                                chart=chart_list[0] if chart_list else None,
+                                charts=chart_list)
 
         if query_type == QueryType.learning_path:
             target_role, known_skills = self._extract_learning_path_intent(resolved)

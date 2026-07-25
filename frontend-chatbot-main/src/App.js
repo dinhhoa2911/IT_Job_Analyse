@@ -193,7 +193,9 @@ function App() {
     setConversations(loadConversations(storageKey(user?.uid ?? null)));
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const wasVoiceInputRef = useRef(false);
+  const wasVoiceInputRef    = useRef(false);
+  const abortControllerRef  = useRef(null);
+  const requestSeqRef       = useRef(0);
 
   const handleCloseSidebar = useCallback(() => {
     setSidebarClosing(true);
@@ -279,9 +281,19 @@ function App() {
    * @param {string} text - The user-typed message text.
    * @returns {Promise<void>}
    */
+  const handleStop = useCallback(() => {
+    requestSeqRef.current += 1;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+    setIsLoading(false);
+  }, []);
+
   const handleSendMessage = useCallback(
     async (text) => {
       if (isLoading) return;
+      const requestId = ++requestSeqRef.current;
 
       const conv = activeConvRef.current;
 
@@ -313,6 +325,9 @@ function App() {
       setIsLoading(true);
 
       try {
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         const res = await fetch(`${API_URL}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -321,11 +336,13 @@ function App() {
             session_id: conv.id,
             conversation_id: conv.id,
           }),
+          signal: controller.signal,
         });
 
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
         const data = await res.json();
+        if (controller.signal.aborted || requestId !== requestSeqRef.current) return;
 
         const botMessage = {
           id: Date.now() + 1,
@@ -348,12 +365,20 @@ function App() {
           )
         );
         speakText(data.answer);
+        if (requestId === requestSeqRef.current) {
+          abortControllerRef.current = null;
+          setIsLoading(false);
+        }
       } catch (err) {
+        // User clicked stop — abort silently, loading already reset by handleStop
+        if (err?.name === "AbortError") return;
+        if (requestId !== requestSeqRef.current) return;
+
         const raw = err?.message ?? "";
         let friendly;
         if (raw.includes("Failed to fetch") || raw.includes("NetworkError") || raw.includes("network")) {
           friendly = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.";
-        } else if (raw.includes("504") || raw.includes("timeout") || err?.name === "AbortError") {
+        } else if (raw.includes("504") || raw.includes("timeout")) {
           friendly = "Máy chủ phản hồi quá lâu. Câu hỏi của bạn có thể phức tạp — hãy thử lại sau vài giây.";
         } else if (raw.includes("503") || raw.includes("502")) {
           friendly = "Hệ thống đang bảo trì hoặc khởi động lại. Vui lòng thử lại sau ít phút.";
@@ -378,8 +403,10 @@ function App() {
             c.active ? { ...c, messages: [...c.messages, errMessage] } : c
           )
         );
-      } finally {
-        setIsLoading(false);
+        if (requestId === requestSeqRef.current) {
+          abortControllerRef.current = null;
+          setIsLoading(false);
+        }
       }
     },
     [isLoading]
@@ -548,6 +575,7 @@ function App() {
                   onSendMessage={handleSendMessage}
                   onOpenCVModal={handleOpenCVModal}
                   onVoiceSubmit={handleVoiceSubmit}
+                  onStop={handleStop}
                   isLoading={isLoading}
                   isSpeaking={isSpeaking}
                 />
@@ -562,6 +590,7 @@ function App() {
                 onSendMessage={handleSendMessage}
                 onOpenCVModal={handleOpenCVModal}
                 onVoiceSubmit={handleVoiceSubmit}
+                onStop={handleStop}
                 isLoading={isLoading}
                 isSpeaking={isSpeaking}
               />

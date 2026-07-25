@@ -66,9 +66,20 @@ class MarketInsight(BaseModel):
     primary_skill:   str
     total_jobs:      int
     top_companies:   list[str]       = Field(default_factory=list)  # ["VNG (24)", "Tiki (18)"]
-    work_mode_dist:  dict[str, int]  = Field(default_factory=dict)  # {"remote": 45, "hybrid": 30}
+    work_mode_dist:  dict[str, int]  = Field(default_factory=dict)  # {"Remote": 45, "Hybrid": 30}
     related_skills:  list[str]       = Field(default_factory=list)  # ["FastAPI", "PostgreSQL"]
-    location_filter: Optional[str]   = None                         # "Ho Chi Minh" | None
+    location_filter:  Optional[str]   = None                         # "Ho Chi Minh" | None
+    work_mode_filter: Optional[str]   = None                         # "At Office" | "Remote" | "Hybrid" | None
+    level_filter:     Optional[str]   = None                         # "Senior" | "Junior" | None
+    region_filter:    Optional[str]   = None                         # "South" | "North" | "Central" | None
+    date_filter:      Optional[str]   = None                         # "2025" | "Q1/2025" | "tháng 3/2025" | None
+    category_filter:  Optional[str]   = None                         # "Backend Development" | None
+    company_filter:   Optional[str]   = None                         # "VNG" | None
+    category_dist:    dict[str, int]  = Field(default_factory=dict)  # {"Backend Development": 120}
+    region_dist:      dict[str, int]  = Field(default_factory=dict)  # {"South": 5264, "North": 3075}
+    co_skills:            list[str]       = Field(default_factory=list)  # ["KUBERNETES"] when joint filter active
+    or_skill_totals:      dict[str, int]  = Field(default_factory=dict)  # {"ORACLE": 294, "POSTGRESQL": 427} for OR queries
+    related_skill_counts: dict[str, int]  = Field(default_factory=dict)  # {"C++": 98, "Linux": 45} co-occurrence counts
 
 
 class ChatResponse(BaseModel):
@@ -104,13 +115,13 @@ class LearningPathStep(BaseModel):
     ``bridge_score`` = % of target-category jobs that require BOTH the user's
                        known skills AND this skill — measures how well the skill
                        connects to what the user already knows.
-    ``rank_score``   = 0.6 × market_freq + 0.4 × bridge_score (composite ranking).
+    ``rank_score``   = 0.85 × market_freq + 0.15 × bridge_score (composite ranking).
     """
     skill_name:   str
     skill_group:  str
     market_freq:  float  = Field(..., description="% of target-category jobs requiring this skill")
     bridge_score: float  = Field(..., description="% of target-category jobs needing known_skills + this skill")
-    rank_score:   float  = Field(..., description="Composite score: 0.6×market_freq + 0.4×bridge_score")
+    rank_score:   float  = Field(..., description="Composite score: 0.85×market_freq + 0.15×bridge_score")
     market_count: int    = Field(..., description="Raw count of distinct job postings requiring this skill")
 
 

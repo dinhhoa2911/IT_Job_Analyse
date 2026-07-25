@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FiFileText, FiMic, FiMicOff } from "react-icons/fi";
+import { FiFileText, FiMic, FiMicOff, FiSquare } from "react-icons/fi";
 import { LuArrowUp } from "react-icons/lu";
 import { PiWaveformBold } from "react-icons/pi";
 
@@ -58,6 +58,7 @@ function MessageInput({
   onSendMessage,
   onOpenCVModal,
   onVoiceSubmit  = () => {},
+  onStop         = () => {},
   isLoading      = false,
   isSpeaking     = false,
 }) {
@@ -179,12 +180,13 @@ function MessageInput({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            isListening ? "Đang lắng nghe… (VI + EN đều được)" :
-            isSpeaking  ? "AI đang phản hồi…"                  :
-            noSupport   ? "Trình duyệt không hỗ trợ mic"       :
+            isListening ? "Đang lắng nghe… (VI + EN đều được)"  :
+            isLoading   ? "Nhấn ■ để dừng, hoặc nhập câu tiếp…" :
+            isSpeaking  ? "AI đang phản hồi…"                   :
+            noSupport   ? "Trình duyệt không hỗ trợ mic"        :
             "Hỏi về việc làm IT, hoặc upload CV để tìm việc phù hợp…"
           }
-          disabled={isLoading || isListening}
+          disabled={isListening}
           className="flex-1 bg-transparent text-black dark:text-white outline-none placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-60 text-base"
         />
 
@@ -204,19 +206,28 @@ function MessageInput({
           {isListening ? <FiMicOff className="w-5 h-5 relative" /> : <FiMic className="w-5 h-5 relative" />}
         </button>
 
-        {/* Send */}
-        <button type="submit"
-          disabled={isLoading || input.trim() === "" || isListening}
-          className="w-8 h-8 rounded-full bg-black dark:bg-white flex items-center justify-center transition flex-shrink-0 disabled:opacity-40"
-          title="Gửi"
-        >
-          {isLoading
-            ? <span className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" />
-            : input.trim() === ""
+        {/* Stop (while loading) / Send (idle) */}
+        {isLoading ? (
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onStop(); }}
+            className="w-8 h-8 rounded-full bg-black dark:bg-white flex items-center justify-center flex-shrink-0 cursor-pointer"
+            title="Dừng"
+          >
+            <FiSquare className="w-3 h-3 text-white dark:text-black pointer-events-none" />
+          </button>
+        ) : (
+          <button type="submit"
+            disabled={input.trim() === "" || isListening}
+            className="w-8 h-8 rounded-full bg-black dark:bg-white flex items-center justify-center transition flex-shrink-0 disabled:opacity-40"
+            title="Gửi"
+          >
+            {input.trim() === ""
               ? <PiWaveformBold className="w-5 h-5 text-white dark:text-black" />
               : <LuArrowUp      className="w-5 h-5 text-white dark:text-black" />
-          }
-        </button>
+            }
+          </button>
+        )}
       </form>
     </div>
   );

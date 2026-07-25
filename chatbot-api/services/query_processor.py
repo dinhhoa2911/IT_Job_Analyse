@@ -23,10 +23,10 @@ import logging
 import re
 
 import trino
-from openai import OpenAI
+import anthropic
 
 from config import settings
-from constants import LOCATION_ALIAS_TO_NAME, LOCATION_CITY_NAME
+from constants import LOCATION_ALIAS_TO_NAME, LOCATION_CITY_NAME, SKILL_QUERY_ALIASES
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,10 @@ _LOCATION_SHORT: dict[str, str] = {
     LOCATION_CITY_NAME["danang"]: "Da Nang",
     "remote": "remote",
 }
+
+# SKILL_QUERY_ALIASES imported from constants — maps user-typed variants to DB canonical.
+# e.g. "golang" → "go", "k8s" → "kubernetes", "react native" → "react_native"
+# See constants.py for the full ground-truth list with DB job counts.
 
 # Tokens that signal advisory / ambiguous intent → route to slow-path.
 _AMBIGUITY_TOKENS = {
@@ -103,6 +107,20 @@ Rules:
 - Return a JSON array of exactly 3 strings: [original, variant_1, variant_2].
 - Variants must preserve the SAME intent and requirements as the original.
 - Use common IT industry terminology (English preferred for tech terms).
+- IMPORTANT — normalize skill names to canonical forms in variants:
+  Alias      → Canonical (always include in at least one variant)
+  golang/Golang → Go  |  k8s/k8 → Kubernetes  |  k8 → Kubernetes
+  nodejs/NodeJS → Node.js  |  vuejs/vue.js → Vue  |  reactjs → React
+  react native/react-native/reactnative → React Native
+  ci/cd/cicd → CI/CD  |  microservices → Microservices
+  scikit-learn/sklearn → Scikit-learn  |  dotnet/.net → .NET
+  elastic search → Elasticsearch  |  elk → ELK Stack
+  airflow → Apache Airflow  |  postgres → PostgreSQL
+  powerbi → Power BI  |  tailwindcss → Tailwind
+- Handle typos and unusual spellings by normalizing to standard names in variants.
+  If user typed "golng" → treat as Golang/Go.
+  If user typed "k8" → treat as Kubernetes.
+  If user typed "reactnative" → treat as React Native.
 - Do NOT add new requirements not in the original.
 - No markdown, no explanation.
 
@@ -115,7 +133,17 @@ Output: ["Python backend developer",
 Input:  "React senior HCM"
 Output: ["React senior HCM",
          "senior React developer Ho Chi Minh City frontend",
-         "experienced ReactJS engineer HCMC JavaScript"]"""
+         "experienced ReactJS engineer HCMC JavaScript"]
+
+Input:  "Golang Kubernetes DevOps engineer"
+Output: ["Golang Kubernetes DevOps engineer",
+         "Go developer Kubernetes infrastructure DevOps",
+         "Golang engineer container orchestration CI/CD K8s"]
+
+Input:  "golng k8 devops"
+Output: ["golng k8 devops",
+         "Go developer Kubernetes DevOps engineer",
+         "Golang engineer Kubernetes infrastructure CI/CD"]"""
 
 
 # ── QueryProcessor ────────────────────────────────────────────────────────────
@@ -141,7 +169,7 @@ class QueryProcessor:
     """
 
     def __init__(self) -> None:
-        self._client = OpenAI(api_key=settings.openai_api_key)
+        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
         # Fast-path state (populated by _load_db_metadata)
         self._skill_map: dict[str, str] = {}       # lowercase → original casing
@@ -242,15 +270,25 @@ class QueryProcessor:
         """
         @brief Return lowercase skill keys found in the query using word-boundary-aware matching.
 
-        Handles dotted and special-character skill names (node.js, c#, vue.js).
+        Checks _SKILL_ALIASES first (e.g. "golang" → "go", "k8s" → "kubernetes") so
+        user-typed variants resolve to the canonical DB skill name before the full
+        skill_map scan.  Handles dotted/special names (node.js, c#, vue.js).
 
         @param query_lower  Lowercased query string.
-        @return             List of matched skill keys from self._skill_map.
+        @return             List of matched skill keys from self._skill_map (no duplicates).
         """
-        found = []
+        found: list[str] = []
+        # Resolve aliases first (longer aliases take priority via sorted order)
+        for alias, canonical in sorted(SKILL_QUERY_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
+            escaped = re.escape(alias)
+            if re.search(rf"(?<![a-z0-9.]){escaped}(?![a-z0-9.])", query_lower):
+                if canonical in self._skill_map and canonical not in found:
+                    found.append(canonical)
+        # Then scan the full skill_map for direct matches
         for skill_lower in self._skill_map:
+            if skill_lower in found:
+                continue
             escaped = re.escape(skill_lower)
-            # Handles dotted/special names like "node.js", "c#", "vue.js"
             if re.search(rf"(?<![a-z0-9.]){escaped}(?![a-z0-9.])", query_lower):
                 found.append(skill_lower)
         return found
@@ -364,15 +402,15 @@ class QueryProcessor:
         @param max_tokens  Token budget for the LLM response (default 256).
         @return            Parsed list of strings, or [user] on parse failure.
         """
-        response = self._client.chat.completions.create(
-            model=settings.openai_model,
+        response = self._client.messages.create(
+            model=settings.anthropic_model,
             max_tokens=max_tokens,
+            system=system,
             messages=[
-                {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         )
-        raw = response.choices[0].message.content.strip()
+        raw = response.content[0].text.strip()
         if raw.startswith("```"):
             lines = raw.splitlines()
             raw = "\n".join(lines[1:-1]).strip()

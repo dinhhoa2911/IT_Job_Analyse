@@ -23,6 +23,7 @@ import { FiBarChart2, FiChevronDown, FiChevronUp } from "react-icons/fi";
  * @property {WorkModeDist} work_mode_dist   - Distribution of work modes across postings.
  * @property {string[]}     related_skills   - Co-occurring skills found in the postings.
  * @property {string|null}  location_filter  - Active location filter, or null for nationwide.
+ * @property {Object.<string, number>} [or_skill_totals] - Skill counts for OR queries.
  */
 
 /**
@@ -65,6 +66,7 @@ function modeColor(mode) {
  * @returns {JSX.Element|null}
  */
 function WorkModeBar({ dist }) {
+  const [hovered, setHovered] = useState(null);
   const entries = Object.entries(dist).filter(([, v]) => v > 0);
   if (entries.length === 0) return null;
 
@@ -77,8 +79,14 @@ function WorkModeBar({ dist }) {
         .map(([mode, count]) => {
           const pct = Math.round((count / total) * 100);
           const c   = modeColor(mode);
+          const isHovered = hovered === mode;
           return (
-            <div key={mode} className="flex items-center gap-2">
+            <div
+              key={mode}
+              className="flex items-center gap-2 cursor-default"
+              onMouseEnter={() => setHovered(mode)}
+              onMouseLeave={() => setHovered(null)}
+            >
               <span className={`text-xs w-14 flex-shrink-0 capitalize ${c.text}`}>{mode}</span>
               <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
                 <div
@@ -86,12 +94,47 @@ function WorkModeBar({ dist }) {
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right flex-shrink-0">
-                {pct}%
-              </span>
+              {isHovered ? (
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-16 text-right flex-shrink-0 whitespace-nowrap">
+                  {count.toLocaleString()}/{total.toLocaleString()}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right flex-shrink-0">
+                  {pct}%
+                </span>
+              )}
             </div>
           );
         })}
+    </div>
+  );
+}
+
+function RelatedSkills({ skills, counts = {}, total }) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+        Kỹ năng đi kèm
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {skills.slice(0, 6).map((s) => {
+          const cnt = counts?.[s];
+          const isHovered = hovered === s;
+          return (
+            <span
+              key={s}
+              onMouseEnter={() => setHovered(s)}
+              onMouseLeave={() => setHovered(null)}
+              className="text-xs bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full cursor-default transition-all"
+            >
+              {isHovered && cnt != null
+                ? `${s} (${cnt.toLocaleString()}/${total.toLocaleString()})`
+                : s}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -115,7 +158,12 @@ export default function MarketInsightCard({ insight }) {
   if (!insight) return null;
 
   const locLabel = insight.location_filter ? ` · ${insight.location_filter}` : "";
-  const title    = `${insight.primary_skill}${locLabel}`;
+  const orEntries = Object.entries(insight.or_skill_totals || {})
+    .filter(([, count]) => Number(count) > 0);
+  const hasOrComparison = orEntries.length > 1;
+  const title = hasOrComparison
+    ? `${orEntries.map(([skill]) => skill).join(" / ")}${locLabel}`
+    : `${insight.primary_skill}${locLabel}`;
 
   return (
     <div className="mt-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/30 overflow-hidden text-sm">
@@ -131,7 +179,7 @@ export default function MarketInsightCard({ insight }) {
             Thị trường {title}
           </span>
           <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-600 text-white text-xs font-semibold">
-            {insight.total_jobs} jobs
+            {hasOrComparison ? `${orEntries.length} skills` : `${insight.total_jobs} jobs`}
           </span>
         </div>
         {open
@@ -144,14 +192,49 @@ export default function MarketInsightCard({ insight }) {
       {open && (
         <div className="px-4 pb-4 pt-1 grid grid-cols-1 gap-4 sm:grid-cols-3">
 
+          {/* OR skill comparison */}
+          {hasOrComparison && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                So sánh kỹ năng
+              </p>
+              <div className="space-y-1.5">
+                {orEntries.map(([skill, count]) => {
+                  const maxCount = Math.max(...orEntries.map(([, c]) => Number(c)));
+                  const pct = maxCount > 0
+                    ? Math.max(8, Math.round((Number(count) / maxCount) * 100))
+                    : 0;
+                  return (
+                    <div key={skill} className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 truncate">
+                          {skill}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                          {Number(count).toLocaleString()} jobs
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40">
+                        <div
+                          className="h-1.5 rounded-full bg-indigo-500 transition-all duration-700"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Top companies */}
           {insight.top_companies.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                 Top công ty
               </p>
-              <ul className="space-y-1">
-                {insight.top_companies.slice(0, 4).map((c, i) => (
+              <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                {insight.top_companies.map((c, i) => (
                   <li key={c} className="flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300 text-[10px] font-bold flex-shrink-0">
                       {i + 1}
@@ -175,21 +258,7 @@ export default function MarketInsightCard({ insight }) {
 
           {/* Related skills */}
           {insight.related_skills.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Kỹ năng đi kèm
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {insight.related_skills.slice(0, 6).map((s) => (
-                  <span
-                    key={s}
-                    className="text-xs bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <RelatedSkills skills={insight.related_skills} counts={insight.related_skill_counts} total={insight.total_jobs} />
           )}
         </div>
       )}

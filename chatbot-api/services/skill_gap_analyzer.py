@@ -29,9 +29,52 @@ import re
 import trino
 
 from config import settings
+from constants import SKILL_QUERY_ALIASES
 from models.schemas import CVProfile, SkillGap, SkillGapAnalysis
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_skill(s: str) -> str:
+    """Normalize a user-typed skill to its canonical dim_skill name."""
+    low = s.strip().lower()
+    return SKILL_QUERY_ALIASES.get(low, low)
+
+
+# Direct role-keyword → category mapping (avoids LIKE mismatches on job titles
+# like "Full Stack" vs "Fullstack"). Checked before the LIKE fallback.
+_ROLE_CATEGORY_MAP: dict[str, str] = {
+    "backend": "Backend Development", "back-end": "Backend Development",
+    "back end": "Backend Development",
+    "frontend": "Frontend Development", "front-end": "Frontend Development",
+    "front end": "Frontend Development",
+    "fullstack": "Fullstack Development", "full-stack": "Fullstack Development",
+    "full stack": "Fullstack Development",
+    "mobile": "Mobile Development", "android": "Mobile Development",
+    "ios": "Mobile Development",
+    "devops": "DevOps & Infrastructure", "sre": "DevOps & Infrastructure",
+    "data engineer": "Data Engineering", "data pipeline": "Data Engineering",
+    "data analyst": "Data Analytics", "analytics": "Data Analytics",
+    "machine learning": "AI & Machine Learning", "ml engineer": "AI & Machine Learning",
+    "data science": "AI & Machine Learning",
+    "qa": "Testing & QA", "tester": "Testing & QA", "testing": "Testing & QA",
+    "security": "Cyber Security", "cybersecurity": "Cyber Security",
+    "embedded": "Embedded & IoT", "iot": "Embedded & IoT",
+    "game": "Game Development",
+    "erp": "ERP & CRM", "crm": "ERP & CRM",
+    "product manager": "Product & Business Analysis",
+    "business analyst": "Product & Business Analysis",
+    "manager": "Management", "management": "Management",
+}
+
+
+def _infer_category_from_keywords(role: str) -> str | None:
+    """Match role string against known keywords (longest first)."""
+    role_lower = role.lower()
+    for keyword in sorted(_ROLE_CATEGORY_MAP, key=len, reverse=True):
+        if keyword in role_lower:
+            return _ROLE_CATEGORY_MAP[keyword]
+    return None
 
 
 # ── SQL templates ─────────────────────────────────────────────────────────────
@@ -174,10 +217,10 @@ def _infer_category_from_db(
     if not skills:
         return None
 
-    # Build SQL-safe IN-list: LOWER each skill, escape quotes, wrap in single quotes
+    # Build SQL-safe IN-list: normalize aliases (nodejs→node.js, golang→go, etc.)
     in_list = ", ".join(
-        f"'{_escape(s.strip().lower())}'"
-        for s in skills[:20]   # cap at 20 to keep query short
+        f"'{_escape(_normalize_skill(s))}'"
+        for s in skills[:20]
         if s.strip()
     )
     if not in_list:
@@ -219,6 +262,17 @@ def _infer_categories_from_roles_db(
     if not preferred_roles:
         return []
 
+    # Strategy 1: direct keyword mapping (handles fullstack/full-stack/full stack)
+    keyword_cats: list[str] = []
+    for role in preferred_roles[:5]:
+        cat = _infer_category_from_keywords(role)
+        if cat and cat not in keyword_cats:
+            keyword_cats.append(cat)
+    if keyword_cats:
+        logger.info("Role-keyword category inference → %s", keyword_cats)
+        return keyword_cats[:3]
+
+    # Strategy 2: LIKE fallback on job titles
     conditions = [
         f"LOWER(f.job_title) LIKE '%{_escape(r.strip().lower())}%'"
         for r in preferred_roles[:5]
@@ -231,7 +285,7 @@ def _infer_categories_from_roles_db(
         role_conditions=" OR ".join(conditions)
     ))
     categories = [r["category_name"] for r in rows if r.get("category_name")]
-    logger.info("Role-title category inference → %s", categories)
+    logger.info("Role-title category inference (LIKE) → %s", categories)
     return categories
 
 
@@ -262,7 +316,7 @@ class SkillGapAnalyzerService:
             return False
 
         in_list = ", ".join(
-            f"'{_escape(s.strip().lower())}'"
+            f"'{_escape(_normalize_skill(s))}'"
             for s in skills[:30]
             if s.strip()
         )
