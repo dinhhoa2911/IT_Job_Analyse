@@ -1,3 +1,7 @@
+from spark_config import load_settings
+
+job_settings = load_settings()
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import DoubleType, IntegerType, StringType
@@ -10,8 +14,8 @@ import numpy as np
 warnings.filterwarnings("ignore")
 
 # --- CONFIGURATION ---
-HIVE_METASTORE = "thrift://hive-metastore:9083"
-WAREHOUSE_PATH = "hdfs://dinhhoa-master:9000/user/ndh/warehouse"
+HIVE_METASTORE = job_settings.hive_metastore_uri
+WAREHOUSE_PATH = job_settings.weekly_warehouse_path
 CATALOG = "iceberg"
 DATABASE_GOLD = "gold"
 

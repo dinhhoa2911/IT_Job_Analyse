@@ -1,3 +1,7 @@
+from spark_config import load_settings
+
+job_settings = load_settings(require_minio=True)
+
 from pyspark.sql import SparkSession
 from pyspark.sql.types import IntegerType, DoubleType, StringType
 from pyspark.sql import functions as F
@@ -11,11 +15,11 @@ import numpy as np
 # ============================================
 warnings.filterwarnings("ignore")
 
-HIVE_METASTORE  = "thrift://hive-metastore:9083"
-WAREHOUSE_PATH  = "s3a://warehouse/iceberg_data"   # MinIO — same as Build_Gold.py
-MINIO_ENDPOINT  = "http://minio:9000"
-MINIO_ACCESS    = "minioadmin"
-MINIO_SECRET    = "minioadmin"
+HIVE_METASTORE = job_settings.hive_metastore_uri
+WAREHOUSE_PATH = job_settings.warehouse_path
+MINIO_ENDPOINT = job_settings.minio_endpoint
+MINIO_ACCESS = job_settings.minio_access_key
+MINIO_SECRET = job_settings.minio_secret_key
 CATALOG = "iceberg"
 DATABASE_GOLD = "gold"
 TABLE_FACT = "fact_job_posting"

@@ -1,111 +1,89 @@
-# 📊 ITJOBANALYSE: Data Lakehouse & Job Demand Prediction System
+# IT Job Analyse
 
-![Project Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Docker](https://img.shields.io/badge/Containerized-Docker-blue)
-![License](https://img.shields.io/badge/License-MIT-lightgrey)
+**Phân tích thị trường tuyển dụng CNTT và hỗ trợ tìm kiếm việc làm thông minh ứng dụng AI.**
 
-## 📖 Introduction
+## Mục tiêu
 
-**ITJOBANALYSE** is a modern Data Lakehouse project designed to collect, process, and analyze IT recruitment data in Vietnam (sourced from TopDev, VietnamWorks). By leveraging the **Medallion Architecture**, the system transforms raw data into actionable insights.
+Dự án xây dựng nền tảng Data Lakehouse để tổ chức dữ liệu tuyển dụng ITViec, phân tích nhu cầu nhân lực và kỹ năng, đồng thời cung cấp trợ lý hỗ trợ tìm việc và định hướng nghề nghiệp dựa trên dữ liệu.
 
-A key feature of this project is the integration of the **Facebook Prophet** machine learning algorithm to forecast future recruitment trends, helping decision-makers understand the labor market demand.
+Lakehouse/ETL do chủ dự án phát triển; phần RAG do thành viên khác phát triển. README mô tả các thành phần có trong repository; **chưa xác nhận hệ thống chạy tích hợp đầu cuối**.
 
+## Kiến trúc
 
-## 🏗️ System Architecture
+![Kiến trúc hệ thống IT Job Analyse](docs/images/system-architecture.png)
 
-The entire system is deployed on a **Docker** infrastructure, ensuring reproducibility and scalability. It integrates **Apache Iceberg** to bring ACID transactions to the Data Lake.
-<img width="940" height="468" alt="image" src="https://github.com/user-attachments/assets/65859fef-a3dd-46f4-9e5a-f4d196353d71" />
+Luồng chính: dữ liệu tuyển dụng → MinIO → Iceberg Bronze/Silver/Gold qua Spark; Airflow điều phối, Trino phục vụ truy vấn và Superset phục vụ BI. Backend FastAPI kết hợp tìm kiếm Milvus và phân tích SQL để cung cấp kết quả cho giao diện React.
 
-🛠️ Tech Stack
+**Lưu ý:** ảnh thể hiện nhánh vector hóa từ Gold, nhưng [script hiện tại](scripts/Vectorize_To_Milvus.py) đọc **`iceberg.silver.it_jobs_clean`**. Gold phục vụ phân tích có cấu trúc qua Trino. Ảnh là sơ đồ thiết kế; các nhãn như LangChain không thay thế bằng chứng triển khai trong code. Xem [đối chiếu kiến trúc và triển khai](docs/thesis-code-mapping.md).
 
-Component,Technology,Role
-Storage,Hadoop HDFS,Distributed physical storage for raw and processed data.
-Table Format,Apache Iceberg,"Provides ACID transactions, time travel, and schema evolution."
-Processing,Apache Spark,Heavy ETL processing and Machine Learning model training.
-Orchestration,Apache Airflow,Workflow management and scheduling of data pipelines.
-Query Engine,Trino,High-performance distributed SQL query engine for interactive analytics.
-Visualization,Apache Superset,Business Intelligence (BI) tool for dashboards and reporting.
-Metadata,Hive Metastore,Central repository for metadata management.
-Algorithm,Prophet,Time-series forecasting for job demand prediction.
+## Công nghệ
 
-🔄 Data Pipeline (Medallion Architecture)
-The data flows through a structured Bronze-Silver-Gold pipeline managed by Apache Iceberg:
+| Nhóm | Công nghệ |
+|---|---|
+| Lưu trữ và metadata | MinIO, Apache Iceberg, Hive Metastore, PostgreSQL |
+| Xử lý và điều phối | Apache Spark, Apache Airflow, Redis |
+| Truy vấn và BI | Trino, Apache Superset |
+| Tìm kiếm và AI | Milvus, OpenAI Embedding, Claude, BM25, RRF, cross-encoder rerank |
+| Backend và CV | FastAPI, pdfplumber, PyMuPDF, PaddleOCR |
+| Frontend và tài khoản | React, Tailwind CSS, Chart.js, Firebase, EmailJS |
+| Dự báo và nhánh lưu trữ khác | Prophet; HDFS còn được một số script tham chiếu |
 
-Bronze Layer (Raw): Ingests raw recruitment data (CSV, JSON, Scraped Data) into HDFS.
+## Chức năng chính
 
-Silver Layer (Cleansed): Spark cleans, deduplicates, and validates data. Stored as Iceberg tables.
+Các nhóm sau có mã triển khai hoặc cấu hình trong repository, chưa được nghiệm thu tích hợp:
 
-Gold Layer (Aggregated): Business-level aggregations ready for analysis (e.g., "Jobs by Industry," "Salary Trends").
+- **Xử lý dữ liệu:** nạp Bronze, làm sạch Silver, xây dựng Star Schema Gold.
+- **Phân tích thị trường:** truy vấn theo kỹ năng, địa điểm, doanh nghiệp và thời gian; NL2SQL và biểu đồ.
+- **Tìm kiếm việc làm:** kết hợp tìm kiếm ngữ nghĩa, từ khóa và xếp hạng lại kết quả.
+- **Hỗ trợ ứng viên:** trích xuất CV PDF/OCR, so khớp việc làm, phân tích khoảng cách kỹ năng và gợi ý lộ trình học tập.
+- **Giao diện tương tác:** chat, hiển thị phân tích, tài khoản và quản lý CV.
 
-Prediction Layer: Spark ML runs the Prophet algorithm on historical data to generate future demand forecasts, storing results back into the Gold layer.
+Repository cũng có cấu hình Superset và các module Prophet; nhánh dự báo chưa hoàn thiện luồng tới chat/UI.
 
-🤖 Machine Learning: Job Demand Prediction
-We utilize Facebook Prophet, a robust additive model for time series forecasting, to predict labor market trends.
+## Cấu trúc thư mục
 
-Input: Historical job posting counts, seasonal trends, and industry categories.
+```text
+chatbot-api/              # Backend FastAPI và các dịch vụ RAG/NL2SQL/CV
+frontend-chatbot-main/    # Giao diện React
+chatbot/                 # Compose cho API và UI
+scripts/                 # ETL, vector hóa, Prophet và tiện ích dữ liệu
+orchestration/           # Compose Airflow và DAG được mount
+dags/                    # Các bản DAG khác còn trong repo
+spark_iceberg/           # Spark image, cấu hình và Compose
+minio/                   # MinIO và các cấu hình/script HDFS còn lưu
+metastore/               # Hive Metastore và PostgreSQL
+trino/                   # Trino và catalog
+milvus/                  # Milvus, etcd và Attu
+superset/                # Cấu hình BI
+data/, models/           # Dữ liệu và model artifact có trong repo
+tests/, tools/           # Kiểm tra offline và công cụ kiểm tra cú pháp
+docs/                    # Kiến trúc, hướng dẫn và báo cáo kỹ thuật
+```
 
-Process: The model is trained periodically via Airflow DAGs using PySpark.
+## Hướng dẫn chạy
 
-Output: Forecasted number of job openings for the next [X] months.
+Repository có nhiều Compose theo từng thành phần, **không có Compose gốc để chạy toàn hệ thống bằng một lệnh**. Các bước khởi động dưới đây chưa được kiểm chứng trên môi trường tích hợp:
 
-Visualization: Predicted trends are visualized in Superset alongside historical data.
+1. Chuẩn bị Docker/Compose và network external `system_network`; kiểm tra subnet phù hợp với IP MinIO được cấu hình.
+2. Chuẩn bị hai file môi trường riêng từ [mẫu backend](chatbot-api/.env.example) và [mẫu Spark](scripts/.env.example), thay placeholder bằng giá trị hợp lệ. Không ghi đè `.env` đã có hoặc commit credentials.
+3. Kiểm tra dữ liệu, bảng và collection cần thiết, rồi khởi động từng stack theo [hướng dẫn môi trường](docs/setup-guide.md). Ví dụ, **chỉ khi các dịch vụ phụ thuộc và dữ liệu đã sẵn sàng**, từ root repo có thể gọi stack API/UI bằng:
 
-🚀 Getting Started
-Prerequisites
-Docker & Docker Compose (allocated at least 8GB RAM).
+   ```powershell
+   docker compose -f chatbot/docker-compose.yml up -d
+   ```
 
-Git.
+4. Theo cổng cấu hình, giao diện React ở `http://localhost:3000`, API docs ở `http://localhost:8100/docs`. Các cổng khác, mount và thứ tự phụ thuộc nằm trong hướng dẫn chi tiết.
 
-Installation
-Clone the repository:
+Xem [cấu hình từng thành phần](docs/configuration.md) để cấp credentials MinIO bắt buộc cho API và Spark, cùng quy tắc ưu tiên biến môi trường. Không chạy crawl hoặc embedding chỉ để kiểm tra khởi động.
 
-Bash
+## Giới hạn
 
-git clone https://github.com/your-username/job-demand-datalakehouse.git
+Chưa xác nhận chạy tích hợp. Nguồn crawler chưa tìm thấy trong repo; một số điểm nối dữ liệu, DAG và forecast còn cần thống nhất. Không suy ra chức năng không tồn tại bên ngoài repo từ việc thiếu file. Xem [báo cáo tương thích](docs/integration-review.md) để phân biệt điểm khớp, bất tương thích từ code và phần chưa kiểm chứng.
 
-cd job-demand-datalakehouse
+## Tài liệu tham khảo
 
-Start the environment:
-
-Bash
-docker-compose up -d
-
-Access the interfaces:
-
-Airflow: http://localhost:8080 (User/Pass: admin/admin)
-
-Superset: http://localhost:8088 (User/Pass: admin/admin)
-
-Trino: http://localhost:8081
-
-Spark Master: http://localhost:8090
-
-📊 Dashboard & Visualization
-Describes the insights provided by Superset:
-
-Market Overview: Total active jobs, distribution by industry.
-
-Geographic Analysis: Heatmaps of job demand by region/city.
-
-Forecasting: Line charts showing Historical Data vs. Prophet Predictions.
-<img width="940" height="429" alt="image" src="https://github.com/user-attachments/assets/fb452d5f-27ed-4bdc-b231-a431d2534310" />
-
-📂 Project Structure
-
-├── dags/                 # Airflow DAGs (ETL & ML pipelines)
-
-├── data/                 # Sample raw data
-
-├── docker/               # Dockerfile and configuration for services
-
-├── notebooks/            # Jupyter Notebooks for EDA and Model Prototyping
-
-├── scripts/              # Python/Spark scripts for processing
-
-├── docker-compose.yaml   # Container orchestration
-
-└── README.md             # Project documentation
-
-
-📝 License
-This project is created for educational purposes within the "specialized essay" course.
+- [Hướng dẫn môi trường và khởi động](docs/setup-guide.md), [cấu hình](docs/configuration.md).
+- [Kiểm kê hiện trạng](docs/current-state.md), [đối chiếu khóa luận–code](docs/thesis-code-mapping.md).
+- [Báo cáo tương thích giữa Lakehouse và RAG](docs/integration-review.md).
+- [Baseline kiểm tra và giới hạn bằng chứng](docs/validation-baseline.md).
+- [Kế hoạch và backlog](docs/refactor-plan.md), [lịch sử công việc](TASKS.md).

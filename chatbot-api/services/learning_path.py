@@ -272,7 +272,7 @@ class LearningPathService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=20,
+                request_timeout=settings.trino_learning_timeout,
             )
 
             # Q0 — infer category
