@@ -6,7 +6,7 @@
 
 Dự án xây dựng nền tảng Data Lakehouse để tổ chức dữ liệu tuyển dụng ITViec, phân tích nhu cầu nhân lực và kỹ năng, đồng thời cung cấp trợ lý hỗ trợ tìm việc và định hướng nghề nghiệp dựa trên dữ liệu.
 
-Lakehouse/ETL do chủ dự án phát triển; phần RAG do thành viên khác phát triển. README mô tả các thành phần có trong repository; **chưa xác nhận hệ thống chạy tích hợp đầu cuối**.
+Lakehouse/ETL do chủ dự án phát triển; phần RAG do thành viên khác phát triển. README mô tả các thành phần có trong repository; 
 
 ## Kiến trúc
 
@@ -63,8 +63,6 @@ docs/                    # Kiến trúc, hướng dẫn và báo cáo kỹ thu�
 
 ## Hướng dẫn chạy
 
-Repository có nhiều Compose theo từng thành phần, **không có Compose gốc để chạy toàn hệ thống bằng một lệnh**. Các bước khởi động dưới đây chưa được kiểm chứng trên môi trường tích hợp:
-
 1. Chuẩn bị Docker/Compose và network external `system_network`; kiểm tra subnet phù hợp với IP MinIO được cấu hình.
 2. Chuẩn bị hai file môi trường riêng từ [mẫu backend](chatbot-api/.env.example) và [mẫu Spark](scripts/.env.example), thay placeholder bằng giá trị hợp lệ. Không ghi đè `.env` đã có hoặc commit credentials.
 3. Kiểm tra dữ liệu, bảng và collection cần thiết, rồi khởi động từng stack theo [hướng dẫn môi trường](docs/setup-guide.md). Ví dụ, **chỉ khi các dịch vụ phụ thuộc và dữ liệu đã sẵn sàng**, từ root repo có thể gọi stack API/UI bằng:
@@ -73,16 +71,12 @@ Repository có nhiều Compose theo từng thành phần, **không có Compose g
    docker compose -f chatbot/docker-compose.yml up -d
    ```
 
-4. Theo cổng cấu hình, giao diện React ở `http://localhost:3000`, API docs ở `http://localhost:8100/docs`. Các cổng khác, mount và thứ tự phụ thuộc nằm trong hướng dẫn chi tiết.
+4. Giao diện React ở `http://localhost:3000`, API docs ở `http://localhost:8100/docs`. Các cổng khác, mount và thứ tự phụ thuộc nằm trong hướng dẫn chi tiết.
+<img width="1921" height="877" alt="image" src="https://github.com/user-attachments/assets/e9fa0790-8267-4dce-ab5d-6d3220d891e2" />
 
 Xem [cấu hình từng thành phần](docs/configuration.md) để cấp credentials MinIO bắt buộc cho API và Spark, cùng quy tắc ưu tiên biến môi trường. Không chạy crawl hoặc embedding chỉ để kiểm tra khởi động.
 
-## Giới hạn
-
-Chưa xác nhận chạy tích hợp. Nguồn crawler chưa tìm thấy trong repo; một số điểm nối dữ liệu, DAG và forecast còn cần thống nhất. Không suy ra chức năng không tồn tại bên ngoài repo từ việc thiếu file. Xem [báo cáo tương thích](docs/integration-review.md) để phân biệt điểm khớp, bất tương thích từ code và phần chưa kiểm chứng.
-
 ## Tài liệu tham khảo
-
 - [Hướng dẫn môi trường và khởi động](docs/setup-guide.md), [cấu hình](docs/configuration.md).
 - [Kiểm kê hiện trạng](docs/current-state.md), [đối chiếu khóa luận–code](docs/thesis-code-mapping.md).
 - [Báo cáo tương thích giữa Lakehouse và RAG](docs/integration-review.md).
