@@ -54,6 +54,8 @@
     spark-submit:
       image: dinhhoa0102/spark-iceberg:3.5.3
       container_name: spark-submit
+      env_file:
+        - ../scripts/.env
       volumes:
         - ../minio/config/core-site.xml:/opt/spark/conf/core-site.xml:ro
         - ../scripts:/opt/spark/scripts

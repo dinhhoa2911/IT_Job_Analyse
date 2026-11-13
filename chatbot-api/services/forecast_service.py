@@ -364,7 +364,7 @@ class ForecastService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=10,
+                request_timeout=settings.trino_forecast_timeout,
             )
 
             # Q1 — historical actuals

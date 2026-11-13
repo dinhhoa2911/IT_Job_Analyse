@@ -1,3 +1,7 @@
+from spark_config import load_settings
+
+job_settings = load_settings(require_minio=True)
+
 import pandas as pd
 import os
 import sys
@@ -5,9 +9,9 @@ import sys
 # ===========================================================
 # CẤU HÌNH MINIO
 # ===========================================================
-MINIO_ENDPOINT = "http://minio:9000"
-MINIO_ACCESS_KEY = "minioadmin"
-MINIO_SECRET_KEY = "minioadmin"
+MINIO_ENDPOINT = job_settings.minio_endpoint
+MINIO_ACCESS_KEY = job_settings.minio_access_key
+MINIO_SECRET_KEY = job_settings.minio_secret_key
 BUCKET_NAME = "warehouse"
 
 # Đường dẫn file

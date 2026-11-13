@@ -1,14 +1,18 @@
+from spark_config import load_settings
+
+job_settings = load_settings(require_minio=True)
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 # ===========================================================
 # 1. Cấu hình hệ thống & Dictionaries
 # ===========================================================
-MINIO_ENDPOINT = "http://minio:9000"
-MINIO_ACCESS_KEY = "minioadmin"
-MINIO_SECRET_KEY = "minioadmin"
-WAREHOUSE_PATH = "s3a://warehouse/iceberg_data"
-HIVE_METASTORE = "thrift://hive-metastore:9083"
+MINIO_ENDPOINT = job_settings.minio_endpoint
+MINIO_ACCESS_KEY = job_settings.minio_access_key
+MINIO_SECRET_KEY = job_settings.minio_secret_key
+WAREHOUSE_PATH = job_settings.warehouse_path
+HIVE_METASTORE = job_settings.hive_metastore_uri
 
 CATALOG_NAME = "iceberg"
 

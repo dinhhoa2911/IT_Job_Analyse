@@ -329,7 +329,7 @@ class SkillGapAnalyzerService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=8,
+                request_timeout=settings.trino_query_timeout,
             )
             rows = _run(conn, _SQL_HAS_IT_SKILLS.format(skills=in_list))
             conn.close()
@@ -423,7 +423,7 @@ class SkillGapAnalyzerService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=15,
+                request_timeout=settings.trino_skill_gap_timeout,
             )
 
             # Step 1: match preferred_roles against job titles in Gold layer

@@ -1,3 +1,7 @@
+from spark_config import load_settings
+
+job_settings = load_settings()
+
 from hdfs import InsecureClient
 import pandas as pd
 import os
@@ -5,9 +9,9 @@ import os
 # ======================================================
 # CONFIGURATION
 # ======================================================
-HDFS_HOST = "dinhhoa-master"
-HDFS_PORT = 9000
-HDFS_USER = "root"
+HDFS_HOST = job_settings.hdfs_host
+HDFS_PORT = job_settings.hdfs_port
+HDFS_USER = job_settings.hdfs_user
 
 LOCAL_FILE = "/opt/spark/scripts/itviec_jobs_full.csv"
 HDFS_PATH = "/data_lake/raw/itviec_jobs_full.csv"

@@ -1,3 +1,7 @@
+from spark_config import load_settings
+
+job_settings = load_settings(require_minio=True, require_openai=True)
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
@@ -16,24 +20,24 @@ HADOOP_AWS_VERSION = "3.3.4"
 ICEBERG_VERSION = "1.5.0"
 SPARK_VERSION = "3.5_2.12" 
 
-MINIO_ENDPOINT = "http://minio:9000"
-MINIO_ACCESS_KEY = "minioadmin"
-MINIO_SECRET_KEY = "minioadmin"
-WAREHOUSE_PATH = "s3a://warehouse/iceberg_data"
-HIVE_METASTORE = "thrift://hive-metastore:9083"
+MINIO_ENDPOINT = job_settings.minio_endpoint
+MINIO_ACCESS_KEY = job_settings.minio_access_key
+MINIO_SECRET_KEY = job_settings.minio_secret_key
+WAREHOUSE_PATH = job_settings.warehouse_path
+HIVE_METASTORE = job_settings.hive_metastore_uri
 
 CATALOG_NAME = "iceberg"
 DATABASE_SILVER = "silver"
 TABLE_SILVER = "it_jobs_clean"
 
 # Cấu hình Milvus
-MILVUS_HOST = "milvus-standalone" 
-MILVUS_PORT = "19530"
+MILVUS_HOST = job_settings.milvus_host
+MILVUS_PORT = job_settings.milvus_port
 COLLECTION_NAME = "it_jobs_rag"
 EMBEDDING_MODEL = "text-embedding-3-large"
 EMBEDDING_DIM = 3072  # text-embedding-3-large outputs 3072 dimensions
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-BATCH_SIZE = 500  # texts per OpenAI API call
+OPENAI_API_KEY = job_settings.openai_api_key
+BATCH_SIZE = job_settings.embedding_batch_size
 
 # ===========================================================
 # 2. Khởi tạo Spark Session (Sửa lỗi ClassNotFoundException)

@@ -1034,7 +1034,7 @@ class MarketContextService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=5,
+                request_timeout=settings.trino_metadata_timeout,
             )
             rows = _run(conn, _SQL_LOAD_SKILLS)
             conn.close()
@@ -1067,7 +1067,7 @@ class MarketContextService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=5,
+                request_timeout=settings.trino_metadata_timeout,
             )
             rows = _run(conn, _SQL_LOAD_COMPANIES)
             conn.close()
@@ -1319,7 +1319,7 @@ class MarketContextService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=8,
+                request_timeout=settings.trino_query_timeout,
             )
             try:
                 if is_or_query:
@@ -1598,7 +1598,7 @@ class MarketContextService:
                 port=settings.trino_port,
                 user=settings.trino_user,
                 catalog=settings.trino_catalog,
-                request_timeout=8,
+                request_timeout=settings.trino_query_timeout,
             )
 
             # Q1 — total jobs for this skill (+ all active filters, including co_skill joint filter)

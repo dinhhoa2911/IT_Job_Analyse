@@ -1,3 +1,7 @@
+from spark_config import load_settings
+
+job_settings = load_settings()
+
 from pyspark.sql import SparkSession
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.clustering import GaussianMixture
@@ -6,12 +10,12 @@ from pyspark.sql.functions import max, count, sum, datediff, lit, col
 spark = (
     SparkSession.builder
     .appName("Customer_Clustering")
-    .config("hive.metastore.uris", "thrift://hive-metastore:9083")
+    .config("hive.metastore.uris", job_settings.hive_metastore_uri)
     .config("spark.sql.catalog.hive_catalog", "org.apache.iceberg.spark.SparkCatalog")
     .config("spark.sql.catalog.hive_catalog.type", "hive")
-    .config("spark.sql.catalog.hive_catalog.uri", "thrift://hive-metastore:9083")
+    .config("spark.sql.catalog.hive_catalog.uri", job_settings.hive_metastore_uri)
     .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-    .config("spark.sql.catalog.hive_catalog.warehouse", "hdfs://tuankiet170-master:9000/data_lake/warehouse")
+    .config("spark.sql.catalog.hive_catalog.warehouse", job_settings.cluster_warehouse_path)
     .enableHiveSupport()
     .getOrCreate()
 )
