@@ -10,7 +10,8 @@ Lakehouse/ETL do chủ dự án phát triển; phần RAG do thành viên khác 
 
 ## Kiến trúc
 
-![Kiến trúc hệ thống IT Job Analyse](docs/images/system-architecture.png)
+<img width="1355" height="675" alt="image" src="https://github.com/user-attachments/assets/7810100c-a0cc-4ced-9d24-f050e0e11786" />
+
 
 Luồng chính: dữ liệu tuyển dụng → MinIO → Iceberg Bronze/Silver/Gold qua Spark; Airflow điều phối, Trino phục vụ truy vấn và Superset phục vụ BI. Backend FastAPI kết hợp tìm kiếm Milvus và phân tích SQL để cung cấp kết quả cho giao diện React.
 
