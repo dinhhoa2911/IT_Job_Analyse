@@ -6,16 +6,11 @@
 
 Dự án xây dựng nền tảng Data Lakehouse để tổ chức dữ liệu tuyển dụng ITViec, phân tích nhu cầu nhân lực và kỹ năng, đồng thời cung cấp trợ lý hỗ trợ tìm việc và định hướng nghề nghiệp dựa trên dữ liệu.
 
-Lakehouse/ETL do chủ dự án phát triển; phần RAG do thành viên khác phát triển. README mô tả các thành phần có trong repository; 
-
 ## Kiến trúc
 
 <img width="1355" height="675" alt="image" src="https://github.com/user-attachments/assets/7810100c-a0cc-4ced-9d24-f050e0e11786" />
 
-
 Luồng chính: dữ liệu tuyển dụng → MinIO → Iceberg Bronze/Silver/Gold qua Spark; Airflow điều phối, Trino phục vụ truy vấn và Superset phục vụ BI. Backend FastAPI kết hợp tìm kiếm Milvus và phân tích SQL để cung cấp kết quả cho giao diện React.
-
-**Lưu ý:** ảnh thể hiện nhánh vector hóa từ Gold, nhưng [script hiện tại](scripts/Vectorize_To_Milvus.py) đọc **`iceberg.silver.it_jobs_clean`**. Gold phục vụ phân tích có cấu trúc qua Trino. Ảnh là sơ đồ thiết kế; các nhãn như LangChain không thay thế bằng chứng triển khai trong code. Xem [đối chiếu kiến trúc và triển khai](docs/thesis-code-mapping.md).
 
 ## Công nghệ
 
@@ -39,8 +34,7 @@ Các nhóm sau có mã triển khai hoặc cấu hình trong repository, chưa �
 - **Hỗ trợ ứng viên:** trích xuất CV PDF/OCR, so khớp việc làm, phân tích khoảng cách kỹ năng và gợi ý lộ trình học tập.
 - **Giao diện tương tác:** chat, hiển thị phân tích, tài khoản và quản lý CV.
 
-Repository cũng có cấu hình Superset và các module Prophet; nhánh dự báo chưa hoàn thiện luồng tới chat/UI.
-
+Repository cũng có cấu hình Superset và các module Prophet;
 ## Cấu trúc thư mục
 
 ```text
